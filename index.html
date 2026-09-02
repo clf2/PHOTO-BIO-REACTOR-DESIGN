@@ -43,6 +43,7 @@ body{
   font-size:14.5px;
   line-height:1.5;
   -webkit-font-smoothing:antialiased;
+  --warning-height:0px;
 }
 ::selection{background:var(--brand);color:#10161d;}
 a{color:var(--brand2);}
@@ -93,13 +94,28 @@ a{color:var(--brand2);}
 .navitem.active{color:var(--text); border-left-color:var(--brand); background:var(--bg-panel-2);}
 .navitem.active .num{color:var(--brand2);}
 
-.main{margin-left:230px; margin-top:56px; padding:28px 32px 90px; width:calc(100% - 230px); max-width:1180px;}
+.main{
+  margin-left:230px;
+  margin-top:56px;
+  padding:calc(28px + var(--warning-height, 0px)) 32px 90px;
+  width:calc(100% - 230px);
+  max-width:1180px;
+}
 
 @media (max-width:900px){
   .sidebar{transform:translateX(-100%); transition:transform .18s; z-index:60;}
   .sidebar.open{transform:translateX(0);}
   .main{margin-left:0; width:100%;}
   .topbar .brand .title{display:none;}
+  #warningBar{left:0;}
+}
+@media (max-width:700px){
+  .topbar{height:auto; min-height:56px; padding:8px 12px; gap:8px; align-items:flex-start;}
+  .topbar .actions{flex-wrap:wrap; justify-content:flex-end;}
+  .topbar .actions .btn{font-size:11px; padding:6px 8px;}
+  .sidebar{top:56px;}
+  #warningBar{top:56px;}
+  .main{margin-top:56px; padding-left:16px; padding-right:16px;}
 }
 
 /* ---------- Typography ---------- */
@@ -177,7 +193,16 @@ p.lead{color:var(--text-dim); font-size:14px; max-width:70ch; margin:0 0 20px;}
 @media (max-width:600px){.fieldgrid{grid-template-columns:1fr;}}
 
 /* ---------- Warnings ---------- */
-#warningBar{position:fixed; top:56px; left:230px; right:0; z-index:40;}
+#warningBar{
+  position:fixed;
+  top:56px;
+  left:230px;
+  right:0;
+  z-index:40;
+  max-height:45vh;
+  overflow-y:auto;
+  box-shadow:0 1px 0 rgba(0,0,0,.15);
+}
 @media (max-width:900px){#warningBar{left:0;}}
 .warning{
   font-size:13px; padding:9px 20px; display:flex; gap:10px; align-items:flex-start; border-bottom:1px solid rgba(0,0,0,.2);
@@ -446,7 +471,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
       <h2>Volume</h2>
       <div class="row"><div class="label">Geometric reactor volume<span class="sub">V<sub>geom</sub></span></div><div class="meta"><span class="badge locked">LOCKED</span><div class="val" id="r-geomVol">–</div></div></div>
       <div class="row"><div class="label">Working liquid volume<span class="sub">V<sub>working</sub> = V<sub>geom</sub> × fraction</span></div><div class="meta"><span class="badge locked">CALC</span><button class="formula-btn" data-f="workVol">View Formula</button><div class="val" id="r-workVolM3">–</div></div></div>
-      <div class="row"><div class="label">Working liquid volume</div><div class="meta"><div class="val" id="r-workVolL">–</div></div></div>
+      <div class="row"><div class="label">Working liquid volume</div><div class="meta"><button class="formula-btn" data-f="workVolL">View Formula</button><div class="val" id="r-workVolL">–</div></div></div>
     </div>
     <div class="card">
       <h2>U-Bend Geometry</h2>
@@ -480,9 +505,9 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   <div class="card">
     <h2>CO₂ Demand</h2>
     <div class="row"><div class="label">CO₂ utilization rate<span class="sub">m<sub>CO2</sub> = V<sub>working</sub> × r<sub>CO2</sub> / 1000</span></div><div class="meta"><button class="formula-btn" data-f="co2UtilH">View Formula</button><div class="val" id="r-co2UtilH">–</div></div></div>
-    <div class="row"><div class="label">CO₂ utilization rate</div><div class="meta"><div class="val" id="r-co2UtilDay">–</div></div></div>
+    <div class="row"><div class="label">CO₂ utilization rate</div><div class="meta"><button class="formula-btn" data-f="co2UtilDay">View Formula</button><div class="val" id="r-co2UtilDay">–</div></div></div>
     <div class="row"><div class="label">CO₂ inlet required<span class="sub">= utilization / capture efficiency</span></div><div class="meta"><button class="formula-btn" data-f="co2Inlet">View Formula</button><div class="val" id="r-co2InletH">–</div></div></div>
-    <div class="row"><div class="label">CO₂ inlet required</div><div class="meta"><div class="val" id="r-co2InletDay">–</div></div></div>
+    <div class="row"><div class="label">CO₂ inlet required</div><div class="meta"><button class="formula-btn" data-f="co2InletDay">View Formula</button><div class="val" id="r-co2InletDay">–</div></div></div>
     <div class="row"><div class="label">CO₂ molar flow<span class="sub">= inlet mass flow / MW</span></div><div class="meta"><button class="formula-btn" data-f="co2Molar">View Formula</button><div class="val" id="r-co2Molar">–</div></div></div>
   </div>
 
@@ -490,9 +515,9 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
     <h2>Total Flue Gas</h2>
     <div class="row"><div class="label">Total flue-gas molar flow<span class="sub">= CO₂ molar flow / CO₂ fraction</span></div><div class="meta"><button class="formula-btn" data-f="totalMolar">View Formula</button><div class="val" id="r-totalMolar">–</div></div></div>
     <div class="row"><div class="label">Standard flue-gas flow (NTP)<span class="sub">= molar flow × 22.414 m³/kmol</span></div><div class="meta"><button class="formula-btn" data-f="stdFlow">View Formula</button><div class="val" id="r-stdNm3h">–</div></div></div>
-    <div class="row"><div class="label">Standard flue-gas flow</div><div class="meta"><div class="val" id="r-stdNLmin">–</div></div></div>
+    <div class="row"><div class="label">Standard flue-gas flow</div><div class="meta"><button class="formula-btn" data-f="stdNLmin">View Formula</button><div class="val" id="r-stdNLmin">–</div></div></div>
     <div class="row"><div class="label">Actual flue-gas flow at inlet T<span class="sub">= molar flow × V<sub>m</sub>(T)</span></div><div class="meta"><button class="formula-btn" data-f="actFlow">View Formula</button><div class="val" id="r-actM3h">–</div></div></div>
-    <div class="row"><div class="label">Actual flue-gas flow at inlet T</div><div class="meta"><div class="val" id="r-actLmin">–</div></div></div>
+    <div class="row"><div class="label">Actual flue-gas flow at inlet T</div><div class="meta"><button class="formula-btn" data-f="actLmin">View Formula</button><div class="val" id="r-actLmin">–</div></div></div>
   </div>
 
   <div class="grid2">
@@ -541,7 +566,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
     <div class="row"><div class="label">Liquid mass<span class="sub">m<sub>liq</sub> = V<sub>working</sub> × ρ<sub>liq</sub></span></div><div class="meta"><button class="formula-btn" data-f="mLiquid">View Formula</button><div class="val" id="r-mLiquid">–</div></div></div>
     <div class="row"><div class="label">Flue-gas mass flow<span class="sub">= standard flow × ρ<sub>N,gas</sub></span></div><div class="meta"><button class="formula-btn" data-f="mDotGas">View Formula</button><div class="val" id="r-mDotGas">–</div></div></div>
     <div class="row"><div class="label">Initial heat-transfer rate<span class="sub">Q̇₀ = ṁ<sub>gas</sub> Cp<sub>gas</sub>(T<sub>gas</sub> − T₀)</span></div><div class="meta"><button class="formula-btn" data-f="qDot0">View Formula</button><div class="val" id="r-qDot0">–</div></div></div>
-    <div class="row"><div class="label">Liquid thermal capacitance<span class="sub">C = m<sub>liq</sub> Cp<sub>liq</sub></span></div><div class="meta"><div class="val" id="r-cLiquid">–</div></div></div>
+    <div class="row"><div class="label">Liquid thermal capacitance<span class="sub">C = m<sub>liq</sub> Cp<sub>liq</sub></span></div><div class="meta"><button class="formula-btn" data-f="cLiquid">View Formula</button><div class="val" id="r-cLiquid">–</div></div></div>
     <div class="row"><div class="label">Heating coefficient<span class="sub">k = ṁ<sub>gas</sub>Cp<sub>gas</sub> / (m<sub>liq</sub>Cp<sub>liq</sub>)</span></div><div class="meta"><button class="formula-btn" data-f="kCoeff">View Formula</button><div class="val" id="r-kCoeff">–</div></div></div>
   </div>
 
@@ -563,7 +588,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
     <label>Selectable time for point read-out</label>
     <div class="inputwrap"><input type="number" step="1" min="0" max="192" id="in-tSelect" value="192"><span class="unit-suffix">h</span></div>
   </div>
-  <div class="row"><div class="label">Temperature at selected time</div><div class="meta"><div class="val" id="r-tSelectOut">–</div></div></div>
+  <div class="row"><div class="label">Temperature at selected time</div><div class="meta"><button class="formula-btn" data-f="tSelect">View Formula</button><div class="val" id="r-tSelectOut">–</div></div></div>
 
   <div class="qualif">A rigorous overall energy balance requires: heat-transfer effectiveness / UA, ambient heat losses, pump heat, LED heat (if applicable), biological heat, and actual gas–liquid contact/transfer efficiency. None of these are included in the screening model above.</div>
 </section>
@@ -683,7 +708,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
         <tr><td class="label-cell">278 NL/min standard flue gas</td><td>≈173.1 NL/min (current 90% working-volume, 13% CO₂, 85% capture basis)</td></tr>
         <tr><td class="label-cell">4-day HRT continuous-operation basis (~104.29 L/h net throughput)</td><td>Batch cultivation, 8-day cycle — no continuous HRT feed flow in current basis</td></tr>
         <tr><td class="label-cell">~70.67 kg/day CO₂ basis</td><td>54.06 kg/day CO₂ utilization (0.25 g/L/h × 9,010.53 L)</td></tr>
-        <tr><td class="label-cell">Selected liquid velocity 0.10 m/s (Final Design sheet, ~36.7 m³/h circulation)</td><td>Velocity solved from target Re = 5000 (≈0.0848 m/s, ≈31.14 m³/h circulation)</td></tr>
+        <tr><td class="label-cell">Selected liquid velocity 0.10 m/s (Final Design sheet)</td><td>Velocity solved from target Re = 5000 using μ = 1.8 mPa·s (≈0.0848 m/s, ≈31.14 m³/h circulation)</td></tr>
         <tr><td class="label-cell">Flue-gas volumetric basis at 35°C (Final Design sheet update)</td><td>Flue-gas inlet temperature = 80°C per current locked basis</td></tr>
       </tbody>
     </table>
@@ -789,7 +814,7 @@ function compute(s){
   // ---- geometry ----
   r.workVolM3 = s.geomVol * (s.workFrac/100);
   r.workVolL  = r.workVolM3 * 1000;
-  r.ubendR_m  = (s.ubendCC/1000) / 2;
+  r.ubendR_m  = (s.ubendCC/1000) / 2; // locked design basis: R = C-C / 2
   r.ubendL_m  = Math.PI * r.ubendR_m;
   r.lStraight = s.numStraight * s.straightLen;
   r.lBend     = s.numUbends * r.ubendL_m;
@@ -855,10 +880,6 @@ function computeWarnings(s, r){
     // informational only, not shown as warning by default
   }
   w.push({level:'notice', msg:'CYCLONE FINAL SIZING BLOCKED: PM concentration, particle-size distribution and particle density required.'});
-  {
-    const altR = 1.5 * (s.tubeOD/1000);
-    w.push({level:'notice', msg:`DESIGN-BASIS DISCREPANCY (U-bend geometry): active model uses R = C-C/2 = ${fmt(r.ubendR_m,4)} m from the ${fmt(s.ubendCC,0)} mm centre-to-centre input. CarbonONE fabrication basis (R = 1.5 × tube OD) would give R = ${fmt(altR,4)} m instead — not applied here. Confirm which basis governs before fabrication.`});
-  }
   return w;
 }
 
@@ -876,7 +897,7 @@ const FORMULAS = {
   ubendR: (s,r)=>({
     title:'U-Bend Centreline Radius', sub:'Reactor Geometry',
     formula:'R = C-C / 2',
-    vars:'<code>C-C</code> U-bend centre-to-centre spacing (m)',
+    vars:'<code>C-C</code> U-bend centre-to-centre dimension (m); locked design basis uses R = C-C / 2',
     subs:`R = ${fmt(s.ubendCC/1000,4)} / 2`,
     result:`R = ${fmt(r.ubendR_m,4)} m`
   }),
@@ -915,6 +936,7 @@ const FORMULAS = {
     subs:`m_CO2 = ${fmt(r.workVolL,2)} × ${fmt(s.co2Util,3)} / 1000`,
     result:`m_CO2 = ${fmt(r.co2UtilH,4)} kg/h  (${fmt(r.co2UtilDay,2)} kg/day)`
   }),
+  workVolL: (s,r)=>({title:'Working Liquid Volume in Litres', sub:'Reactor Geometry', formula:'V_working,L = V_working,m³ × 1000', vars:'<code>V_working,m³</code> working liquid volume (m³)', subs:`V_working,L = ${fmt(r.workVolM3,4)} × 1000`, result:`V_working = ${fmt(r.workVolL,2)} L`}),
   co2Inlet: (s,r)=>({
     title:'CO₂ Inlet Required', sub:'CO₂ &amp; Flue Gas',
     formula:'m_CO2,in = m_CO2 / η_capture',
@@ -922,6 +944,8 @@ const FORMULAS = {
     subs:`m_CO2,in = ${fmt(r.co2UtilH,4)} / ${fmt(s.captureEff/100,2)}`,
     result:`m_CO2,in = ${fmt(r.co2InletH,4)} kg/h  (${fmt(r.co2InletDay,2)} kg/day)`
   }),
+  co2UtilDay: (s,r)=>({title:'Daily CO₂ Utilization', sub:'CO₂ &amp; Flue Gas', formula:'m_CO2,day = m_CO2,h × 24', vars:'<code>m_CO2,h</code> CO₂ utilization rate (kg/h)', subs:`m_CO2,day = ${fmt(r.co2UtilH,4)} × 24`, result:`m_CO2,day = ${fmt(r.co2UtilDay,2)} kg/day`}),
+  co2InletDay: (s,r)=>({title:'Daily CO₂ Inlet Requirement', sub:'CO₂ &amp; Flue Gas', formula:'m_CO2,in,day = m_CO2,in,h × 24', vars:'<code>m_CO2,in,h</code> inlet CO₂ mass flow (kg/h)', subs:`m_CO2,in,day = ${fmt(r.co2InletH,4)} × 24`, result:`m_CO2,in,day = ${fmt(r.co2InletDay,2)} kg/day`}),
   co2Molar: (s,r)=>({
     title:'CO₂ Molar Flow', sub:'CO₂ &amp; Flue Gas',
     formula:'n_CO2 = m_CO2,in / MW_CO2',
@@ -943,6 +967,7 @@ const FORMULAS = {
     subs:`Q_std = ${fmt(r.totalMolarH,5)} × 22.414`,
     result:`Q_std = ${fmt(r.stdNm3h,3)} Nm³/h  (${fmt(r.stdNLmin,1)} NL/min)`
   }),
+  stdNLmin: (s,r)=>({title:'Standard Flue-Gas Flow in NL/min', sub:'CO₂ &amp; Flue Gas', formula:'Q_std,NL/min = Q_std,Nm³/h × 1000 / 60', vars:'<code>Q_std,Nm³/h</code> standard flue-gas flow (Nm³/h)', subs:`Q_std,NL/min = ${fmt(r.stdNm3h,3)} × 1000 / 60`, result:`Q_std = ${fmt(r.stdNLmin,1)} NL/min`}),
   actFlow: (s,r)=>({
     title:'Actual Flue-Gas Flow at Inlet Temperature', sub:'CO₂ &amp; Flue Gas',
     formula:'V_m(T) = V_m,NTP × (273.15+T)/273.15;   Q_act = n_total × V_m(T)',
@@ -950,6 +975,7 @@ const FORMULAS = {
     subs:`V_m(${fmt(s.flueTempIn,0)}°C) = 22.414 × ${fmt((273.15+s.flueTempIn)/273.15,4)} = ${fmt(r.actMolVol,3)} m³/kmol\nQ_act = ${fmt(r.totalMolarH,5)} × ${fmt(r.actMolVol,3)}`,
     result:`Q_act = ${fmt(r.actM3h,2)} m³/h  (${fmt(r.actLmin,1)} L/min)`
   }),
+  actLmin: (s,r)=>({title:'Actual Flue-Gas Flow in L/min', sub:'CO₂ &amp; Flue Gas', formula:'Q_act,L/min = Q_act,m³/h × 1000 / 60', vars:'<code>Q_act,m³/h</code> actual flue-gas flow at inlet temperature (m³/h)', subs:`Q_act,L/min = ${fmt(r.actM3h,2)} × 1000 / 60`, result:`Q_act = ${fmt(r.actLmin,1)} L/min`}),
   tubeArea: (s,r)=>({
     title:'Tube Cross-Sectional Area', sub:'Hydraulics',
     formula:'A = π D² / 4',
@@ -1006,6 +1032,7 @@ const FORMULAS = {
     subs:`Q̇₀ = ${fmt(r.mDotGas,2)} × ${fmt(s.gasCp,2)} × (${fmt(s.flueTempIn,1)} − ${fmt(s.tempInit,1)})`,
     result:`Q̇₀ = ${fmt(r.qDot0,0)} kJ/h`
   }),
+  cLiquid: (s,r)=>({title:'Liquid Thermal Capacitance', sub:'Energy', formula:'C_liquid = m_liquid × Cp_liquid', vars:'<code>m_liquid</code> liquid mass (kg) · <code>Cp_liquid</code> liquid heat capacity (kJ/kg·K)', subs:`C_liquid = ${fmt(r.mLiquid,1)} × ${fmt(s.liquidCp,2)}`, result:`C_liquid = ${fmt(r.cLiquid,0)} kJ/K`}),
   kCoeff: (s,r)=>({
     title:'Heating Coefficient k', sub:'Energy',
     formula:'k = (ṁ_gas × Cp_gas) / (m_liquid × Cp_liquid)',
@@ -1020,6 +1047,7 @@ const FORMULAS = {
     subs:`T(192) = ${fmt(s.flueTempIn,1)} − (${fmt(s.flueTempIn,1)} − ${fmt(s.tempInit,1)}) × e^(−${fmt(r.kCoeff,6)}×192)`,
     result:`T(192 h) = ${fmt(r.tempAt(192),2)} °C  (rise = ${fmt(r.tempAt(192)-s.tempInit,2)} °C)`
   }),
+  tSelect: (s,r)=>({title:'Temperature at Selected Time', sub:'Energy', formula:'T(t) = T_gas − (T_gas − T₀) × e^(−k t)', vars:'<code>t</code> selected elapsed time (h) · <code>k</code> heating coefficient (1/h) · <code>T_gas</code> inlet gas temperature · <code>T₀</code> initial liquid temperature', subs:`T(${fmt(getSelectedTimeForFormula(),1)}) = ${fmt(s.flueTempIn,1)} − (${fmt(s.flueTempIn,1)} − ${fmt(s.tempInit,1)}) × e^(−${fmt(r.kCoeff,6)}×${fmt(getSelectedTimeForFormula(),1)})`, result:`T(${fmt(getSelectedTimeForFormula(),1)} h) = ${fmt(r.tempAt(getSelectedTimeForFormula()),2)} °C`}),
   cycA: (s,r)=>({
     title:'Cyclone Inlet Area', sub:'Cyclone (screening)',
     formula:'A_in = Q_act / v_inlet',
@@ -1035,6 +1063,8 @@ const FORMULAS = {
     result:`D_c ≈ ${fmt(r.cycD,4)} m  (${fmt(r.cycD*1000,0)} mm) — SCREENING ONLY`
   }),
 };
+
+function getSelectedTimeForFormula(){ const horizon=getTimeHorizon(); const el=document.getElementById('in-tSelect'); const t=el ? (parseFloat(el.value)||0) : horizon; return Math.min(Math.max(t,0),horizon); }
 
 function openFormula(key){
   const r = compute(state);
@@ -1077,7 +1107,7 @@ const IMPACT_MAP = {
   tempTarget: ['Reference target for heating outcome comparison'],
   cycVel: ['Cyclone inlet area', 'Screening cyclone diameter'],
   co2MW: ['CO₂ molar flow', 'Total flue-gas molar flow', 'Standard/actual gas flow'],
-  ubendCC: ['U-bend centreline radius/length', 'Total flow-path length'],
+  ubendCC: ['U-bend radius', 'U-bend length', 'Total U-bend length', 'Total flow-path length'],
   numUbends: ['Total U-bend length', 'Total flow-path length'],
   numStraight: ['Total straight-tube length', 'Total flow-path length'],
   straightLen: ['Total straight-tube length', 'Total flow-path length'],
@@ -1197,10 +1227,18 @@ function renderAll(){
   const warns = computeWarnings(state, r);
   const bar = document.getElementById('warningBar');
   bar.innerHTML = warns.map(w=>`<div class="warning ${w.level}"><span class="wtag">${w.level==='error'?'ERROR':'NOTICE'}</span><span>${w.msg}</span></div>`).join('');
+  updateWarningLayout();
 
   prevValues.__lastActLmin = r.actLmin;
 }
 function set(id, html){ const el=document.getElementById(id); if(el) el.innerHTML = html; }
+
+function updateWarningLayout(){
+  const bar = document.getElementById('warningBar');
+  if(!bar) return;
+  const h = bar.offsetHeight || 0;
+  document.documentElement.style.setProperty('--warning-height', h + 'px');
+}
 
 function getTimeHorizon(){
   const days = Number(state.batchDays);
