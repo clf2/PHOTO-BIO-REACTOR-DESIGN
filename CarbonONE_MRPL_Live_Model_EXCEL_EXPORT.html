@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarbonONE MRPL — Live Reactor Design &amp; Calculation Model</title>
+<style>
+:root{
+  --bg:#10161d;
+  --bg-panel:#171f28;
+  --bg-panel-2:#1e2733;
+  --bg-raised:#232e3b;
+  --border:#2b3743;
+  --border-soft:#232c36;
+  --text:#e7ecf1;
+  --text-dim:#93a3b3;
+  --text-faint:#5f7080;
+  --locked:#4fae7a;
+  --locked-bg:rgba(79,174,122,.12);
+  --input:#5b8def;
+  --input-bg:rgba(91,141,239,.12);
+  --prelim:#d9a441;
+  --prelim-bg:rgba(217,164,65,.13);
+  --tbd:#e0605a;
+  --tbd-bg:rgba(224,96,90,.13);
+  --cond:#a385d9;
+  --cond-bg:rgba(163,133,217,.13);
+  --brand:#c97b4a;
+  --brand2:#e0935f;
+  --gas:#6fb7c9;
+  --liquid:#5b8def;
+  --solid:#c9a45b;
+  --mono: ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --radius:3px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:14.5px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--brand);color:#10161d;}
+a{color:var(--brand2);}
+
+/* ---------- Layout shell ---------- */
+.app{display:flex; min-height:100vh;}
+
+.topbar{
+  position:fixed; top:0; left:0; right:0; height:56px;
+  background:#0d1218; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; z-index:50;
+}
+.topbar .brand{display:flex; align-items:baseline; gap:10px;}
+.topbar .brand .mark{
+  font-family:var(--mono); font-weight:700; font-size:15px; letter-spacing:.03em;
+  color:var(--brand2); border:1px solid var(--brand); padding:3px 7px; border-radius:var(--radius);
+}
+.topbar .brand .title{font-size:14.5px; color:var(--text-dim);}
+.topbar .brand .title b{color:var(--text); font-weight:600;}
+.topbar .actions{display:flex; gap:8px;}
+.btn{
+  font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text);
+  background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius);
+  padding:7px 13px; cursor:pointer; transition:border-color .12s, background .12s;
+}
+.btn:hover{border-color:var(--brand); background:#28323f;}
+.btn.primary{background:var(--brand); border-color:var(--brand); color:#12100c;}
+.btn.primary:hover{background:var(--brand2); border-color:var(--brand2);}
+.btn.ghost{background:transparent;}
+.btn.small{padding:4px 9px; font-size:12px;}
+
+.sidebar{
+  position:fixed; top:56px; left:0; bottom:0; width:230px;
+  background:var(--bg-panel); border-right:1px solid var(--border);
+  overflow-y:auto; padding:14px 0;
+}
+.sidebar .navgroup-label{
+  font-size:11px; color:var(--text-faint); padding:10px 18px 6px; letter-spacing:.02em;
+}
+.navitem{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 18px; font-size:13.5px; color:var(--text-dim); cursor:pointer;
+  border-left:2px solid transparent;
+}
+.navitem .num{font-family:var(--mono); font-size:11.5px; color:var(--text-faint); width:16px;}
+.navitem:hover{color:var(--text); background:var(--bg-panel-2);}
+.navitem.active{color:var(--text); border-left-color:var(--brand); background:var(--bg-panel-2);}
+.navitem.active .num{color:var(--brand2);}
+
+.main{margin-left:230px; margin-top:56px; padding:28px 32px 90px; width:calc(100% - 230px); max-width:1180px;}
+
+@media (max-width:900px){
+  .sidebar{transform:translateX(-100%); transition:transform .18s; z-index:60;}
+  .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0; width:100%;}
+  .topbar .brand .title{display:none;}
+}
+
+/* ---------- Typography ---------- */
+h1{font-size:22px; margin:0 0 4px; font-weight:650; letter-spacing:-.01em;}
+h2{font-size:12.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint); font-weight:650; margin:0 0 14px; padding-bottom:8px; border-bottom:1px solid var(--border-soft);}
+h3{font-size:15px; margin:0 0 10px; font-weight:650;}
+p.lead{color:var(--text-dim); font-size:14px; max-width:70ch; margin:0 0 20px;}
+.section{display:none;}
+.section.active{display:block;}
+.section-header{margin-bottom:22px;}
+.section-header .tag{font-family:var(--mono); font-size:11px; color:var(--brand2);}
+
+/* ---------- Cards / panels ---------- */
+.card{
+  background:var(--bg-panel); border:1px solid var(--border); border-radius:var(--radius);
+  padding:18px 20px; margin-bottom:18px;
+}
+.card + .card{margin-top:0;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+.grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px;}
+@media (max-width:760px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+/* ---------- Status badges ---------- */
+.badge{
+  display:inline-flex; align-items:center; gap:5px; font-family:var(--mono); font-size:10.5px;
+  padding:2px 7px; border-radius:2px; font-weight:600; letter-spacing:.02em; white-space:nowrap;
+}
+.badge.locked{color:var(--locked); background:var(--locked-bg); border:1px solid rgba(79,174,122,.35);}
+.badge.input{color:var(--input); background:var(--input-bg); border:1px solid rgba(91,141,239,.35);}
+.badge.prelim{color:var(--prelim); background:var(--prelim-bg); border:1px solid rgba(217,164,65,.35);}
+.badge.tbd{color:var(--tbd); background:var(--tbd-bg); border:1px solid rgba(224,96,90,.35);}
+.badge.cond{color:var(--cond); background:var(--cond-bg); border:1px solid rgba(163,133,217,.35);}
+.legend{display:flex; flex-wrap:wrap; gap:14px; margin-bottom:20px; font-size:12px; color:var(--text-dim); align-items:center;}
+.legend .item{display:flex; align-items:center; gap:6px;}
+
+/* ---------- Rows / fields ---------- */
+.row{
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  padding:9px 0; border-bottom:1px solid var(--border-soft);
+}
+.row:last-child{border-bottom:none;}
+.row .label{color:var(--text-dim); font-size:13.5px; flex:1;}
+.row .label .sub{display:block; font-size:11.5px; color:var(--text-faint); margin-top:1px;}
+.row .val{
+  font-family:var(--mono); font-size:14.5px; font-weight:600; text-align:right; white-space:nowrap;
+}
+.row .val .unit{font-family:var(--sans); font-weight:400; font-size:12px; color:var(--text-faint); margin-left:4px;}
+.row .meta{display:flex; align-items:center; gap:8px;}
+
+.formula-btn{
+  font-family:var(--mono); font-size:10.5px; color:var(--text-faint); background:none; border:1px solid var(--border);
+  border-radius:2px; padding:2px 6px; cursor:pointer;
+}
+.formula-btn:hover{color:var(--brand2); border-color:var(--brand);}
+
+/* ---------- Inputs ---------- */
+.field{display:flex; flex-direction:column; gap:5px; margin-bottom:14px;}
+.field label{font-size:12px; color:var(--text-dim); display:flex; justify-content:space-between; align-items:center;}
+.field .inputwrap{display:flex; align-items:stretch;}
+.field input[type=number], .field input[type=text]{
+  flex:1; background:var(--bg); border:1px solid var(--border); color:var(--text);
+  font-family:var(--mono); font-size:14px; padding:8px 10px; border-radius:var(--radius) 0 0 var(--radius);
+  min-width:0;
+}
+.field input:focus{outline:none; border-color:var(--brand);}
+.field .unit-suffix{
+  display:flex; align-items:center; padding:0 10px; background:var(--bg-panel-2); border:1px solid var(--border); border-left:none;
+  border-radius:0 var(--radius) var(--radius) 0; color:var(--text-faint); font-family:var(--mono); font-size:12px;
+}
+.field select{
+  background:var(--bg-panel-2); border:1px solid var(--border); border-left:none; color:var(--text-dim); font-family:var(--mono); font-size:12px;
+  padding:0 6px; border-radius:0 var(--radius) var(--radius) 0;
+}
+.fieldgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px 20px;}
+@media (max-width:600px){.fieldgrid{grid-template-columns:1fr;}}
+
+/* ---------- Warnings ---------- */
+#warningBar{position:fixed; top:56px; left:230px; right:0; z-index:40;}
+@media (max-width:900px){#warningBar{left:0;}}
+.warning{
+  font-size:13px; padding:9px 20px; display:flex; gap:10px; align-items:flex-start; border-bottom:1px solid rgba(0,0,0,.2);
+}
+.warning.error{background:#3a1616; color:#ff9d97;}
+.warning.notice{background:#332a12; color:#f0c675;}
+.warning .wtag{font-family:var(--mono); font-size:10.5px; font-weight:700; flex-shrink:0; padding-top:1px;}
+
+/* ---------- Modal (formula viewer) ---------- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(6,9,12,.72); z-index:200;
+  display:flex; align-items:flex-start; justify-content:center; padding:80px 20px;
+  opacity:0; pointer-events:none; transition:opacity .12s;
+}
+.modal-overlay.open{opacity:1; pointer-events:all;}
+.modal{
+  background:var(--bg-panel-2); border:1px solid var(--border); border-radius:5px; max-width:560px; width:100%;
+  padding:22px 24px; box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.modal .mtitle{font-size:16px; font-weight:650; margin-bottom:2px;}
+.modal .msub{font-size:12px; color:var(--text-faint); margin-bottom:16px;}
+.modal .mblock{margin-bottom:14px;}
+.modal .mblock .mk{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); margin-bottom:6px;}
+.modal .formula-eq{font-family:var(--mono); font-size:16px; background:var(--bg); border:1px solid var(--border); border-radius:3px; padding:12px 14px; color:var(--brand2);}
+.modal .sub-eq{font-family:var(--mono); font-size:13.5px; background:var(--bg); border:1px solid var(--border); border-radius:3px; padding:10px 14px; color:var(--text);}
+.modal .result-eq{font-family:var(--mono); font-size:15px; background:var(--locked-bg); border:1px solid rgba(79,174,122,.35); border-radius:3px; padding:10px 14px; color:var(--locked); font-weight:600;}
+.modal .varlist{font-size:12.5px; color:var(--text-dim); line-height:1.7;}
+.modal .varlist code{font-family:var(--mono); color:var(--text);}
+.modal .mclose{position:absolute; top:16px; right:18px; cursor:pointer; color:var(--text-faint); font-size:20px; background:none; border:none;}
+.modal{position:relative;}
+
+/* ---------- Tables ---------- */
+table{width:100%; border-collapse:collapse; font-size:13px;}
+th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); padding:8px 10px; border-bottom:1px solid var(--border); font-weight:600;}
+td{padding:8px 10px; border-bottom:1px solid var(--border-soft); font-family:var(--mono); color:var(--text);}
+td.label-cell{font-family:var(--sans); color:var(--text-dim);}
+tr:last-child td{border-bottom:none;}
+
+/* ---------- Process flow ---------- */
+.flow-wrap{overflow-x:auto; padding:6px 0 10px;}
+.flow{display:flex; align-items:center; gap:0; min-width:900px;}
+.flow-node{
+  background:var(--bg-panel-2); border:1.5px solid var(--border); border-radius:5px; padding:12px 14px; width:118px;
+  text-align:center; cursor:pointer; flex-shrink:0; transition:border-color .12s, transform .12s;
+}
+.flow-node:hover{border-color:var(--brand); transform:translateY(-2px);}
+.flow-node .fn-title{font-size:12px; font-weight:650; margin-bottom:4px;}
+.flow-node .fn-status{font-family:var(--mono); font-size:9.5px;}
+.flow-node.gas{border-top:3px solid var(--gas);}
+.flow-node.liquid{border-top:3px solid var(--liquid);}
+.flow-node.off{opacity:.4;}
+.flow-arrow{flex-shrink:0; width:34px; display:flex; align-items:center; justify-content:center; color:var(--text-faint);}
+.flow-legend{display:flex; gap:16px; margin-top:10px; font-size:11.5px; color:var(--text-dim);}
+.flow-legend .sw{display:inline-block; width:14px; height:3px; margin-right:5px; vertical-align:middle;}
+
+#flowDetail{margin-top:16px;}
+#flowDetail .fd-title{font-size:15px; font-weight:650; margin-bottom:8px;}
+#flowDetail .fd-row{display:flex; gap:8px; margin-bottom:6px; font-size:13px;}
+#flowDetail .fd-row .fk{color:var(--text-faint); width:120px; flex-shrink:0;}
+
+/* ---------- Charts ---------- */
+.chart-card canvas{width:100%; display:block;}
+.chart-tooltip{position:absolute; background:#0d1218; border:1px solid var(--border); padding:5px 8px; font-family:var(--mono); font-size:11.5px; border-radius:3px; pointer-events:none; display:none; z-index:10;}
+
+/* ---------- Reactor schematic ---------- */
+.schematic-wrap{background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:10px;}
+.schematic-caption{text-align:center; font-family:var(--mono); font-size:11px; color:var(--tbd); letter-spacing:.04em; margin-top:6px;}
+
+/* ---------- Impact panel ---------- */
+#impactPanel{
+  background:var(--bg-panel); border:1px solid var(--border); border-left:3px solid var(--brand); border-radius:var(--radius);
+  padding:14px 18px; margin-bottom:18px; display:none;
+}
+#impactPanel.show{display:block;}
+#impactPanel .ip-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+#impactPanel .ip-title{font-size:13px; font-weight:650;}
+#impactPanel .ip-change{font-family:var(--mono); font-size:12.5px; color:var(--text-dim); margin-bottom:10px;}
+#impactPanel .ip-change b{color:var(--brand2);}
+#impactPanel ul{margin:0; padding-left:18px; font-size:13px; color:var(--text-dim);}
+#impactPanel li{margin-bottom:3px;}
+#impactPanel li b{color:var(--text);}
+
+.value-static{
+  font-size:13px;
+  font-weight:500;
+}
+.inline-note{
+  color:var(--text-dim);
+  font-size:13.5px;
+}
+.small-note{
+  font-size:12.5px;
+}
+.table-label{width:160px;}
+.flow-legend .sw.gas{background:var(--gas);}
+.flow-legend .sw.liquid{background:var(--liquid);}
+.flow-legend .sw.solid{background:var(--solid);}
+
+/* ---------- Case comparison ---------- */
+.case-controls{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+
+/* ---------- Calculation trace ---------- */
+.time-selector{max-width:320px;}
+.trace-chain{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--text-dim);
+  line-height:2;
+}
+
+/* ---------- footer note ---------- */
+.footnote{font-size:11.5px; color:var(--text-faint); margin-top:10px; line-height:1.6;}
+.qualif{
+  background:linear-gradient(90deg, rgba(217,164,65,.1), transparent); border:1px solid rgba(217,164,65,.3);
+  border-radius:4px; padding:12px 16px; font-size:12.5px; color:var(--prelim); margin-bottom:20px;
+}
+hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
+
+.checkline{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-dim); padding:6px 0;}
+.checkline input{accent-color:var(--brand);}
+
+::-webkit-scrollbar{width:10px; height:10px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:5px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="mark">C1</span>
+    <span class="title">CarbonONE MRPL &nbsp;·&nbsp; <b>Live Reactor Design &amp; Calculation Model</b></span>
+  </div>
+  <div class="actions">
+    <button class="btn ghost small" id="traceToggleBtn">Calculation Trace: OFF</button>
+    <button class="btn" id="resetBtn">Reset to Current Design Basis</button>
+    <button class="btn primary" id="exportBtn">Export Calculation Report</button>
+  </div>
+</div>
+
+<div id="warningBar"></div>
+
+<nav class="sidebar" id="sidebar">
+  <div class="navgroup-label">MODEL SECTIONS</div>
+  <div class="navitem active" data-sec="basis"><span class="num">01</span>Design Basis</div>
+  <div class="navitem" data-sec="geometry"><span class="num">02</span>Reactor Geometry</div>
+  <div class="navitem" data-sec="fluegas"><span class="num">03</span>CO₂ &amp; Flue Gas</div>
+  <div class="navitem" data-sec="hydraulics"><span class="num">04</span>Hydraulics</div>
+  <div class="navitem" data-sec="energy"><span class="num">05</span>Energy</div>
+  <div class="navitem" data-sec="cleaning"><span class="num">06</span>Flue Gas Cleaning</div>
+  <div class="navitem" data-sec="cyclone"><span class="num">07</span>Cyclone</div>
+  <div class="navitem" data-sec="impact"><span class="num">08</span>Impact Analysis</div>
+  <div class="navitem" data-sec="compare"><span class="num">09</span>Case Comparison</div>
+  <div class="navitem" data-sec="notes"><span class="num">10</span>Engineering Notes</div>
+</nav>
+
+<main class="main" id="content">
+
+<!-- ============ 01 DESIGN BASIS ============ -->
+<section class="section active" id="sec-basis">
+  <div class="section-header">
+    <div class="tag">01 / DESIGN BASIS</div>
+    <h1>Design Basis</h1>
+    <p class="lead">Central editable design-basis inputs, sourced from the CarbonONE MRPL model-basis workbook and the current locked design basis. Every calculated value in this model derives from the inputs below — change a value anywhere and every dependent result updates.</p>
+  </div>
+
+  <div class="qualif">PRELIMINARY ENGINEERING MODEL — FOR DESIGN DEVELOPMENT AND INTERNAL REVIEW. Not a fabrication drawing, guaranteed performance model, or final equipment sizing package.</div>
+
+  <div class="legend">
+    <div class="item"><span class="badge locked">LOCKED</span> design basis</div>
+    <div class="item"><span class="badge input">INPUT</span> user-editable</div>
+    <div class="item"><span class="badge prelim">PRELIM</span> screening assumption</div>
+    <div class="item"><span class="badge cond">COND</span> conditional</div>
+    <div class="item"><span class="badge tbd">TBD</span> requires plant data</div>
+  </div>
+
+  <div class="card">
+    <h2>Reactor &amp; Batch Basis</h2>
+    <div class="fieldgrid">
+      <div class="field"><label>Geometric reactor volume <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="0.0001" id="in-geomVol" data-key="geomVol"><span class="unit-suffix">m³</span></div></div>
+      <div class="field"><label>Working volume fraction <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="0.1" id="in-workFrac" data-key="workFrac"><span class="unit-suffix">%</span></div></div>
+      <div class="field"><label>Batch cultivation time <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-batchDays" data-key="batchDays"><span class="unit-suffix">days</span></div></div>
+      <div class="field"><label>Operating temperature target <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="0.5" id="in-tempTarget" data-key="tempTarget"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Initial feed temperature <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="0.5" id="in-tempInit" data-key="tempInit"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Pressure <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="0.01" id="in-pressure" data-key="pressure"><span class="unit-suffix">atm abs</span></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Tube &amp; Loop Geometry</h2>
+    <div class="fieldgrid">
+      <div class="field"><label>Tube ID <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-tubeID" data-key="tubeID"><span class="unit-suffix">mm</span></div></div>
+      <div class="field"><label>Tube OD <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-tubeOD" data-key="tubeOD"><span class="unit-suffix">mm</span></div></div>
+      <div class="field"><label>Straight tube length <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="0.1" id="in-straightLen" data-key="straightLen"><span class="unit-suffix">m</span></div></div>
+      <div class="field"><label>Straight tubes <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-numStraight" data-key="numStraight"><span class="unit-suffix">count</span></div></div>
+      <div class="field"><label>U-bends <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-numUbends" data-key="numUbends"><span class="unit-suffix">count</span></div></div>
+      <div class="field"><label>U-bend centre-to-centre <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-ubendCC" data-key="ubendCC"><span class="unit-suffix">mm</span></div></div>
+      <div class="field"><label>Liquid main header ID <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-headerID" data-key="headerID"><span class="unit-suffix">mm</span></div></div>
+      <div class="field"><label>Internal circulation loops <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-numLoops" data-key="numLoops"><span class="unit-suffix">count</span></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Flue Gas Basis</h2>
+    <div class="fieldgrid">
+      <div class="field"><label>CO₂ concentration <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="0.1" id="in-co2Frac" data-key="co2Frac"><span class="unit-suffix">%</span></div></div>
+      <div class="field"><label>CO₂ utilization design basis <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="0.01" id="in-co2Util" data-key="co2Util"><span class="unit-suffix">g/L/h</span></div></div>
+      <div class="field"><label>CO₂ capture efficiency <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-captureEff" data-key="captureEff"><span class="unit-suffix">%</span></div></div>
+      <div class="field"><label>CO₂ molecular weight <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="0.1" id="in-co2MW" data-key="co2MW"><span class="unit-suffix">kg/kmol</span></div></div>
+      <div class="field"><label>Flue-gas inlet temperature <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-flueTempIn" data-key="flueTempIn"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Normal gas density (NTP) <span class="badge prelim">PRELIM</span></label>
+        <div class="inputwrap"><input type="number" step="0.01" id="in-normDensity" data-key="normDensity"><span class="unit-suffix">kg/Nm³</span></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Hydraulic &amp; Thermal Properties</h2>
+    <div class="fieldgrid">
+      <div class="field"><label>Broth density <span class="badge prelim">PRELIM</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-brothDensity" data-key="brothDensity"><span class="unit-suffix">kg/m³</span></div></div>
+      <div class="field"><label>Dynamic viscosity <span class="badge prelim">PRELIM</span></label>
+        <div class="inputwrap"><input type="number" step="0.01" id="in-viscosity" data-key="viscosity"><span class="unit-suffix">mPa·s</span></div></div>
+      <div class="field"><label>Target Reynolds number <span class="badge prelim">PRELIM</span></label>
+        <div class="inputwrap"><input type="number" step="10" id="in-targetRe" data-key="targetRe"><span class="unit-suffix">–</span></div></div>
+      <div class="field"><label>Liquid heat capacity <span class="badge prelim">PRELIM</span></label>
+        <div class="inputwrap"><input type="number" step="0.1" id="in-liquidCp" data-key="liquidCp"><span class="unit-suffix">kJ/kg·K</span></div></div>
+      <div class="field"><label>Flue-gas heat capacity <span class="badge prelim">PRELIM</span></label>
+        <div class="inputwrap"><input type="number" step="0.1" id="in-gasCp" data-key="gasCp"><span class="unit-suffix">kJ/kg·K</span></div></div>
+      <div class="field"><label>PM reference particle size <span class="badge prelim">PRELIM</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-pmSize" data-key="pmSize"><span class="unit-suffix">µm</span></div></div>
+    </div>
+  </div>
+
+  <p class="footnote">All percentages above are entered and displayed as %, not as decimal fractions — the model converts internally (e.g. 13% → 0.13) so a typo can't silently create a 99% CO₂ stream. Data basis: CarbonONE MRPL model-basis workbook ("Live Model Inputs" / "Final Design" sheets), overridden where noted by the current locked design basis (batch, 8-day, 90% working volume, 35°C target, 13% CO₂, 0.25 g/L/h utilization, 85% capture, Re≈5000, 12 loops).</p>
+</section>
+
+<!-- ============ 02 GEOMETRY ============ -->
+<section class="section" id="sec-geometry">
+  <div class="section-header">
+    <div class="tag">02 / REACTOR GEOMETRY</div>
+    <h1>Reactor Geometry</h1>
+    <p class="lead">Working volume and flow-path length derive directly from the tube and loop counts on the Design Basis tab.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>Volume</h2>
+      <div class="row"><div class="label">Geometric reactor volume<span class="sub">V<sub>geom</sub></span></div><div class="meta"><span class="badge locked">LOCKED</span><div class="val" id="r-geomVol">–</div></div></div>
+      <div class="row"><div class="label">Working liquid volume<span class="sub">V<sub>working</sub> = V<sub>geom</sub> × fraction</span></div><div class="meta"><span class="badge locked">CALC</span><button class="formula-btn" data-f="workVol">View Formula</button><div class="val" id="r-workVolM3">–</div></div></div>
+      <div class="row"><div class="label">Working liquid volume</div><div class="meta"><div class="val" id="r-workVolL">–</div></div></div>
+    </div>
+    <div class="card">
+      <h2>U-Bend Geometry</h2>
+      <div class="row"><div class="label">U-bend centreline radius<span class="sub">R = C-C / 2</span></div><div class="meta"><button class="formula-btn" data-f="ubendR">View Formula</button><div class="val" id="r-ubendR">–</div></div></div>
+      <div class="row"><div class="label">U-bend centreline length<span class="sub">L<sub>U</sub> = πR (per bend)</span></div><div class="meta"><button class="formula-btn" data-f="ubendL">View Formula</button><div class="val" id="r-ubendL">–</div></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Total Flow-Path Length</h2>
+    <div class="row"><div class="label">Total straight-tube length<span class="sub">L<sub>straight</sub> = N<sub>tubes</sub> × L<sub>tube</sub></span></div><div class="meta"><button class="formula-btn" data-f="lStraight">View Formula</button><div class="val" id="r-lStraight">–</div></div></div>
+    <div class="row"><div class="label">Total U-bend length<span class="sub">L<sub>bend</sub> = N<sub>bends</sub> × L<sub>U</sub></span></div><div class="meta"><button class="formula-btn" data-f="lBend">View Formula</button><div class="val" id="r-lBend">–</div></div></div>
+    <div class="row"><div class="label">Total flow-path length<span class="sub">L<sub>total</sub> = L<sub>straight</sub> + L<sub>bend</sub></span></div><div class="meta"><button class="formula-btn" data-f="lTotal">View Formula</button><div class="val" id="r-lTotal">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Loop Schematic</h2>
+    <div class="schematic-wrap"><div id="schematicSvg"></div></div>
+    <div class="schematic-caption">SCHEMATIC — NOT FOR FABRICATION</div>
+  </div>
+</section>
+
+<!-- ============ 03 CO2 & FLUE GAS ============ -->
+<section class="section" id="sec-fluegas">
+  <div class="section-header">
+    <div class="tag">03 / CO₂ &amp; FLUE GAS</div>
+    <h1>CO₂ &amp; Flue Gas Mass Balance</h1>
+    <p class="lead">Current locked gas-flow basis (supersedes any older 278 NL/min figure found in legacy project history — see Engineering Notes).</p>
+  </div>
+
+  <div class="card">
+    <h2>CO₂ Demand</h2>
+    <div class="row"><div class="label">CO₂ utilization rate<span class="sub">m<sub>CO2</sub> = V<sub>working</sub> × r<sub>CO2</sub> / 1000</span></div><div class="meta"><button class="formula-btn" data-f="co2UtilH">View Formula</button><div class="val" id="r-co2UtilH">–</div></div></div>
+    <div class="row"><div class="label">CO₂ utilization rate</div><div class="meta"><div class="val" id="r-co2UtilDay">–</div></div></div>
+    <div class="row"><div class="label">CO₂ inlet required<span class="sub">= utilization / capture efficiency</span></div><div class="meta"><button class="formula-btn" data-f="co2Inlet">View Formula</button><div class="val" id="r-co2InletH">–</div></div></div>
+    <div class="row"><div class="label">CO₂ inlet required</div><div class="meta"><div class="val" id="r-co2InletDay">–</div></div></div>
+    <div class="row"><div class="label">CO₂ molar flow<span class="sub">= inlet mass flow / MW</span></div><div class="meta"><button class="formula-btn" data-f="co2Molar">View Formula</button><div class="val" id="r-co2Molar">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Total Flue Gas</h2>
+    <div class="row"><div class="label">Total flue-gas molar flow<span class="sub">= CO₂ molar flow / CO₂ fraction</span></div><div class="meta"><button class="formula-btn" data-f="totalMolar">View Formula</button><div class="val" id="r-totalMolar">–</div></div></div>
+    <div class="row"><div class="label">Standard flue-gas flow (NTP)<span class="sub">= molar flow × 22.414 m³/kmol</span></div><div class="meta"><button class="formula-btn" data-f="stdFlow">View Formula</button><div class="val" id="r-stdNm3h">–</div></div></div>
+    <div class="row"><div class="label">Standard flue-gas flow</div><div class="meta"><div class="val" id="r-stdNLmin">–</div></div></div>
+    <div class="row"><div class="label">Actual flue-gas flow at inlet T<span class="sub">= molar flow × V<sub>m</sub>(T)</span></div><div class="meta"><button class="formula-btn" data-f="actFlow">View Formula</button><div class="val" id="r-actM3h">–</div></div></div>
+    <div class="row"><div class="label">Actual flue-gas flow at inlet T</div><div class="meta"><div class="val" id="r-actLmin">–</div></div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card chart-card">
+      <h3>Flue-Gas Flow vs CO₂ Concentration</h3>
+      <canvas id="chartCO2Conc" height="220"></canvas>
+    </div>
+    <div class="card chart-card">
+      <h3>CO₂ Requirement vs Working Volume</h3>
+      <canvas id="chartCO2Vol" height="220"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 HYDRAULICS ============ -->
+<section class="section" id="sec-hydraulics">
+  <div class="section-header">
+    <div class="tag">04 / HYDRAULICS</div>
+    <h1>Internal Recirculation Hydraulics</h1>
+    <p class="lead">This is internal recirculation flow within the closed-loop reactor — <b>not</b> the batch feed flow and not an HRT-based continuous feed flow. The reactor basis is batch cultivation, so no HRT feed-flow figure is introduced here.</p>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="label">Tube cross-sectional area<span class="sub">A = πD² / 4</span></div><div class="meta"><button class="formula-btn" data-f="tubeArea">View Formula</button><div class="val" id="r-tubeArea">–</div></div></div>
+    <div class="row"><div class="label">Velocity for target Re<span class="sub">v = Re·μ / (ρ·D)</span></div><div class="meta"><button class="formula-btn" data-f="velocity">View Formula</button><div class="val" id="r-velocity">–</div></div></div>
+    <div class="row"><div class="label">Flow per loop<span class="sub">Q<sub>loop</sub> = v × A</span></div><div class="meta"><button class="formula-btn" data-f="qLoop">View Formula</button><div class="val" id="r-qLoop">–</div></div></div>
+    <div class="row"><div class="label">Total internal circulation<span class="sub">Q<sub>total</sub> = Q<sub>loop</sub> × N<sub>loops</sub></span></div><div class="meta"><button class="formula-btn" data-f="qTotal">View Formula</button><div class="val" id="r-qTotal">–</div></div></div>
+    <div class="row"><div class="label">Reynolds number check<span class="sub">Re = ρvD / μ</span></div><div class="meta"><button class="formula-btn" data-f="reCheck">View Formula</button><div class="val" id="r-reCheck">–</div></div></div>
+  </div>
+
+  <div class="card chart-card">
+    <h3>Total Circulation Flow vs Tube ID</h3>
+    <canvas id="chartCircTube" height="220"></canvas>
+  </div>
+</section>
+
+<!-- ============ 05 ENERGY ============ -->
+<section class="section" id="sec-energy">
+  <div class="section-header">
+    <div class="tag">05 / ENERGY</div>
+    <h1>Transient Heating — Screening Model</h1>
+    <p class="lead">IDEAL COMPLETE SENSIBLE-HEAT-TRANSFER SCREENING MODEL. This treats the flue gas as instantaneously and completely transferring its sensible heat to the batch liquid. It is a transient screening calculation, not a temperature-maintenance or full reactor energy balance.</p>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="label">Liquid mass<span class="sub">m<sub>liq</sub> = V<sub>working</sub> × ρ<sub>liq</sub></span></div><div class="meta"><button class="formula-btn" data-f="mLiquid">View Formula</button><div class="val" id="r-mLiquid">–</div></div></div>
+    <div class="row"><div class="label">Flue-gas mass flow<span class="sub">= standard flow × ρ<sub>N,gas</sub></span></div><div class="meta"><button class="formula-btn" data-f="mDotGas">View Formula</button><div class="val" id="r-mDotGas">–</div></div></div>
+    <div class="row"><div class="label">Initial heat-transfer rate<span class="sub">Q̇₀ = ṁ<sub>gas</sub> Cp<sub>gas</sub>(T<sub>gas</sub> − T₀)</span></div><div class="meta"><button class="formula-btn" data-f="qDot0">View Formula</button><div class="val" id="r-qDot0">–</div></div></div>
+    <div class="row"><div class="label">Liquid thermal capacitance<span class="sub">C = m<sub>liq</sub> Cp<sub>liq</sub></span></div><div class="meta"><div class="val" id="r-cLiquid">–</div></div></div>
+    <div class="row"><div class="label">Heating coefficient<span class="sub">k = ṁ<sub>gas</sub>Cp<sub>gas</sub> / (m<sub>liq</sub>Cp<sub>liq</sub>)</span></div><div class="meta"><button class="formula-btn" data-f="kCoeff">View Formula</button><div class="val" id="r-kCoeff">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Temperature vs Time — T(t) = T<sub>gas</sub> − (T<sub>gas</sub> − T₀)·e<sup>−kt</sup></h2>
+    <button class="formula-btn" data-f="tOfT" style="margin-bottom:10px;">View Formula</button>
+    <table>
+      <thead><tr><th>Time (h)</th><th>Temperature (°C)</th><th>Rise from T₀</th></tr></thead>
+      <tbody id="tempTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="card chart-card">
+    <h3>Reactor Temperature vs Time (batch horizon)</h3>
+    <canvas id="chartTemp" height="240"></canvas>
+  </div>
+
+  <div class="field" style="max-width:320px;">
+    <label>Selectable time for point read-out</label>
+    <div class="inputwrap"><input type="number" step="1" min="0" max="192" id="in-tSelect" value="192"><span class="unit-suffix">h</span></div>
+  </div>
+  <div class="row"><div class="label">Temperature at selected time</div><div class="meta"><div class="val" id="r-tSelectOut">–</div></div></div>
+
+  <div class="qualif">A rigorous overall energy balance requires: heat-transfer effectiveness / UA, ambient heat losses, pump heat, LED heat (if applicable), biological heat, and actual gas–liquid contact/transfer efficiency. None of these are included in the screening model above.</div>
+</section>
+
+<!-- ============ 06 FLUE GAS CLEANING ============ -->
+<section class="section" id="sec-cleaning">
+  <div class="section-header">
+    <div class="tag">06 / FLUE GAS CLEANING</div>
+    <h1>Flue-Gas Cleaning &amp; Conditioning</h1>
+    <p class="lead">Not every unit is automatically required. Toggle stages on to reflect the actual expected flue-gas composition; each toggle is marked conditional until confirmed by MRPL flue-gas analysis.</p>
+  </div>
+
+  <div class="card">
+    <h2>Conditional Stages</h2>
+    <div class="checkline"><input type="checkbox" id="chk-filter"><label for="chk-filter">Fine cartridge / fabric filter required (significant fine PM expected)</label></div>
+    <div class="checkline"><input type="checkbox" id="chk-cooler"><label for="chk-cooler">Gas cooler / heat exchanger required (inlet T needs reduction before PBR)</label></div>
+    <div class="checkline"><input type="checkbox" id="chk-scrubber"><label for="chk-scrubber">Packed-bed alkaline wet scrubber required (acid gases: SOx / HCl / NOx present)</label></div>
+    <div class="checkline"><input type="checkbox" id="chk-nox"><label for="chk-nox">Dedicated NOx treatment required</label></div>
+  </div>
+
+  <div class="card">
+    <h2>Process Flow</h2>
+    <div class="flow-wrap"><div class="flow" id="flowDiagram"></div></div>
+    <div class="flow-legend">
+      <div><span class="sw gas"></span>Gas flow</div>
+      <div><span class="sw liquid"></span>Liquid flow</div>
+      <div><span class="sw solid"></span>Solids / dust</div>
+    </div>
+    <div id="flowDetail"></div>
+  </div>
+</section>
+
+<!-- ============ 07 CYCLONE ============ -->
+<section class="section" id="sec-cyclone">
+  <div class="section-header">
+    <div class="tag">07 / CYCLONE</div>
+    <h1>Cyclone — Preliminary Screening Sizing</h1>
+    <p class="lead">SCREENING ESTIMATE ONLY — NOT FINAL FABRICATION SIZE. Uses actual flue-gas flow at inlet temperature and an assumed inlet velocity.</p>
+  </div>
+
+  <div class="card">
+    <div class="row"><div class="label">Cyclone type <span class="badge prelim">PRELIM</span></div><div class="meta"><div class="val value-static">Tangential-entry reverse-flow separator</div></div></div>
+    <div class="row"><div class="label">PM reference particle size <span class="badge prelim">PRELIM</span></div><div class="meta"><div class="val" id="r-pmRef">–</div></div></div>
+    <div class="row"><div class="label">Assumed inlet velocity <span class="badge prelim">PRELIM</span></div><div class="meta"><div class="val" id="r-cycVel">–</div></div></div>
+    <div class="row"><div class="label">Cyclone inlet area<span class="sub">A<sub>in</sub> = Q / v<sub>inlet</sub></span></div><div class="meta"><button class="formula-btn" data-f="cycA">View Formula</button><div class="val" id="r-cycA">–</div></div></div>
+    <div class="row"><div class="label">Screening cyclone diameter<span class="sub">D<sub>c</sub> ≈ √(A<sub>in</sub> / 0.1)</span></div><div class="meta"><button class="formula-btn" data-f="cycD">View Formula</button><div class="val" id="r-cycD">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Final Sizing Inputs — <span class="badge tbd">TBD</span></h2>
+    <p class="footnote small-note">Final cyclone sizing (collection-efficiency curve, cut diameter, pressure drop) requires data not yet available:</p>
+    <ul style="color:var(--text-dim); font-size:13px;">
+      <li>PM concentration in flue gas — <span class="badge tbd">TBD</span></li>
+      <li>Particle-size distribution (PSD) — <span class="badge tbd">TBD</span></li>
+      <li>Particle density — <span class="badge tbd">TBD</span></li>
+      <li>Target collection efficiency — <span class="badge tbd">TBD</span></li>
+      <li>Allowable pressure drop — <span class="badge tbd">TBD</span></li>
+    </ul>
+    <div class="footnote">50 µm is a reference particle size only. It is not a fixed cyclone cutoff diameter — the cyclone does not remove exactly all particles above this size.</div>
+  </div>
+</section>
+
+<!-- ============ 08 IMPACT ANALYSIS ============ -->
+<section class="section" id="sec-impact">
+  <div class="section-header">
+    <div class="tag">08 / IMPACT ANALYSIS</div>
+    <h1>What Happens If I Change This?</h1>
+    <p class="lead">Every input change anywhere in the model is logged here automatically, with the parameter, old and new values, percentage change, and the downstream outputs affected.</p>
+  </div>
+  <div id="impactPanel"></div>
+  <div class="card">
+    <h2>Change Log</h2>
+    <table>
+      <thead><tr><th>Parameter</th><th>Old → New</th><th>% Change</th><th>Downstream impact</th></tr></thead>
+      <tbody id="changeLogBody"><tr><td colspan="4" style="color:var(--text-faint); font-family:var(--sans);">No changes yet — edit any input on the Design Basis tab to see impact analysis.</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 09 CASE COMPARISON ============ -->
+<section class="section" id="sec-compare">
+  <div class="section-header">
+    <div class="tag">09 / CASE COMPARISON</div>
+    <h1>Compare Design Cases</h1>
+    <p class="lead">Snapshot the current live model as Case A or Case B, then compare key results side by side.</p>
+  </div>
+  <div class="case-controls">
+    <button class="btn" id="saveCaseA">Save current state as Case A</button>
+    <button class="btn" id="saveCaseB">Save current state as Case B</button>
+    <button class="btn ghost" id="clearCases">Clear cases</button>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Parameter</th><th id="caseAHead">Case A</th><th id="caseBHead">Case B</th><th>Change</th><th>Impact</th></tr></thead>
+      <tbody id="compareBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 10 NOTES ============ -->
+<section class="section" id="sec-notes">
+  <div class="section-header">
+    <div class="tag">10 / ENGINEERING NOTES</div>
+    <h1>Engineering Notes &amp; Data Integrity</h1>
+  </div>
+
+  <div class="card">
+    <h2>Current Locked Design Basis</h2>
+    <p class="inline-note">Batch · 8 days · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h CO₂ utilization · 85% CO₂ capture · ≈173.1 NL/min standard flue gas · ≈223.8 L/min actual flue gas at 80°C · Re ≈ 5000 · 12 internal circulation loops.</p>
+  </div>
+
+  <div class="card">
+    <h2>Legacy / Previous Design Basis — do not use in live calculations</h2>
+    <table>
+      <thead><tr><th>Legacy value</th><th>Superseded by</th></tr></thead>
+      <tbody>
+        <tr><td class="label-cell">278 NL/min standard flue gas</td><td>≈173.1 NL/min (current 90% working-volume, 13% CO₂, 85% capture basis)</td></tr>
+        <tr><td class="label-cell">4-day HRT continuous-operation basis (~104.29 L/h net throughput)</td><td>Batch cultivation, 8-day cycle — no continuous HRT feed flow in current basis</td></tr>
+        <tr><td class="label-cell">~70.67 kg/day CO₂ basis</td><td>54.06 kg/day CO₂ utilization (0.25 g/L/h × 9,010.53 L)</td></tr>
+        <tr><td class="label-cell">Selected liquid velocity 0.10 m/s (Final Design sheet, ~36.7 m³/h circulation)</td><td>Velocity solved from target Re = 5000 (≈0.0848 m/s, ≈31.14 m³/h circulation)</td></tr>
+        <tr><td class="label-cell">Flue-gas volumetric basis at 35°C (Final Design sheet update)</td><td>Flue-gas inlet temperature = 80°C per current locked basis</td></tr>
+      </tbody>
+    </table>
+    <p class="footnote">These legacy figures are retained here for traceability only. They are never mixed into the current live calculations unless explicitly restored via Case Comparison.</p>
+  </div>
+
+  <div class="card">
+    <h2>Model Logic Summary</h2>
+    <table>
+      <tbody>
+        <tr><td class="label-cell table-label">Working volume</td><td class="inline-note">Geometric volume × working fraction. Changing either changes liquid inventory and every volume-based calculation downstream.</td></tr>
+        <tr><td class="label-cell">CO₂ basis</td><td class="inline-note">0.25 g/L/h utilization, 85% capture, 13 vol% CO₂ determine required inlet CO₂ and flue-gas flow.</td></tr>
+        <tr><td class="label-cell">Gas flow</td><td class="inline-note">Current basis is ≈173.1 NL/min standard and ≈223.8 L/min actual at 80°C, 1 atm.</td></tr>
+        <tr><td class="label-cell">Hydraulics</td><td class="inline-note">Re = 5000 screening target with ρ = 1020 kg/m³, μ = 1.8 mPa·s. Changing tube ID, properties, or Re alters circulation flow.</td></tr>
+        <tr><td class="label-cell">Energy</td><td class="inline-note">Transient heating is an ideal complete-transfer screening model only.</td></tr>
+        <tr><td class="label-cell">Cyclone</td><td class="inline-note">Tangential-entry reverse-flow cyclone is preliminary; 50 µm is a reference size, not a fixed cutoff.</td></tr>
+        <tr><td class="label-cell">Gas cleaning</td><td class="inline-note">Filter, cooler, scrubber, demister, and NOx stages are conditional on actual flue-gas composition.</td></tr>
+        <tr><td class="label-cell">Validation</td><td class="inline-note">Plant flue-gas analysis and vendor/equipment data are required before final fabrication or performance guarantees.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Calculation Trace</h2>
+    <p class="footnote small-note">Enable "Calculation Trace" from the top bar, then reopen a formula viewer anywhere in the model — the chain below highlights as you move through the dependency sequence:</p>
+    <div class="trace-chain">
+      Working volume → CO₂ utilization → CO₂ inlet requirement → CO₂ molar flow → Total flue-gas molar flow → Standard gas flow → Actual gas flow (T,P) → Cyclone loading
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="mclose" id="modalClose" aria-label="Close formula viewer">&times;</button>
+    <div class="mtitle" id="mTitle">–</div>
+    <div class="msub" id="mSub">–</div>
+    <div class="mblock"><div class="mk">Formula</div><div class="formula-eq" id="mFormula">–</div></div>
+    <div class="mblock"><div class="mk">Variables</div><div class="varlist" id="mVars">–</div></div>
+    <div class="mblock"><div class="mk">Substitution</div><div class="sub-eq" id="mSub2">–</div></div>
+    <div class="mblock"><div class="mk">Result</div><div class="result-eq" id="mResult">–</div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+/* ============================================================
+   1. STATE — display-unit values, matching the locked basis
+   ============================================================ */
+const DEFAULTS = {
+  geomVol: 10.0117,        // m3
+  workFrac: 90,            // %
+  batchDays: 8,            // days
+  tempTarget: 35,          // C
+  tempInit: 30,            // C
+  pressure: 1,             // atm
+  tubeID: 104,              // mm
+  tubeOD: 110,              // mm
+  straightLen: 1.5,         // m
+  numStraight: 587,
+  numUbends: 575,
+  ubendCC: 210,             // mm
+  headerID: 50,             // mm
+  numLoops: 12,
+  co2Frac: 13,               // %
+  co2Util: 0.25,             // g/L/h
+  captureEff: 85,            // %
+  co2MW: 44,                 // kg/kmol
+  flueTempIn: 80,             // C
+  normDensity: 1.29,          // kg/Nm3
+  brothDensity: 1020,         // kg/m3
+  viscosity: 1.8,              // mPa.s  (0.0018 Pa.s)
+  targetRe: 5000,
+  liquidCp: 4.0,               // kJ/kgK
+  gasCp: 1.0,                  // kJ/kgK
+  pmSize: 50,                  // um
+  cycVel: 15                   // m/s
+};
+let state = Object.assign({}, DEFAULTS);
+let prevValues = {}; // for impact analysis, key -> old display value
+const changeLog = [];
+let caseA = null, caseB = null;
+let traceMode = false;
+
+const NTP_MOLVOL = 22.414; // m3/kmol at 0C, 1atm
+
+/* ============================================================
+   2. NUMBER FORMATTING
+   ============================================================ */
+function fmt(x, d){
+  if(x===undefined||x===null||isNaN(x)) return "–";
+  if(Math.abs(x) >= 1000) return x.toLocaleString(undefined,{maximumFractionDigits:d===undefined?1:d});
+  return x.toLocaleString(undefined,{maximumFractionDigits:d===undefined?4:d, minimumFractionDigits:0});
+}
+
+/* ============================================================
+   3. COMPUTE ENGINE — pure function of state
+   ============================================================ */
+function compute(s){
+  const r = {};
+  // ---- geometry ----
+  r.workVolM3 = s.geomVol * (s.workFrac/100);
+  r.workVolL  = r.workVolM3 * 1000;
+  r.ubendR_m  = (s.ubendCC/1000) / 2;
+  r.ubendL_m  = Math.PI * r.ubendR_m;
+  r.lStraight = s.numStraight * s.straightLen;
+  r.lBend     = s.numUbends * r.ubendL_m;
+  r.lTotal    = r.lStraight + r.lBend;
+
+  // ---- CO2 / flue gas ----
+  r.co2UtilH   = r.workVolL * s.co2Util / 1000;           // kg/h
+  r.co2UtilDay = r.co2UtilH * 24;                          // kg/day
+  r.co2InletH  = r.co2UtilH / (s.captureEff/100);           // kg/h
+  r.co2InletDay= r.co2InletH * 24;
+  r.co2MolarH  = r.co2InletH / s.co2MW;                     // kmol/h
+  r.totalMolarH= r.co2MolarH / (s.co2Frac/100);             // kmol/h
+  r.stdNm3h    = r.totalMolarH * NTP_MOLVOL;                // Nm3/h
+  r.stdNLmin   = r.stdNm3h * 1000 / 60;                     // NL/min
+  // Ideal-gas correction from NTP (0 °C, 1 atm) to inlet T and absolute pressure.
+  r.actMolVol  = NTP_MOLVOL * (273.15 + s.flueTempIn) / 273.15 / s.pressure; // m3/kmol
+  r.actM3h     = r.totalMolarH * r.actMolVol;               // m3/h
+  r.actLmin    = r.actM3h * 1000 / 60;                      // L/min
+  r.actCO2M3h  = r.co2MolarH * r.actMolVol;                 // m3/h
+
+  // ---- hydraulics ----
+  const D = s.tubeID/1000, mu = s.viscosity/1000, rho = s.brothDensity;
+  r.tubeArea = Math.PI * D*D / 4;                            // m2
+  r.velocity = s.targetRe * mu / (rho * D);                  // m/s
+  r.qLoop_m3s = r.velocity * r.tubeArea;
+  r.qLoop_m3h = r.qLoop_m3s * 3600;
+  r.qTotal_m3h= r.qLoop_m3h * s.numLoops;
+  r.reCheck   = rho * r.velocity * D / mu;
+
+  // ---- energy ----
+  r.mLiquid = r.workVolM3 * s.brothDensity;                  // kg
+  r.mDotGas = r.stdNm3h * s.normDensity;                     // kg/h
+  r.qDot0   = r.mDotGas * s.gasCp * (s.flueTempIn - s.tempInit); // kJ/h
+  r.cLiquid = r.mLiquid * s.liquidCp;                        // kJ/K
+  r.kCoeff  = (r.mDotGas * s.gasCp) / (r.mLiquid * s.liquidCp); // 1/h
+  r.tempAt = function(t){ return s.flueTempIn - (s.flueTempIn - s.tempInit) * Math.exp(-r.kCoeff * t); };
+
+  // ---- cyclone ----
+  const Qact_m3s = r.actM3h / 3600;
+  r.cycA = Qact_m3s / s.cycVel;                              // m2
+  r.cycD = Math.sqrt(r.cycA / 0.1);                           // m
+
+  return r;
+}
+
+/* ============================================================
+   4. WARNINGS / VALIDATION
+   ============================================================ */
+function computeWarnings(s, r){
+  const w = [];
+  if(s.co2Frac<=0 || s.co2Frac>100) w.push({level:'error', msg:'ERROR: CO₂ fraction cannot exceed 100% or be zero/negative.'});
+  if(s.captureEff<=0 || s.captureEff>100) w.push({level:'error', msg:'ERROR: Capture efficiency must be between 0 and 100%.'});
+  if(s.workFrac<=0 || s.workFrac>100) w.push({level:'error', msg:'ERROR: Working volume fraction must be between 0 and 100%.'});
+  if(s.tubeID<=0) w.push({level:'error', msg:'ERROR: Tube ID must be positive.'});
+  if(s.geomVol<=0) w.push({level:'error', msg:'ERROR: Geometric reactor volume must be positive.'});
+  if(s.pressure<=0) w.push({level:'error', msg:'ERROR: Absolute pressure must be greater than zero.'});
+  if(s.tubeOD<=s.tubeID) w.push({level:'error', msg:'ERROR: Tube OD must be greater than tube ID.'});
+  if(prevValues.__lastActLmin!==undefined){
+    const delta = Math.abs(r.actLmin - prevValues.__lastActLmin)/prevValues.__lastActLmin;
+    if(delta>0.15) w.push({level:'notice', msg:'NOTICE: Gas-handling equipment loading has changed by more than 15% since last calculation.'});
+  }
+  if(!document.getElementById('chk-filter') || !document.getElementById('chk-filter').checked){
+    // informational only, not shown as warning by default
+  }
+  w.push({level:'notice', msg:'CYCLONE FINAL SIZING BLOCKED: PM concentration, particle-size distribution and particle density required.'});
+  {
+    const altR = 1.5 * (s.tubeOD/1000);
+    w.push({level:'notice', msg:`DESIGN-BASIS DISCREPANCY (U-bend geometry): active model uses R = C-C/2 = ${fmt(r.ubendR_m,4)} m from the ${fmt(s.ubendCC,0)} mm centre-to-centre input. CarbonONE fabrication basis (R = 1.5 × tube OD) would give R = ${fmt(altR,4)} m instead — not applied here. Confirm which basis governs before fabrication.`});
+  }
+  return w;
+}
+
+/* ============================================================
+   5. FORMULA VIEWER DEFINITIONS
+   ============================================================ */
+const FORMULAS = {
+  workVol: (s,r)=>({
+    title:'Working Liquid Volume', sub:'Reactor Geometry',
+    formula:'V_working = V_geometric × f_working',
+    vars:'<code>V_geometric</code> geometric reactor volume (m³) · <code>f_working</code> working volume fraction',
+    subs:`V_working = ${fmt(s.geomVol,4)} × ${fmt(s.workFrac/100,2)}`,
+    result:`V_working = ${fmt(r.workVolM3,4)} m³  (${fmt(r.workVolL,2)} L)`
+  }),
+  ubendR: (s,r)=>({
+    title:'U-Bend Centreline Radius', sub:'Reactor Geometry',
+    formula:'R = C-C / 2',
+    vars:'<code>C-C</code> U-bend centre-to-centre spacing (m)',
+    subs:`R = ${fmt(s.ubendCC/1000,4)} / 2`,
+    result:`R = ${fmt(r.ubendR_m,4)} m`
+  }),
+  ubendL: (s,r)=>({
+    title:'U-Bend Centreline Length', sub:'Reactor Geometry',
+    formula:'L_U = π × R',
+    vars:'<code>R</code> U-bend centreline radius (m), per bend',
+    subs:`L_U = π × ${fmt(r.ubendR_m,4)}`,
+    result:`L_U = ${fmt(r.ubendL_m,4)} m per bend`
+  }),
+  lStraight: (s,r)=>({
+    title:'Total Straight-Tube Length', sub:'Reactor Geometry',
+    formula:'L_straight = N_tubes × L_tube',
+    vars:'<code>N_tubes</code> straight tube count · <code>L_tube</code> straight tube length (m)',
+    subs:`L_straight = ${s.numStraight} × ${fmt(s.straightLen,2)}`,
+    result:`L_straight = ${fmt(r.lStraight,2)} m`
+  }),
+  lBend: (s,r)=>({
+    title:'Total U-Bend Length', sub:'Reactor Geometry',
+    formula:'L_bend = N_bends × L_U',
+    vars:'<code>N_bends</code> U-bend count · <code>L_U</code> centreline length per bend (m)',
+    subs:`L_bend = ${s.numUbends} × ${fmt(r.ubendL_m,4)}`,
+    result:`L_bend = ${fmt(r.lBend,2)} m`
+  }),
+  lTotal: (s,r)=>({
+    title:'Total Flow-Path Length', sub:'Reactor Geometry',
+    formula:'L_total = L_straight + L_bend',
+    vars:'<code>L_straight</code>, <code>L_bend</code> as above (m)',
+    subs:`L_total = ${fmt(r.lStraight,2)} + ${fmt(r.lBend,2)}`,
+    result:`L_total = ${fmt(r.lTotal,2)} m`
+  }),
+  co2UtilH: (s,r)=>({
+    title:'CO₂ Utilization Rate', sub:'CO₂ &amp; Flue Gas',
+    formula:'m_CO2 = V_working × r_CO2 / 1000',
+    vars:'<code>V_working</code> working liquid volume (L) · <code>r_CO2</code> CO₂ utilization design basis (g/L/h)',
+    subs:`m_CO2 = ${fmt(r.workVolL,2)} × ${fmt(s.co2Util,3)} / 1000`,
+    result:`m_CO2 = ${fmt(r.co2UtilH,4)} kg/h  (${fmt(r.co2UtilDay,2)} kg/day)`
+  }),
+  co2Inlet: (s,r)=>({
+    title:'CO₂ Inlet Required', sub:'CO₂ &amp; Flue Gas',
+    formula:'m_CO2,in = m_CO2 / η_capture',
+    vars:'<code>m_CO2</code> CO₂ utilization rate (kg/h) · <code>η_capture</code> CO₂ capture efficiency',
+    subs:`m_CO2,in = ${fmt(r.co2UtilH,4)} / ${fmt(s.captureEff/100,2)}`,
+    result:`m_CO2,in = ${fmt(r.co2InletH,4)} kg/h  (${fmt(r.co2InletDay,2)} kg/day)`
+  }),
+  co2Molar: (s,r)=>({
+    title:'CO₂ Molar Flow', sub:'CO₂ &amp; Flue Gas',
+    formula:'n_CO2 = m_CO2,in / MW_CO2',
+    vars:'<code>m_CO2,in</code> CO₂ inlet mass flow (kg/h) · <code>MW_CO2</code> CO₂ molecular weight (kg/kmol)',
+    subs:`n_CO2 = ${fmt(r.co2InletH,4)} / ${fmt(s.co2MW,1)}`,
+    result:`n_CO2 = ${fmt(r.co2MolarH,5)} kmol/h`
+  }),
+  totalMolar: (s,r)=>({
+    title:'Total Flue-Gas Molar Flow', sub:'CO₂ &amp; Flue Gas',
+    formula:'n_total = n_CO2 / y_CO2',
+    vars:'<code>n_CO2</code> CO₂ molar flow (kmol/h) · <code>y_CO2</code> CO₂ volume fraction in flue gas',
+    subs:`n_total = ${fmt(r.co2MolarH,5)} / ${fmt(s.co2Frac/100,3)}`,
+    result:`n_total = ${fmt(r.totalMolarH,5)} kmol/h`
+  }),
+  stdFlow: (s,r)=>({
+    title:'Standard Flue-Gas Flow (NTP)', sub:'CO₂ &amp; Flue Gas',
+    formula:'Q_std = n_total × V_m,NTP',
+    vars:'<code>n_total</code> total flue-gas molar flow (kmol/h) · <code>V_m,NTP</code> = 22.414 m³/kmol at 0 °C, 1 atm',
+    subs:`Q_std = ${fmt(r.totalMolarH,5)} × 22.414`,
+    result:`Q_std = ${fmt(r.stdNm3h,3)} Nm³/h  (${fmt(r.stdNLmin,1)} NL/min)`
+  }),
+  actFlow: (s,r)=>({
+    title:'Actual Flue-Gas Flow at Inlet Temperature', sub:'CO₂ &amp; Flue Gas',
+    formula:'V_m(T) = V_m,NTP × (273.15+T)/273.15;   Q_act = n_total × V_m(T)',
+    vars:'<code>T</code> flue-gas inlet temperature (°C), ideal-gas law at 1 atm',
+    subs:`V_m(${fmt(s.flueTempIn,0)}°C) = 22.414 × ${fmt((273.15+s.flueTempIn)/273.15,4)} = ${fmt(r.actMolVol,3)} m³/kmol\nQ_act = ${fmt(r.totalMolarH,5)} × ${fmt(r.actMolVol,3)}`,
+    result:`Q_act = ${fmt(r.actM3h,2)} m³/h  (${fmt(r.actLmin,1)} L/min)`
+  }),
+  tubeArea: (s,r)=>({
+    title:'Tube Cross-Sectional Area', sub:'Hydraulics',
+    formula:'A = π D² / 4',
+    vars:'<code>D</code> tube ID (m)',
+    subs:`A = π × ${fmt(s.tubeID/1000,4)}² / 4`,
+    result:`A = ${fmt(r.tubeArea,6)} m²`
+  }),
+  velocity: (s,r)=>({
+    title:'Velocity for Target Reynolds Number', sub:'Hydraulics',
+    formula:'v = Re × μ / (ρ × D)',
+    vars:'<code>Re</code> target Reynolds number · <code>μ</code> dynamic viscosity (Pa·s) · <code>ρ</code> broth density (kg/m³) · <code>D</code> tube ID (m)',
+    subs:`v = (${s.targetRe} × ${fmt(s.viscosity/1000,5)}) / (${fmt(s.brothDensity,0)} × ${fmt(s.tubeID/1000,4)})`,
+    result:`v = ${fmt(r.velocity,4)} m/s`
+  }),
+  qLoop: (s,r)=>({
+    title:'Flow per Loop', sub:'Hydraulics',
+    formula:'Q_loop = v × A',
+    vars:'<code>v</code> tube velocity (m/s) · <code>A</code> tube cross-sectional area (m²)',
+    subs:`Q_loop = ${fmt(r.velocity,4)} × ${fmt(r.tubeArea,6)} = ${fmt(r.qLoop_m3s,6)} m³/s`,
+    result:`Q_loop = ${fmt(r.qLoop_m3h,3)} m³/h`
+  }),
+  qTotal: (s,r)=>({
+    title:'Total Internal Circulation', sub:'Hydraulics',
+    formula:'Q_total = Q_loop × N_loops',
+    vars:'<code>Q_loop</code> flow per loop (m³/h) · <code>N_loops</code> number of internal circulation loops',
+    subs:`Q_total = ${fmt(r.qLoop_m3h,3)} × ${s.numLoops}`,
+    result:`Q_total = ${fmt(r.qTotal_m3h,2)} m³/h`
+  }),
+  reCheck: (s,r)=>({
+    title:'Reynolds Number Check', sub:'Hydraulics',
+    formula:'Re = ρ v D / μ',
+    vars:'<code>ρ</code> broth density · <code>v</code> tube velocity · <code>D</code> tube ID · <code>μ</code> dynamic viscosity',
+    subs:`Re = (${fmt(s.brothDensity,0)} × ${fmt(r.velocity,4)} × ${fmt(s.tubeID/1000,4)}) / ${fmt(s.viscosity/1000,5)}`,
+    result:`Re ≈ ${fmt(r.reCheck,0)}`
+  }),
+  mLiquid: (s,r)=>({
+    title:'Liquid Mass', sub:'Energy',
+    formula:'m_liquid = V_working × ρ_liquid',
+    vars:'<code>V_working</code> working liquid volume (m³) · <code>ρ_liquid</code> broth density (kg/m³)',
+    subs:`m_liquid = ${fmt(r.workVolM3,4)} × ${fmt(s.brothDensity,0)}`,
+    result:`m_liquid = ${fmt(r.mLiquid,1)} kg`
+  }),
+  mDotGas: (s,r)=>({
+    title:'Flue-Gas Mass Flow', sub:'Energy',
+    formula:'ṁ_gas = Q_std × ρ_N,gas',
+    vars:'<code>Q_std</code> standard flue-gas flow (Nm³/h) · <code>ρ_N,gas</code> normal gas density (kg/Nm³)',
+    subs:`ṁ_gas = ${fmt(r.stdNm3h,3)} × ${fmt(s.normDensity,2)}`,
+    result:`ṁ_gas = ${fmt(r.mDotGas,2)} kg/h`
+  }),
+  qDot0: (s,r)=>({
+    title:'Initial Heat-Transfer Rate (ideal complete transfer)', sub:'Energy',
+    formula:'Q̇₀ = ṁ_gas × Cp_gas × (T_gas − T₀)',
+    vars:'<code>ṁ_gas</code> flue-gas mass flow (kg/h) · <code>Cp_gas</code> flue-gas heat capacity (kJ/kg·K) · <code>T_gas, T₀</code> inlet gas / initial liquid temperature (°C)',
+    subs:`Q̇₀ = ${fmt(r.mDotGas,2)} × ${fmt(s.gasCp,2)} × (${fmt(s.flueTempIn,1)} − ${fmt(s.tempInit,1)})`,
+    result:`Q̇₀ = ${fmt(r.qDot0,0)} kJ/h`
+  }),
+  kCoeff: (s,r)=>({
+    title:'Heating Coefficient k', sub:'Energy',
+    formula:'k = (ṁ_gas × Cp_gas) / (m_liquid × Cp_liquid)',
+    vars:'all terms as defined above; Cp_liquid = liquid heat capacity (kJ/kg·K)',
+    subs:`k = (${fmt(r.mDotGas,2)} × ${fmt(s.gasCp,2)}) / (${fmt(r.mLiquid,1)} × ${fmt(s.liquidCp,2)})`,
+    result:`k = ${fmt(r.kCoeff,6)} 1/h`
+  }),
+  tOfT: (s,r)=>({
+    title:'Temperature vs Time (integrated)', sub:'Energy',
+    formula:'T(t) = T_gas − (T_gas − T₀) × e^(−k t)',
+    vars:'<code>k</code> heating coefficient (1/h) · <code>t</code> elapsed time (h)',
+    subs:`T(192) = ${fmt(s.flueTempIn,1)} − (${fmt(s.flueTempIn,1)} − ${fmt(s.tempInit,1)}) × e^(−${fmt(r.kCoeff,6)}×192)`,
+    result:`T(192 h) = ${fmt(r.tempAt(192),2)} °C  (rise = ${fmt(r.tempAt(192)-s.tempInit,2)} °C)`
+  }),
+  cycA: (s,r)=>({
+    title:'Cyclone Inlet Area', sub:'Cyclone (screening)',
+    formula:'A_in = Q_act / v_inlet',
+    vars:'<code>Q_act</code> actual flue-gas flow at inlet T (m³/s) · <code>v_inlet</code> assumed inlet velocity (m/s)',
+    subs:`A_in = ${fmt(r.actM3h/3600,6)} / ${fmt(s.cycVel,1)}`,
+    result:`A_in = ${fmt(r.cycA,6)} m²`
+  }),
+  cycD: (s,r)=>({
+    title:'Screening Cyclone Diameter', sub:'Cyclone (screening)',
+    formula:'D_c ≈ √(A_in / 0.1)',
+    vars:'<code>A_in</code> cyclone inlet area (m²); 0.1 is a preliminary screening proportionality constant relating inlet area to body diameter',
+    subs:`D_c = √(${fmt(r.cycA,6)} / 0.1)`,
+    result:`D_c ≈ ${fmt(r.cycD,4)} m  (${fmt(r.cycD*1000,0)} mm) — SCREENING ONLY`
+  }),
+};
+
+function openFormula(key){
+  const r = compute(state);
+  const f = FORMULAS[key];
+  if(!f) return;
+  const d = f(state, r);
+  document.getElementById('mTitle').textContent = d.title;
+  document.getElementById('mSub').textContent = d.sub;
+  document.getElementById('mFormula').textContent = d.formula;
+  document.getElementById('mVars').innerHTML = d.vars;
+  document.getElementById('mSub2').textContent = d.subs;
+  document.getElementById('mResult').textContent = d.result;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+document.getElementById('modalClose').addEventListener('click', ()=>document.getElementById('modalOverlay').classList.remove('open'));
+document.getElementById('modalOverlay').addEventListener('click', (e)=>{ if(e.target.id==='modalOverlay') e.currentTarget.classList.remove('open'); });
+document.addEventListener('click', (e)=>{
+  if(e.target.classList.contains('formula-btn')) openFormula(e.target.getAttribute('data-f'));
+});
+
+/* ============================================================
+   6. IMPACT ANALYSIS
+   ============================================================ */
+const IMPACT_MAP = {
+  co2Frac: ['Required total flue-gas flow', 'Standard NL/min', 'Actual gas flow', 'Cyclone gas-handling load', 'Gas velocity through equipment', 'Potential pressure drop'],
+  captureEff: ['CO₂ inlet requirement', 'Total flue-gas flow', 'Cyclone loading'],
+  co2Util: ['CO₂ utilization rate', 'CO₂ inlet requirement', 'Total flue-gas flow', 'Flue-gas mass flow', 'Heating coefficient k'],
+  geomVol: ['Working liquid volume', 'CO₂ requirement', 'Flue-gas requirement', 'Liquid thermal capacitance'],
+  workFrac: ['Liquid inventory', 'CO₂ requirement', 'Flue-gas requirement', 'Internal reactor liquid mass', 'Thermal capacitance'],
+  tubeID: ['Tube area', 'Velocity required for same Re', 'Flow per loop', 'Total circulation', 'Pressure-drop implications'],
+  numLoops: ['Total internal circulation flow'],
+  brothDensity: ['Velocity for target Re', 'Flow per loop', 'Total circulation', 'Liquid mass', 'Thermal capacitance'],
+  viscosity: ['Velocity for target Re', 'Flow per loop', 'Total circulation'],
+  targetRe: ['Velocity for target Re', 'Flow per loop', 'Total circulation'],
+  flueTempIn: ['Actual molar volume at inlet T', 'Actual flue-gas flow', 'Cyclone inlet area/diameter', 'Initial heat-transfer rate'],
+  normDensity: ['Flue-gas mass flow', 'Initial heat-transfer rate', 'Heating coefficient k'],
+  liquidCp: ['Liquid thermal capacitance', 'Heating coefficient k', 'Temperature profile'],
+  gasCp: ['Initial heat-transfer rate', 'Heating coefficient k', 'Temperature profile'],
+  tempInit: ['Initial ΔT', 'Initial heat-transfer rate', 'Temperature profile'],
+  tempTarget: ['Reference target for heating outcome comparison'],
+  cycVel: ['Cyclone inlet area', 'Screening cyclone diameter'],
+  co2MW: ['CO₂ molar flow', 'Total flue-gas molar flow', 'Standard/actual gas flow'],
+  ubendCC: ['U-bend centreline radius/length', 'Total flow-path length'],
+  numUbends: ['Total U-bend length', 'Total flow-path length'],
+  numStraight: ['Total straight-tube length', 'Total flow-path length'],
+  straightLen: ['Total straight-tube length', 'Total flow-path length'],
+  pmSize: ['Cyclone screening reference (does not change sizing formula)'],
+};
+const LABELS = {
+  geomVol:'Geometric reactor volume', workFrac:'Working volume fraction', batchDays:'Batch cultivation time',
+  tempTarget:'Operating temperature target', tempInit:'Initial feed temperature', pressure:'Pressure',
+  tubeID:'Tube ID', tubeOD:'Tube OD', straightLen:'Straight tube length', numStraight:'Straight tubes',
+  numUbends:'U-bends', ubendCC:'U-bend centre-to-centre', headerID:'Liquid main header ID', numLoops:'Internal circulation loops',
+  co2Frac:'CO₂ concentration', co2Util:'CO₂ utilization design basis', captureEff:'CO₂ capture efficiency',
+  co2MW:'CO₂ molecular weight', flueTempIn:'Flue-gas inlet temperature', normDensity:'Normal gas density',
+  brothDensity:'Broth density', viscosity:'Dynamic viscosity', targetRe:'Target Reynolds number',
+  liquidCp:'Liquid heat capacity', gasCp:'Flue-gas heat capacity', pmSize:'PM reference particle size', cycVel:'Cyclone inlet velocity'
+};
+const UNITS = {
+  geomVol:'m³', workFrac:'%', batchDays:'days', tempTarget:'°C', tempInit:'°C', pressure:'atm',
+  tubeID:'mm', tubeOD:'mm', straightLen:'m', numStraight:'', numUbends:'', ubendCC:'mm', headerID:'mm', numLoops:'',
+  co2Frac:'%', co2Util:'g/L/h', captureEff:'%', co2MW:'kg/kmol', flueTempIn:'°C', normDensity:'kg/Nm³',
+  brothDensity:'kg/m³', viscosity:'mPa·s', targetRe:'', liquidCp:'kJ/kg·K', gasCp:'kJ/kg·K', pmSize:'µm', cycVel:'m/s'
+};
+
+function logChange(key, oldV, newV){
+  if(oldV===newV) return;
+  const pct = oldV!==0 ? ((newV-oldV)/Math.abs(oldV))*100 : NaN;
+  const impacts = IMPACT_MAP[key] || [];
+  changeLog.unshift({key, oldV, newV, pct, impacts, t:Date.now()});
+  if(changeLog.length>40) changeLog.pop();
+  renderImpact(key, oldV, newV, pct, impacts);
+  renderChangeLog();
+}
+
+function renderImpact(key, oldV, newV, pct, impacts){
+  const panel = document.getElementById('impactPanel');
+  const unit = UNITS[key]||'';
+  panel.classList.add('show');
+  panel.innerHTML = `
+    <div class="ip-head"><div class="ip-title">Impact of Change</div></div>
+    <div class="ip-change"><b>${LABELS[key]||key}</b>: ${fmt(oldV,4)}${unit} → <b>${fmt(newV,4)}${unit}</b> &nbsp;(${isFinite(pct)?(pct>=0?'+':'')+fmt(pct,1)+'%':'n/a'})</div>
+    <ul>${impacts.map(i=>`<li><b>${i}</b> — recalculated live</li>`).join('') || '<li>No direct downstream dependency mapped for this parameter.</li>'}</ul>
+  `;
+}
+function renderChangeLog(){
+  const body = document.getElementById('changeLogBody');
+  if(changeLog.length===0){ body.innerHTML = '<tr><td colspan="4" style="color:var(--text-faint); font-family:var(--sans);">No changes yet.</td></tr>'; return; }
+  body.innerHTML = changeLog.map(c=>{
+    const unit = UNITS[c.key]||'';
+    return `<tr>
+      <td class="label-cell">${LABELS[c.key]||c.key}</td>
+      <td>${fmt(c.oldV,4)} → ${fmt(c.newV,4)} ${unit}</td>
+      <td>${isFinite(c.pct)?(c.pct>=0?'+':'')+fmt(c.pct,1)+'%':'–'}</td>
+      <td class="label-cell small-note">${c.impacts.slice(0,3).join(', ')}${c.impacts.length>3?'…':''}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ============================================================
+   7. RENDER — main dashboard values
+   ============================================================ */
+function renderAll(){
+  const r = compute(state);
+
+  // geometry
+  set('r-geomVol', fmt(state.geomVol,4)+' <span class="unit">m³</span>');
+  set('r-workVolM3', fmt(r.workVolM3,4)+' <span class="unit">m³</span>');
+  set('r-workVolL', fmt(r.workVolL,2)+' <span class="unit">L</span>');
+  set('r-ubendR', fmt(r.ubendR_m,4)+' <span class="unit">m</span>');
+  set('r-ubendL', fmt(r.ubendL_m,4)+' <span class="unit">m/bend</span>');
+  set('r-lStraight', fmt(r.lStraight,2)+' <span class="unit">m</span>');
+  set('r-lBend', fmt(r.lBend,2)+' <span class="unit">m</span>');
+  set('r-lTotal', fmt(r.lTotal,2)+' <span class="unit">m</span>');
+
+  // flue gas
+  set('r-co2UtilH', fmt(r.co2UtilH,4)+' <span class="unit">kg/h</span>');
+  set('r-co2UtilDay', fmt(r.co2UtilDay,2)+' <span class="unit">kg/day</span>');
+  set('r-co2InletH', fmt(r.co2InletH,4)+' <span class="unit">kg/h</span>');
+  set('r-co2InletDay', fmt(r.co2InletDay,2)+' <span class="unit">kg/day</span>');
+  set('r-co2Molar', fmt(r.co2MolarH,5)+' <span class="unit">kmol/h</span>');
+  set('r-totalMolar', fmt(r.totalMolarH,5)+' <span class="unit">kmol/h</span>');
+  set('r-stdNm3h', fmt(r.stdNm3h,3)+' <span class="unit">Nm³/h</span>');
+  set('r-stdNLmin', fmt(r.stdNLmin,1)+' <span class="unit">NL/min</span>');
+  set('r-actM3h', fmt(r.actM3h,2)+' <span class="unit">m³/h</span>');
+  set('r-actLmin', fmt(r.actLmin,1)+' <span class="unit">L/min</span>');
+
+  // hydraulics
+  set('r-tubeArea', fmt(r.tubeArea,6)+' <span class="unit">m²</span>');
+  set('r-velocity', fmt(r.velocity,4)+' <span class="unit">m/s</span>');
+  set('r-qLoop', fmt(r.qLoop_m3h,3)+' <span class="unit">m³/h</span>');
+  set('r-qTotal', fmt(r.qTotal_m3h,2)+' <span class="unit">m³/h</span>');
+  set('r-reCheck', fmt(r.reCheck,0));
+
+  // energy
+  set('r-mLiquid', fmt(r.mLiquid,1)+' <span class="unit">kg</span>');
+  set('r-mDotGas', fmt(r.mDotGas,2)+' <span class="unit">kg/h</span>');
+  set('r-qDot0', fmt(r.qDot0,0)+' <span class="unit">kJ/h</span>');
+  set('r-cLiquid', fmt(r.cLiquid,0)+' <span class="unit">kJ/K</span>');
+  set('r-kCoeff', fmt(r.kCoeff,6)+' <span class="unit">1/h</span>');
+  renderTempTable(r);
+  drawTempChart(r);
+  const horizon = getTimeHorizon();
+  const tSel = Math.min(Math.max(parseFloat(document.getElementById('in-tSelect').value) || 0, 0), horizon);
+  set('r-tSelectOut', fmt(r.tempAt(tSel),2)+' <span class="unit">°C at '+fmt(tSel,1)+' h</span>');
+
+  // cyclone
+  set('r-pmRef', fmt(state.pmSize,0)+' <span class="unit">µm</span>');
+  set('r-cycVel', fmt(state.cycVel,1)+' <span class="unit">m/s</span>');
+  set('r-cycA', fmt(r.cycA,6)+' <span class="unit">m²</span>');
+  set('r-cycD', fmt(r.cycD*1000,0)+' <span class="unit">mm</span>');
+
+  drawCO2ConcChart(r);
+  drawCO2VolChart(r);
+  drawCircTubeChart(r);
+  renderSchematic();
+  renderFlow();
+
+  // warnings
+  const warns = computeWarnings(state, r);
+  const bar = document.getElementById('warningBar');
+  bar.innerHTML = warns.map(w=>`<div class="warning ${w.level}"><span class="wtag">${w.level==='error'?'ERROR':'NOTICE'}</span><span>${w.msg}</span></div>`).join('');
+
+  prevValues.__lastActLmin = r.actLmin;
+}
+function set(id, html){ const el=document.getElementById(id); if(el) el.innerHTML = html; }
+
+function getTimeHorizon(){
+  const days = Number(state.batchDays);
+  return Number.isFinite(days) && days > 0 ? Math.max(24, days * 24) : 192;
+}
+
+function renderTempTable(r){
+  const horizon = getTimeHorizon();
+  const times = Array.from({length:8}, (_,i) => Math.min(horizon, (i+1) * horizon / 8))
+    .map(t => Math.round(t));
+  const body = document.getElementById('tempTableBody');
+  body.innerHTML = times.map(t=>{
+    const T = r.tempAt(t);
+    return `<tr><td>${t}</td><td>${fmt(T,2)}</td><td>+${fmt(T-state.tempInit,2)}</td></tr>`;
+  }).join('');
+}
+
+/* ============================================================
+   8. CANVAS CHART HELPERS (no external libs)
+   ============================================================ */
+function drawLineChart(canvas, xs, ys, opts){
+  opts = opts||{};
+  const dpr = window.devicePixelRatio||1;
+  const cssW = canvas.clientWidth || 400, cssH = parseInt(canvas.getAttribute('height'))||220;
+  canvas.width = cssW*dpr; canvas.height = cssH*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,cssW,cssH);
+  const padL=54,padR=16,padT=14,padB=30;
+  const w = cssW-padL-padR, h = cssH-padT-padB;
+  const xmin=Math.min(...xs), xmax=Math.max(...xs);
+  const ymin=0, ymax=Math.max(...ys)*1.15 || 1;
+  function px(x){ return padL + (x-xmin)/(xmax-xmin||1)*w; }
+  function py(y){ return padT + h - (y-ymin)/(ymax-ymin||1)*h; }
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth=1;
+  ctx.font='11px ui-monospace,monospace'; ctx.fillStyle='#5f7080';
+  for(let i=0;i<=4;i++){
+    const y = ymin + (ymax-ymin)*i/4;
+    ctx.beginPath(); ctx.moveTo(padL,py(y)); ctx.lineTo(padL+w,py(y)); ctx.stroke();
+    ctx.textAlign='right'; ctx.fillText(fmt(y,1), padL-8, py(y)+4);
+  }
+  // x labels
+  const nxl = Math.min(xs.length, 6);
+  for(let i=0;i<nxl;i++){
+    const idx = Math.round(i*(xs.length-1)/(nxl-1||1));
+    ctx.textAlign='center'; ctx.fillText(fmt(xs[idx],0), px(xs[idx]), padT+h+18);
+  }
+  // line
+  ctx.strokeStyle = opts.color || '#c97b4a'; ctx.lineWidth=2;
+  ctx.beginPath();
+  xs.forEach((x,i)=>{ const X=px(x),Y=py(ys[i]); if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y); });
+  ctx.stroke();
+  // fill
+  ctx.lineTo(px(xs[xs.length-1]), py(ymin)); ctx.lineTo(px(xs[0]), py(ymin)); ctx.closePath();
+  const grad = ctx.createLinearGradient(0,padT,0,padT+h);
+  grad.addColorStop(0, (opts.color||'#c97b4a')+'33'); grad.addColorStop(1, (opts.color||'#c97b4a')+'00');
+  ctx.fillStyle = grad; ctx.fill();
+  // points
+  ctx.fillStyle = opts.color || '#c97b4a';
+  xs.forEach((x,i)=>{ ctx.beginPath(); ctx.arc(px(x),py(ys[i]),2.5,0,7); ctx.fill(); });
+}
+
+function drawTempChart(r){
+  const horizon = getTimeHorizon();
+  const step = Math.max(1, horizon / 24);
+  const xs = Array.from({length:25}, (_,i) => i * step);
+  const ys = xs.map(t=>r.tempAt(t));
+  drawLineChart(document.getElementById('chartTemp'), xs, ys, {color:'#e0935f'});
+}
+function drawCO2ConcChart(r){
+  const xs=[]; for(let c=5;c<=30;c+=2.5) xs.push(c);
+  const ys = xs.map(c=>{
+    const molar = r.co2MolarH/(c/100);
+    return molar*NTP_MOLVOL*1000/60; // NL/min
+  });
+  drawLineChart(document.getElementById('chartCO2Conc'), xs, ys, {color:'#6fb7c9'});
+}
+function drawCO2VolChart(r){
+  const xs=[]; for(let v=5000;v<=13000;v+=1000) xs.push(v);
+  const ys = xs.map(v=> v*state.co2Util/1000 );
+  drawLineChart(document.getElementById('chartCO2Vol'), xs, ys, {color:'#4fae7a'});
+}
+function drawCircTubeChart(r){
+  const xs=[]; for(let d=60;d<=150;d+=10) xs.push(d);
+  const ys = xs.map(d=>{
+    const D=d/1000, mu=state.viscosity/1000, rho=state.brothDensity;
+    const A = Math.PI*D*D/4;
+    const v = state.targetRe*mu/(rho*D);
+    return v*A*3600*state.numLoops;
+  });
+  drawLineChart(document.getElementById('chartCircTube'), xs, ys, {color:'#5b8def'});
+}
+
+/* ============================================================
+   9. REACTOR SCHEMATIC (SVG)
+   ============================================================ */
+function renderSchematic(){
+  const el = document.getElementById('schematicSvg');
+  const loops = Math.max(1, Math.round(state.numLoops));
+  const cols = 2, rows = Math.ceil(loops/cols);
+  const w = 640, hpad=30, rowH = 46;
+  const h = rowH*rows + hpad*2 + 30;
+  let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:640px; display:block; margin:0 auto;">`;
+  svg += `<rect x="1" y="1" width="${w-2}" height="${h-2}" fill="none" stroke="#2b3743" stroke-dasharray="4 3"/>`;
+  // headers
+  svg += `<line x1="40" y1="${hpad-10}" x2="40" y2="${h-hpad+10}" stroke="#5b8def" stroke-width="3"/>`;
+  svg += `<text x="40" y="${hpad-16}" fill="#5b8def" font-size="10" font-family="ui-monospace" text-anchor="middle">IN</text>`;
+  svg += `<line x1="${w-40}" y1="${hpad-10}" x2="${w-40}" y2="${h-hpad+10}" stroke="#c97b4a" stroke-width="3"/>`;
+  svg += `<text x="${w-40}" y="${hpad-16}" fill="#c97b4a" font-size="10" font-family="ui-monospace" text-anchor="middle">OUT</text>`;
+  let n=0;
+  for(let row=0; row<rows; row++){
+    for(let c=0;c<cols && n<loops; c++, n++){
+      const y = hpad + row*rowH + rowH/2;
+      const x1 = 55, x2 = w-55;
+      const dir = (n%2===0) ? 1 : -1;
+      svg += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#6fb7c9" stroke-width="3.5" stroke-linecap="round"/>`;
+      // U-bend hint at loop ends
+      const bendX = dir>0? x2 : x1;
+      svg += `<path d="M ${bendX-10*dir} ${y-8} Q ${bendX+14*dir} ${y} ${bendX-10*dir} ${y+8}" fill="none" stroke="#c9a45b" stroke-width="2.5"/>`;
+      svg += `<text x="${(x1+x2)/2}" y="${y-8}" fill="#5f7080" font-size="9.5" font-family="ui-monospace" text-anchor="middle">L${n+1}</text>`;
+    }
+  }
+  svg += `<text x="${w/2}" y="${h-8}" fill="#93a3b3" font-size="10.5" font-family="ui-monospace" text-anchor="middle">${loops} internal circulation loops · tube ID ${state.tubeID} mm / OD ${state.tubeOD} mm</text>`;
+  svg += `</svg>`;
+  el.innerHTML = svg;
+}
+
+/* ============================================================
+   10. PROCESS FLOW DIAGRAM
+   ============================================================ */
+const FLOW_STAGES = [
+  {id:'source', title:'MRPL Flue Gas', type:'gas', status:'LOCKED', always:true,
+    info:{purpose:'Source flue-gas stream from the MRPL process.', principle:'Raw combustion / process off-gas, 13 vol% CO₂, 80°C inlet.', input:'MRPL process outlet', output:'Raw flue gas to cyclone', formula:'—', design:'LOCKED', data:'Requires full flue-gas analysis (PM, SOx, NOx, moisture).'}},
+  {id:'cyclone', title:'Cyclone Separator', type:'gas', status:'PRELIM', always:true,
+    info:{purpose:'Coarse particulate / dust (PM) removal.', principle:'Tangential-entry reverse-flow cyclone; centrifugal separation of solids.', input:'Raw flue gas', output:'De-dusted gas + collected solids', formula:'A_in = Q/v_inlet; D_c ≈ √(A_in/0.1)', design:'PRELIMINARY / SCREENING', data:'PM concentration, PSD, particle density, target efficiency, allowable ΔP — TBD.'}},
+  {id:'filter', title:'Fine Filter', type:'gas', status:'COND', toggle:'chk-filter',
+    info:{purpose:'Fine PM polishing beyond cyclone cut.', principle:'Cartridge or fabric (bag) filtration.', input:'Cyclone outlet gas', output:'Fine-filtered gas', formula:'Sizing requires face velocity and dust loading — TBD', design:'CONDITIONAL', data:'Only required if fine PM fraction is significant.'}},
+  {id:'cooler', title:'Gas Cooler', type:'gas', status:'COND', toggle:'chk-cooler',
+    info:{purpose:'Reduce gas temperature before PBR contact if required.', principle:'Indirect heat exchanger (air- or water-cooled).', input:'Filtered gas at inlet T', output:'Cooled gas', formula:'Q = ṁ Cp ΔT (duty-sizing, not yet performed)', design:'CONDITIONAL', data:'Required only if inlet temperature exceeds PBR tolerance.'}},
+  {id:'scrubber', title:'Alkaline Scrubber', type:'liquid', status:'COND', toggle:'chk-scrubber',
+    info:{purpose:'Removal of acid gases (SOx, HCl) if present.', principle:'Packed-bed counter-current alkaline wet scrubbing.', input:'Cooled/filtered gas', output:'Scrubbed gas + spent scrubbing liquor', formula:'Packing sizing requires gas load and acid-gas concentration — TBD', design:'CONDITIONAL', data:'Only required if acid gases are confirmed present in the flue-gas analysis.'}},
+  {id:'demister', title:'Mesh Demister', type:'gas', status:'COND', toggle:'chk-scrubber',
+    info:{purpose:'Entrained liquid droplet removal after wet scrubbing.', principle:'Mesh-pad coalescing demister.', input:'Scrubber outlet gas', output:'Dry, scrubbed gas', formula:'Sized on gas velocity vs. mesh pad rating', design:'CONDITIONAL', data:'Only present if wet scrubber stage is used.'}},
+  {id:'nox', title:'NOx Treatment', type:'gas', status:'COND', toggle:'chk-nox',
+    info:{purpose:'Dedicated NOx abatement if concentrations exceed target.', principle:'SCR / SNCR or absorption, depending on NOx level.', input:'Upstream conditioned gas', output:'NOx-reduced gas', formula:'Technology selection pending NOx analysis', design:'CONDITIONAL', data:'Requires measured NOx concentration in flue gas.'}},
+  {id:'monitor', title:'Final Gas Monitoring', type:'gas', status:'PRELIM', always:true,
+    info:{purpose:'Confirm CO₂, O₂, temperature and PM before PBR entry.', principle:'Online gas analyzer bank.', input:'Fully conditioned gas', output:'Verified gas to PBR sparge system', formula:'—', design:'PRELIMINARY', data:'Analyzer set to be confirmed with process control philosophy.'}},
+  {id:'pbr', title:'PBR', type:'gas', status:'LOCKED', always:true,
+    info:{purpose:'Photobioreactor — CO₂ delivery to culture.', principle:'12-loop tubular batch photobioreactor, 9,010.53 L working volume.', input:'Conditioned flue gas + culture liquid', output:'Cultivated biomass, depleted off-gas', formula:'See CO₂ &amp; Flue Gas and Hydraulics sections', design:'LOCKED', data:'—'}},
+];
+
+function renderFlow(){
+  const wrap = document.getElementById('flowDiagram');
+  let html='';
+  FLOW_STAGES.forEach((st,i)=>{
+    const active = st.always || (st.toggle && document.getElementById(st.toggle) && document.getElementById(st.toggle).checked);
+    html += `<div class="flow-node ${st.type} ${active?'':'off'}" data-stage="${st.id}">
+      <div class="fn-title">${st.title}</div>
+      <span class="badge ${st.status==='LOCKED'?'locked':st.status==='PRELIM'?'prelim':st.status==='COND'?'cond':'tbd'}">${st.status}</span>
+    </div>`;
+    if(i<FLOW_STAGES.length-1){
+      html += `<div class="flow-arrow">&#10132;</div>`;
+    }
+  });
+  wrap.innerHTML = html;
+  wrap.querySelectorAll('.flow-node').forEach(node=>{
+    node.addEventListener('click', ()=>showFlowDetail(node.getAttribute('data-stage')));
+  });
+}
+function showFlowDetail(id){
+  const st = FLOW_STAGES.find(s=>s.id===id);
+  if(!st) return;
+  const d = st.info;
+  document.getElementById('flowDetail').innerHTML = `
+    <div class="fd-title">${st.title} <span class="badge ${st.status==='LOCKED'?'locked':st.status==='PRELIM'?'prelim':st.status==='COND'?'cond':'tbd'}">${st.status}</span></div>
+    <div class="fd-row"><div class="fk">Purpose</div><div>${d.purpose}</div></div>
+    <div class="fd-row"><div class="fk">Working principle</div><div>${d.principle}</div></div>
+    <div class="fd-row"><div class="fk">Main input</div><div>${d.input}</div></div>
+    <div class="fd-row"><div class="fk">Main output</div><div>${d.output}</div></div>
+    <div class="fd-row"><div class="fk">Relevant formula</div><div style="font-family:var(--mono); font-size:12.5px;">${d.formula}</div></div>
+    <div class="fd-row"><div class="fk">Required data</div><div>${d.data}</div></div>
+  `;
+}
+
+/* ============================================================
+   11. CASE COMPARISON
+   ============================================================ */
+const COMPARE_FIELDS = [
+  {key:'workVolL', label:'Working volume', unit:'L'},
+  {key:'co2FracDisp', label:'CO₂ %', unit:'%'},
+  {key:'captureEffDisp', label:'Capture efficiency', unit:'%'},
+  {key:'stdNLmin', label:'Flue-gas flow (standard)', unit:'NL/min'},
+  {key:'actLmin', label:'Actual gas flow', unit:'L/min'},
+  {key:'velocity', label:'Tube velocity', unit:'m/s'},
+  {key:'reCheck', label:'Reynolds number', unit:''},
+  {key:'qTotal_m3h', label:'Circulation flow', unit:'m³/h'},
+  {key:'temp192', label:'Temperature at batch horizon', unit:'°C'},
+  {key:'cycDmm', label:'Cyclone screening diameter', unit:'mm'},
+];
+function snapshotCase(){
+  const r = compute(state);
+  return {
+    workVolL:r.workVolL, co2FracDisp: state.co2Frac, captureEffDisp: state.captureEff,
+    stdNLmin:r.stdNLmin, actLmin:r.actLmin, velocity:r.velocity, reCheck:r.reCheck,
+    qTotal_m3h:r.qTotal_m3h, temp192:r.tempAt(getTimeHorizon()), cycDmm:r.cycD*1000
+  };
+}
+function renderCompare(){
+  const body = document.getElementById('compareBody');
+  document.getElementById('caseAHead').textContent = caseA? 'Case A' : 'Case A (not saved)';
+  document.getElementById('caseBHead').textContent = caseB? 'Case B' : 'Case B (not saved)';
+  if(!caseA && !caseB){ body.innerHTML = '<tr><td colspan="5" style="color:var(--text-faint); font-family:var(--sans);">Save Case A and/or Case B to compare.</td></tr>'; return; }
+  body.innerHTML = COMPARE_FIELDS.map(f=>{
+    const a = caseA? caseA[f.key] : null;
+    const b = caseB? caseB[f.key] : null;
+    let change='–', impact='–';
+    if(a!==null && b!==null){
+      const d = b-a;
+      const pct = a!==0? (d/Math.abs(a))*100 : NaN;
+      change = (d>=0?'+':'')+fmt(d,3)+' '+f.unit+(isFinite(pct)?` (${pct>=0?'+':''}${fmt(pct,1)}%)`:'');
+      impact = Math.abs(pct)>5 ? 'Significant change' : 'Minor change';
+    }
+    return `<tr>
+      <td class="label-cell">${f.label}</td>
+      <td>${a!==null? fmt(a,3)+' '+f.unit : '–'}</td>
+      <td>${b!==null? fmt(b,3)+' '+f.unit : '–'}</td>
+      <td>${change}</td>
+      <td class="label-cell small-note">${impact}</td>
+    </tr>`;
+  }).join('');
+}
+document.getElementById('saveCaseA').addEventListener('click', ()=>{ caseA = snapshotCase(); renderCompare(); });
+document.getElementById('saveCaseB').addEventListener('click', ()=>{ caseB = snapshotCase(); renderCompare(); });
+document.getElementById('clearCases').addEventListener('click', ()=>{ caseA=null; caseB=null; renderCompare(); });
+
+/* ============================================================
+   12. NAVIGATION
+   ============================================================ */
+document.querySelectorAll('.navitem').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    document.querySelectorAll('.navitem').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('sec-'+item.getAttribute('data-sec')).classList.add('active');
+    window.scrollTo(0,0);
+    renderAll();
+  });
+});
+
+/* ============================================================
+   13. INPUT BINDING
+   ============================================================ */
+function syncTimeSelector(){
+  const input = document.getElementById('in-tSelect');
+  const horizon = getTimeHorizon();
+  input.max = horizon;
+  if(parseFloat(input.value) > horizon) input.value = horizon;
+}
+
+function bindInputs(){
+  document.querySelectorAll('[data-key]').forEach(inp=>{
+    const key = inp.getAttribute('data-key');
+    inp.value = state[key];
+    inp.addEventListener('change', ()=>{
+      const old = state[key];
+      const val = parseFloat(inp.value);
+      if(isNaN(val)) return;
+      state[key] = val;
+      logChange(key, old, val);
+      if(key === 'batchDays') syncTimeSelector();
+      renderAll();
+    });
+  });
+  syncTimeSelector();
+  document.getElementById('in-tSelect').addEventListener('input', renderAll);
+  ['chk-filter','chk-cooler','chk-scrubber','chk-nox'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', renderAll);
+  });
+}
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  state = Object.assign({}, DEFAULTS);
+  changeLog.length = 0;
+  caseA = null;
+  caseB = null;
+  prevValues = {};
+  document.querySelectorAll('[data-key]').forEach(inp => {
+    inp.value = state[inp.getAttribute('data-key')];
+  });
+  ['chk-filter','chk-cooler','chk-scrubber','chk-nox'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  document.getElementById('impactPanel').classList.remove('show');
+  syncTimeSelector();
+  renderChangeLog();
+  renderCompare();
+  renderAll();
+});
+
+document.getElementById('traceToggleBtn').addEventListener('click', function(){
+  traceMode = !traceMode;
+  this.textContent = 'Calculation Trace: ' + (traceMode?'ON':'OFF');
+  this.classList.toggle('primary', traceMode);
+  document.querySelectorAll('.navitem').forEach(i=>i.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-notes').classList.add('active');
+  document.querySelector('.navitem[data-sec="notes"]').classList.add('active');
+});
+
+/* ============================================================
+   14. EXPORT REPORT
+   ============================================================ */
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const r = compute(state);
+
+  /*
+   * Excel-compatible export:
+   * The downloaded .xls file is an HTML table workbook that opens directly
+   * in Microsoft Excel. It contains separate sheets/sections for:
+   * 1) Design Basis
+   * 2) Reactor Geometry
+   * 3) CO2 & Flue Gas
+   * 4) Hydraulics
+   * 5) Energy
+   * 6) Cyclone
+   * 7) Impact / Change Log
+   * 8) Case Comparison
+   * 9) Engineering Notes
+   */
+  const esc = (v) => String(v ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+
+  const row = (label, value, unit='', status='') =>
+    `<tr><td>${esc(label)}</td><td>${esc(value)}</td><td>${esc(unit)}</td><td>${esc(status)}</td></tr>`;
+
+  const section = (title, rows) => `
+    <table class="sheet">
+      <tr class="sheet-title"><th colspan="4">${esc(title)}</th></tr>
+      <tr class="head"><th>Parameter</th><th>Value</th><th>Unit</th><th>Status / Notes</th></tr>
+      ${rows.join('')}
+    </table>`;
+
+  const designBasisRows = Object.keys(DEFAULTS).map(k =>
+    row(LABELS[k] || k, state[k], UNITS[k] || '', k === 'cycVel' ? 'PRELIM' : 'LIVE INPUT')
+  );
+
+  const geometryRows = [
+    row('Geometric reactor volume', fmt(state.geomVol,4), 'm³', 'LOCKED'),
+    row('Working liquid volume', fmt(r.workVolM3,4), 'm³', 'CALCULATED'),
+    row('Working liquid volume', fmt(r.workVolL,2), 'L', 'CALCULATED'),
+    row('U-bend centreline radius', fmt(r.ubendR_m,4), 'm', 'CALCULATED'),
+    row('U-bend centreline length', fmt(r.ubendL_m,4), 'm/bend', 'CALCULATED'),
+    row('Total straight-tube length', fmt(r.lStraight,2), 'm', 'CALCULATED'),
+    row('Total U-bend length', fmt(r.lBend,2), 'm', 'CALCULATED'),
+    row('Total flow-path length', fmt(r.lTotal,2), 'm', 'CALCULATED')
+  ];
+
+  const gasRows = [
+    row('CO₂ utilization rate', fmt(r.co2UtilH,4), 'kg/h', 'CALCULATED'),
+    row('CO₂ utilization rate', fmt(r.co2UtilDay,2), 'kg/day', 'CALCULATED'),
+    row('CO₂ inlet required', fmt(r.co2InletH,4), 'kg/h', 'CALCULATED'),
+    row('CO₂ inlet required', fmt(r.co2InletDay,2), 'kg/day', 'CALCULATED'),
+    row('CO₂ molar flow', fmt(r.co2MolarH,5), 'kmol/h', 'CALCULATED'),
+    row('Total flue-gas molar flow', fmt(r.totalMolarH,5), 'kmol/h', 'CALCULATED'),
+    row('Standard flue-gas flow', fmt(r.stdNm3h,3), 'Nm³/h', 'CALCULATED'),
+    row('Standard flue-gas flow', fmt(r.stdNLmin,1), 'NL/min', 'CALCULATED'),
+    row('Actual flue-gas flow at inlet temperature', fmt(r.actM3h,2), 'm³/h', `T=${state.flueTempIn}°C, P=${state.pressure} atm abs`),
+    row('Actual flue-gas flow at inlet temperature', fmt(r.actLmin,1), 'L/min', `T=${state.flueTempIn}°C, P=${state.pressure} atm abs`)
+  ];
+
+  const hydraulicRows = [
+    row('Tube cross-sectional area', fmt(r.tubeArea,6), 'm²', 'CALCULATED'),
+    row('Velocity for target Reynolds number', fmt(r.velocity,4), 'm/s', `Re target=${state.targetRe}`),
+    row('Flow per loop', fmt(r.qLoop_m3h,3), 'm³/h', 'CALCULATED'),
+    row('Total internal circulation', fmt(r.qTotal_m3h,2), 'm³/h', `${state.numLoops} loops`),
+    row('Reynolds number check', fmt(r.reCheck,0), '—', 'CALCULATED')
+  ];
+
+  const energyRows = [
+    row('Liquid mass', fmt(r.mLiquid,1), 'kg', 'CALCULATED'),
+    row('Flue-gas mass flow', fmt(r.mDotGas,2), 'kg/h', 'CALCULATED'),
+    row('Initial heat-transfer rate', fmt(r.qDot0,0), 'kJ/h', 'IDEAL SCREENING'),
+    row('Liquid thermal capacitance', fmt(r.cLiquid,0), 'kJ/K', 'CALCULATED'),
+    row('Heating coefficient', fmt(r.kCoeff,6), '1/h', 'CALCULATED'),
+    row(`Temperature at 24 h`, fmt(r.tempAt(24),2), '°C', 'SCREENING'),
+    row(`Temperature at 48 h`, fmt(r.tempAt(48),2), '°C', 'SCREENING'),
+    row(`Temperature at 72 h`, fmt(r.tempAt(72),2), '°C', 'SCREENING'),
+    row(`Temperature at 96 h`, fmt(r.tempAt(96),2), '°C', 'SCREENING'),
+    row(`Temperature at 120 h`, fmt(r.tempAt(120),2), '°C', 'SCREENING'),
+    row(`Temperature at 144 h`, fmt(r.tempAt(144),2), '°C', 'SCREENING'),
+    row(`Temperature at 168 h`, fmt(r.tempAt(168),2), '°C', 'SCREENING'),
+    row(`Temperature at ${state.batchDays*24} h`, fmt(r.tempAt(state.batchDays*24),2), '°C', 'SCREENING')
+  ];
+
+  const cycloneRows = [
+    row('Cyclone type', 'Tangential-entry reverse-flow separator', '', 'PRELIMINARY'),
+    row('PM reference particle size', state.pmSize, 'µm', 'REFERENCE ONLY'),
+    row('Assumed inlet velocity', state.cycVel, 'm/s', 'PRELIMINARY'),
+    row('Cyclone inlet area', fmt(r.cycA,6), 'm²', 'SCREENING'),
+    row('Screening cyclone diameter', fmt(r.cycD*1000,0), 'mm', 'SCREENING — NOT FINAL SIZE'),
+    row('Final PM concentration', 'TBD', '', 'REQUIRED'),
+    row('Particle-size distribution', 'TBD', '', 'REQUIRED'),
+    row('Particle density', 'TBD', '', 'REQUIRED'),
+    row('Target collection efficiency', 'TBD', '', 'REQUIRED'),
+    row('Allowable pressure drop', 'TBD', '', 'REQUIRED')
+  ];
+
+  const impactRows = changeLog.length
+    ? changeLog.map(c => row(
+        LABELS[c.key] || c.key,
+        `${fmt(c.oldV,4)} → ${fmt(c.newV,4)}`,
+        isFinite(c.pct) ? `${c.pct >= 0 ? '+' : ''}${fmt(c.pct,1)}%` : '—',
+        c.impacts.join('; ')
+      ))
+    : [row('Change log', 'No changes yet', '', '')];
+
+  const compareRows = COMPARE_FIELDS.map(f => {
+    const a = caseA ? caseA[f.key] : null;
+    const b = caseB ? caseB[f.key] : null;
+    let change = '—';
+    let impact = '—';
+    if(a !== null && b !== null){
+      const d = b - a;
+      const pct = a !== 0 ? (d / Math.abs(a)) * 100 : NaN;
+      change = `${d >= 0 ? '+' : ''}${fmt(d,3)} ${f.unit}${isFinite(pct) ? ` (${pct >= 0 ? '+' : ''}${fmt(pct,1)}%)` : ''}`;
+      impact = Math.abs(pct) > 5 ? 'Significant change' : 'Minor change';
+    }
+    return row(
+      f.label,
+      caseA ? fmt(a,3) : '—',
+      f.unit,
+      `Case B: ${caseB ? fmt(b,3) : '—'} ${f.unit} | Change: ${change} | ${impact}`
+    );
+  });
+
+  const notesRows = [
+    row('Current design basis', 'Batch · 8 days · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h · 85% capture · Re≈5000 · 12 loops', '', 'REFERENCE'),
+    row('Gas flow basis', `${fmt(r.stdNLmin,1)} NL/min standard`, 'NL/min', 'LIVE'),
+    row('Actual gas flow basis', `${fmt(r.actLmin,1)} L/min at ${state.flueTempIn}°C`, 'L/min', `LIVE; P=${state.pressure} atm abs`),
+    row('Energy model', 'Ideal complete sensible-heat-transfer screening model', '', 'NOT FINAL ENERGY BALANCE'),
+    row('Cyclone', 'Preliminary screening only', '', 'FINAL SIZING REQUIRES PLANT/VENDOR DATA'),
+    row('Validation', 'Plant flue-gas analysis and vendor/equipment data required', '', 'BEFORE FABRICATION')
+  ];
+
+  const workbook = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body{font-family:Arial,sans-serif;font-size:11pt;}
+  .sheet{border-collapse:collapse;width:100%;margin:0 0 28px 0;}
+  .sheet th,.sheet td{border:1px solid #b7b7b7;padding:6px 8px;}
+  .sheet-title th{background:#1f4e78;color:white;font-size:14pt;text-align:left;}
+  .head th{background:#d9eaf7;font-weight:bold;}
+  .sheet td:nth-child(2){mso-number-format:"0.0000";}
+</style>
+</head>
+<body>
+${section('CARBONONE MRPL — DESIGN BASIS', designBasisRows)}
+${section('REACTOR GEOMETRY', geometryRows)}
+${section('CO₂ & FLUE GAS MASS BALANCE', gasRows)}
+${section('INTERNAL RECIRCULATION HYDRAULICS', hydraulicRows)}
+${section('ENERGY — IDEAL SCREENING MODEL', energyRows)}
+${section('CYCLONE — PRELIMINARY SCREENING', cycloneRows)}
+${section('IMPACT ANALYSIS / CHANGE LOG', impactRows)}
+${section('CASE COMPARISON', compareRows)}
+${section('ENGINEERING NOTES', notesRows)}
+</body>
+</html>`;
+
+  const blob = new Blob([workbook], {type:'application/vnd.ms-excel'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'CarbonONE_MRPL_Calculation_Report.xls';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* ============================================================
+   15. INIT
+   ============================================================ */
+bindInputs();
+renderAll();
+renderCompare();
+window.addEventListener('resize', () => {
+  const r = compute(state);
+  drawTempChart(r);
+  drawCO2ConcChart(r);
+  drawCO2VolChart(r);
+  drawCircTubeChart(r);
+});
+
+})();
+</script>
+</body>
+</html>
