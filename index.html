@@ -82,8 +82,18 @@ a{color:var(--brand2);}
   overflow-y:auto; padding:14px 0;
 }
 .sidebar .navgroup-label{
-  font-size:11px; color:var(--text-faint); padding:10px 18px 6px; letter-spacing:.02em;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  font-size:11px; color:var(--text-faint); padding:10px 12px 8px 18px; letter-spacing:.02em;
+  cursor:pointer; user-select:none;
 }
+.navgroup-toggle{
+  width:28px; height:26px; display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--border); border-radius:6px; background:var(--bg-raised);
+  color:var(--text-dim); font-size:14px; line-height:1; cursor:pointer;
+}
+.navgroup-toggle:hover{border-color:var(--brand); color:var(--text);}
+.sidebar.sections-collapsed .navitem{display:none;}
+.sidebar.sections-collapsed .navgroup-label{padding-bottom:10px;}
 .navitem{
   display:flex; align-items:center; gap:10px;
   padding:9px 18px; font-size:13.5px; color:var(--text-dim); cursor:pointer;
@@ -211,6 +221,18 @@ p.lead{color:var(--text-dim); font-size:14px; max-width:70ch; margin:0 0 20px;}
 .warning.notice{background:#332a12; color:#f0c675;}
 .warning .wtag{font-family:var(--mono); font-size:10.5px; font-weight:700; flex-shrink:0; padding-top:1px;}
 
+
+/* ---------- Warning bar minimize control ---------- */
+#warningBar{transition:max-height .18s ease, opacity .18s ease;}
+#warningBar.collapsed{max-height:38px; overflow:hidden;}
+.warning-controls{height:38px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 12px 0 20px; background:#171d24; border-bottom:1px solid var(--border); color:var(--text-dim); font-size:11px; font-family:var(--mono); position:sticky; top:0; z-index:2;}
+.warning-summary{display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.warning-summary .count{color:var(--prelim); font-weight:700;}
+.warning-toggle{border:1px solid var(--border); background:var(--bg-panel-2); color:var(--text); border-radius:3px; padding:5px 10px; font-size:11px; cursor:pointer; font-family:var(--sans); flex-shrink:0;}
+.warning-toggle:hover{border-color:var(--brand); color:var(--brand2);}
+.warning-items{display:block;}
+#warningBar.collapsed .warning-items{display:none;}
+
 /* ---------- Modal (formula viewer) ---------- */
 .modal-overlay{
   position:fixed; inset:0; background:rgba(6,9,12,.72); z-index:200;
@@ -329,7 +351,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
 ::-webkit-scrollbar-thumb{background:var(--border); border-radius:5px;}
 
 /* ---------- Calculated geometry fields ---------- */
-.calc-field input[readonly]{
+.calc-field input[]{
   background:var(--bg-panel-2);
   color:var(--locked);
   border-color:rgba(79,174,122,.35);
@@ -340,6 +362,13 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   padding:2px 7px; border-radius:2px; font-weight:600; letter-spacing:.02em; white-space:nowrap;
   color:var(--locked); background:var(--locked-bg); border:1px solid rgba(79,174,122,.35);
 }
+.calc-field input[readonly], input[readonly][aria-readonly="true"]{cursor:not-allowed;opacity:.9;}
+
+.mode-selector-card{display:grid;grid-template-columns:minmax(260px,1fr) minmax(280px,1.6fr);gap:18px;align-items:end;padding:16px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02)}
+.mode-selector-card select{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font:inherit}
+.mode-summary{padding:12px 14px;border-left:3px solid var(--accent);background:rgba(255,255,255,.03);color:var(--text-muted);line-height:1.5}
+@media(max-width:800px){.mode-selector-card{grid-template-columns:1fr}}
+.mode-continuous-only{display:none}
 </style>
 </head>
 <body>
@@ -358,18 +387,23 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
 
 <div id="warningBar"></div>
 
-<nav class="sidebar" id="sidebar">
-  <div class="navgroup-label">MODEL SECTIONS</div>
+<nav class="sidebar sections-collapsed" id="sidebar">
+  <div class="navgroup-label" id="sectionsToggle" role="button" aria-expanded="false" tabindex="0">
+    <span>MODEL SECTIONS</span>
+    <button class="navgroup-toggle" id="sectionsToggleBtn" type="button" aria-label="Expand model sections" aria-expanded="false">+</button>
+  </div>
   <div class="navitem active" data-sec="basis"><span class="num">01</span>Design Basis</div>
   <div class="navitem" data-sec="geometry"><span class="num">02</span>Reactor Geometry</div>
   <div class="navitem" data-sec="fluegas"><span class="num">03</span>CO₂ &amp; Flue Gas</div>
   <div class="navitem" data-sec="hydraulics"><span class="num">04</span>Hydraulics</div>
-  <div class="navitem" data-sec="energy"><span class="num">05</span>Energy</div>
-  <div class="navitem" data-sec="cleaning"><span class="num">06</span>Flue Gas Cleaning</div>
-  <div class="navitem" data-sec="cyclone"><span class="num">07</span>Cyclone</div>
-  <div class="navitem" data-sec="impact"><span class="num">08</span>Impact Analysis</div>
-  <div class="navitem" data-sec="compare"><span class="num">09</span>Case Comparison</div>
-  <div class="navitem" data-sec="notes"><span class="num">10</span>Engineering Notes</div>
+  <div class="navitem" data-sec="massbalance"><span class="num">05</span>Mass Balance</div>
+  <div class="navitem" data-sec="energy"><span class="num">06</span>Energy Balance</div>
+  <div class="navitem" data-sec="cleaning"><span class="num">07</span>Flue Gas Cleaning</div>
+  <div class="navitem" data-sec="cyclone"><span class="num">08</span>Cyclone</div>
+  <div class="navitem" data-sec="impact"><span class="num">09</span>Impact Analysis</div>
+  <div class="navitem" data-sec="compare"><span class="num">10</span>Case Comparison</div>
+  <div class="navitem" data-sec="notes"><span class="num">11</span>Engineering Notes</div>
+  <div class="navitem" data-sec="requirements"><span class="num">12</span>Complete Design Requirements</div>
 </nav>
 
 <main class="main" id="content">
@@ -385,7 +419,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   <div class="qualif">PRELIMINARY ENGINEERING MODEL — FOR DESIGN DEVELOPMENT AND INTERNAL REVIEW. Not a fabrication drawing, guaranteed performance model, or final equipment sizing package.</div>
 
   <div class="legend">
-    <div class="item"><span class="badge locked">LOCKED</span> design basis</div>
+    <div class="item"><span class="badge input">INPUT</span> design basis</div>
     <div class="item"><span class="badge input">INPUT</span> user-editable</div>
     <div class="item"><span class="badge prelim">PRELIM</span> screening assumption</div>
     <div class="item"><span class="badge cond">COND</span> conditional</div>
@@ -393,19 +427,37 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   </div>
 
   <div class="card">
-    <h2>Reactor &amp; Batch Basis</h2>
+    <h2>Reactor Operating Mode</h2>
+    <div class="mode-selector-card">
+      <div class="field">
+        <label>Reactor operation mode <span class="badge locked">SELECT</span></label>
+        <div class="inputwrap">
+          <select id="in-reactorMode" data-key="reactorMode" aria-label="Reactor operation mode">
+            <option value="batch">Batch Reactor</option>
+            <option value="continuous">Continuous Reactor</option>
+          </select>
+        </div>
+        <div class="hint">Select the reactor operating mode. All mode-dependent labels, units and calculations update automatically.</div>
+      </div>
+      <div class="mode-summary" id="modeSummary">BATCH MODE — fixed cultivation cycle; batch mass balances are reported per batch.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Reactor &amp; <span class="mode-text" data-batch="Batch" data-continuous="Continuous">Batch</span> Basis</h2>
     <div class="fieldgrid">
-      <div class="field"><label>Geometric reactor volume <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Geometric reactor volume <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.0001" id="in-geomVol" data-key="geomVol"><span class="unit-suffix">m³</span></div></div>
-      <div class="field"><label>Working volume fraction <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Working volume fraction <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.1" id="in-workFrac" data-key="workFrac"><span class="unit-suffix">%</span></div></div>
-      <div class="field"><label>Batch cultivation time <span class="badge locked">LOCKED</span></label>
-        <div class="inputwrap"><input type="number" step="1" id="in-batchDays" data-key="batchDays"><span class="unit-suffix">days</span></div></div>
-      <div class="field"><label>Operating temperature target <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label><span id="modeTimeLabel">Batch cultivation time</span> <span class="badge input">INPUT</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-batchDays" data-key="batchDays"><span class="unit-suffix">days</span></div>
+        <div class="hint" id="modeTimeHint">For batch: total cultivation-cycle duration.</div></div>
+      <div class="field"><label>Operating temperature target <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.5" id="in-tempTarget" data-key="tempTarget"><span class="unit-suffix">°C</span></div></div>
-      <div class="field"><label>Initial feed temperature <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Initial feed temperature <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.5" id="in-tempInit" data-key="tempInit"><span class="unit-suffix">°C</span></div></div>
-      <div class="field"><label>Pressure <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Pressure <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.01" id="in-pressure" data-key="pressure"><span class="unit-suffix">atm abs</span></div></div>
     </div>
   </div>
@@ -413,37 +465,38 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   <div class="card">
     <h2>Tube &amp; Loop Geometry</h2>
     <div class="fieldgrid">
-      <div class="field"><label>Tube ID <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Tube ID <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-tubeID" data-key="tubeID"><span class="unit-suffix">mm</span></div></div>
-      <div class="field"><label>Tube OD <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Tube OD <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-tubeOD" data-key="tubeOD"><span class="unit-suffix">mm</span></div></div>
-      <div class="field"><label>Straight tube length <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Straight tube length <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.1" id="in-straightLen" data-key="straightLen"><span class="unit-suffix">m</span></div></div>
       <div class="field calc-field"><label>Straight tubes — calculated <span class="calc-badge">CALC</span></label>
-        <div class="inputwrap"><input type="number" step="1" id="in-numStraight" data-key="numStraight" readonly><span class="unit-suffix">count</span></div></div>
+        <div class="inputwrap"><input type="number" step="1" id="in-numStraight" readonly aria-readonly="true"><span class="unit-suffix">count</span></div></div>
       <div class="field calc-field"><label>U-bends — calculated <span class="calc-badge">CALC</span></label>
-        <div class="inputwrap"><input type="number" step="1" id="in-numUbends" data-key="numUbends" readonly><span class="unit-suffix">count</span></div></div>
-      <div class="field"><label>U-bend centre-to-centre <span class="badge locked">LOCKED</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-numUbends" readonly aria-readonly="true"><span class="unit-suffix">count</span></div></div>
+      <div class="field"><label>U-bend centre-to-centre <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-ubendCC" data-key="ubendCC"><span class="unit-suffix">mm</span></div></div>
-      <div class="field"><label>Liquid main header ID <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Liquid main header ID <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-headerID" data-key="headerID"><span class="unit-suffix">mm</span></div></div>
-      <div class="field"><label>Internal circulation loops <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Internal circulation loops <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-numLoops" data-key="numLoops"><span class="unit-suffix">count</span></div></div>
+      <div class="field"><label>Tube-count selection <span class="badge locked">AUTO</span></label><div class="inputwrap"><input type="text" value="At least target volume" readonly aria-readonly="true"><span class="unit-suffix">AUTO</span></div><div class="hint">Whole tubes are automatically rounded up so the physical reactor is never undersized.</div></div>
     </div>
   </div>
 
   <div class="card">
     <h2>Flue Gas Basis</h2>
     <div class="fieldgrid">
-      <div class="field"><label>CO₂ concentration <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>CO₂ concentration <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.1" id="in-co2Frac" data-key="co2Frac"><span class="unit-suffix">%</span></div></div>
-      <div class="field"><label>CO₂ utilization design basis <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>CO₂ utilization design basis <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.01" id="in-co2Util" data-key="co2Util"><span class="unit-suffix">g/L/h</span></div></div>
-      <div class="field"><label>CO₂ capture efficiency <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>CO₂ capture efficiency <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-captureEff" data-key="captureEff"><span class="unit-suffix">%</span></div></div>
-      <div class="field"><label>CO₂ molecular weight <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>CO₂ molecular weight <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.1" id="in-co2MW" data-key="co2MW"><span class="unit-suffix">kg/kmol</span></div></div>
-      <div class="field"><label>Flue-gas inlet temperature <span class="badge locked">LOCKED</span></label>
+      <div class="field"><label>Flue-gas inlet temperature <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-flueTempIn" data-key="flueTempIn"><span class="unit-suffix">°C</span></div></div>
       <div class="field"><label>Normal gas density (NTP) <span class="badge prelim">PRELIM</span></label>
         <div class="inputwrap"><input type="number" step="0.01" id="in-normDensity" data-key="normDensity"><span class="unit-suffix">kg/Nm³</span></div></div>
@@ -465,8 +518,52 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
         <div class="inputwrap"><input type="number" step="0.1" id="in-gasCp" data-key="gasCp"><span class="unit-suffix">kJ/kg·K</span></div></div>
       <div class="field"><label>PM reference particle size <span class="badge prelim">PRELIM</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-pmSize" data-key="pmSize"><span class="unit-suffix">µm</span></div></div>
+      <div class="field"><label>U-bend loss coefficient K <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-uBendK" data-key="uBendK"><span class="unit-suffix">– / bend</span></div></div>
+      <div class="field"><label>Supply header length <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-headerLength" data-key="headerLength"><span class="unit-suffix">m</span></div></div>
+      <div class="field"><label>Return header length <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-returnHeaderLength" data-key="returnHeaderLength"><span class="unit-suffix">m</span></div></div>
+      <div class="field"><label>Branch length <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-branchLength" data-key="branchLength"><span class="unit-suffix">m</span></div></div>
+      <div class="field"><label>Branch ID <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-branchID" data-key="branchID"><span class="unit-suffix">mm</span></div></div>
+      <div class="field"><label>Supply-header K total <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-supplyFittingK" data-key="supplyFittingK"><span class="unit-suffix">–</span></div></div>
+      <div class="field"><label>Return-header K total <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-returnFittingK" data-key="returnFittingK"><span class="unit-suffix">–</span></div></div>
+      <div class="field"><label>Branch K total <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-branchFittingK" data-key="branchFittingK"><span class="unit-suffix">–</span></div></div>
+      <div class="field"><label>Loop / tube-side K total <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-fittingK" data-key="fittingK"><span class="unit-suffix">–</span></div></div>
+      <div class="field"><label>Static head difference <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" id="in-staticHead" data-key="staticHead"><span class="unit-suffix">m</span></div></div>
+      <div class="field"><label>Pump efficiency <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.01" min="0.01" max="1" id="in-pumpEfficiency" data-key="pumpEfficiency"><span class="unit-suffix">fraction</span></div></div>
+      <div class="field"><label>Heat-transfer effectiveness ε <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.05" min="0" max="1" id="in-heatEffectiveness" data-key="heatEffectiveness"><span class="unit-suffix">fraction</span></div></div>
+      <div class="field"><label>Ambient temperature <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.5" id="in-ambientTemp" data-key="ambientTemp"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Ambient UA <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-ambientUA" data-key="ambientUA"><span class="unit-suffix">kJ/h-K</span></div></div>
+      <div class="field"><label>Stairmand Euler number <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-cycloneEuler" data-key="cycloneEuler"><span class="unit-suffix">–</span></div></div>
+      <div class="field"><label>Gas viscosity <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.001" min="0" id="in-gasViscosity" data-key="gasViscosity"><span class="unit-suffix">mPa·s</span></div></div>
+      <div class="field"><label>Particle density <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="10" min="0" id="in-particleDensity" data-key="particleDensity"><span class="unit-suffix">kg/m³</span></div></div>
+      <div class="field"><label>Effective cyclone turns N<sub>e</sub> <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.5" min="1" id="in-cycloneEffectiveTurns" data-key="cycloneEffectiveTurns"><span class="unit-suffix">–</span></div></div>
     </div>
   </div>
+
+  <div class="card"><h2>Additional Engineering Inputs — Design Completion</h2><div class="fieldgrid">
+    <div class="field"><label>Initial biomass <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-biomassInitial" data-key="biomassInitial"><span class="unit-suffix">g/L</span></div></div>
+    <div class="field"><label>Final biomass target <span class="badge input">TARGET</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-biomassFinal" data-key="biomassFinal"><span class="unit-suffix">g/L</span></div></div>
+    <div class="field"><label>Lipid fraction of DCW <span class="badge input">TARGET</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" max="1" id="in-lipidFraction" data-key="lipidFraction"><span class="unit-suffix">fraction</span></div></div>
+    <div class="field"><label>CO₂→biomass yield <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" id="in-biomassYieldCO2" data-key="biomassYieldCO2"><span class="unit-suffix">g/g</span></div></div>
+    <div class="field"><label>Light intensity <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-lightIntensity" data-key="lightIntensity"><span class="unit-suffix">µmol/m²/s</span></div></div>
+    <div class="field"><label>Optical extinction coefficient <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.001" min="0" id="in-opticalExtCoeff" data-key="opticalExtCoeff"><span class="unit-suffix">m²/g</span></div></div>
+    <div class="field"><label>Tube pitch / optical path <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.001" min="0" id="in-tubePitch" data-key="tubePitch"><span class="unit-suffix">m</span></div></div>
+    <div class="field"><label>LED load per area <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-ledPowerPerArea" data-key="ledPowerPerArea"><span class="unit-suffix">W/m²</span></div></div>
+    <div class="field"><label>kLa <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" id="in-kla" data-key="kla"><span class="unit-suffix">1/h</span></div></div>
+    <div class="field"><label>CO₂ saturation concentration C* <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.001" min="0" id="in-co2SatConc" data-key="co2SatConc"><span class="unit-suffix">g/L</span></div></div>
+    <div class="field"><label>Liquid CO₂ concentration C_L <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.001" min="0" id="in-co2LiquidConc" data-key="co2LiquidConc"><span class="unit-suffix">g/L</span></div></div>
+    <div class="field"><label><span id="fillTimeLabel">Batch fill time</span> <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.5" min="0" id="in-fillTime" data-key="fillTime"><span class="unit-suffix">h</span></div></div>
+    <div class="field"><label><span id="harvestTimeLabel">Batch harvest time</span> <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.5" min="0" id="in-harvestTime" data-key="harvestTime"><span class="unit-suffix">h</span></div></div>
+    <div class="field"><label>CIP velocity <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-cipVelocity" data-key="cipVelocity"><span class="unit-suffix">m/s</span></div></div>
+    <div class="field"><label>Design pressure <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-designPressure" data-key="designPressure"><span class="unit-suffix">barg</span></div></div>
+    <div class="field"><label>Allowable stress <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-allowableStress" data-key="allowableStress"><span class="unit-suffix">MPa</span></div></div>
+    <div class="field"><label>Weld efficiency <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" max="1" id="in-weldEfficiency" data-key="weldEfficiency"><span class="unit-suffix">fraction</span></div></div>
+    <div class="field"><label>Corrosion allowance <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-corrosionAllowance" data-key="corrosionAllowance"><span class="unit-suffix">mm</span></div></div>
+    <div class="field"><label>Thermal expansion coefficient α <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.000001" min="0" id="in-thermalExpansionCoeff" data-key="thermalExpansionCoeff"><span class="unit-suffix">1/K</span></div></div>
+    <div class="field"><label>Reference length <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-referenceLength" data-key="referenceLength"><span class="unit-suffix">m</span></div></div>
+    <div class="field"><label>Mechanical design temperature <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="1" id="in-designTemp" data-key="designTemp"><span class="unit-suffix">°C</span></div></div>
+    <div class="field"><label>Gas blower ΔP <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-gasBlowerDP" data-key="gasBlowerDP"><span class="unit-suffix">kPa</span></div></div>
+    <div class="field"><label>Blower efficiency <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" max="1" id="in-blowerEfficiency" data-key="blowerEfficiency"><span class="unit-suffix">fraction</span></div></div>
+  </div></div>
 
   <p class="footnote">All percentages above are entered and displayed as %, not as decimal fractions — the model converts internally (e.g. 13% → 0.13) so a typo can't silently create a 99% CO₂ stream. Data basis: CarbonONE MRPL model-basis workbook ("Live Model Inputs" / "Final Design" sheets), overridden where noted by the current locked design basis (batch, 8-day, 90% working volume, 35°C target, 13% CO₂, 0.25 g/L/h utilization, 85% capture, Re≈5000, 12 loops).</p>
 </section>
@@ -482,7 +579,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   <div class="grid2">
     <div class="card">
       <h2>Volume</h2>
-      <div class="row"><div class="label">Geometric reactor volume<span class="sub">V<sub>geom</sub></span></div><div class="meta"><span class="badge locked">LOCKED</span><div class="val" id="r-geomVol">–</div></div></div>
+      <div class="row"><div class="label">Geometric reactor volume<span class="sub">V<sub>geom</sub></span></div><div class="meta"><span class="badge input">INPUT</span><div class="val" id="r-geomVol">–</div></div></div>
       <div class="row"><div class="label">Working liquid volume<span class="sub">V<sub>working</sub> = V<sub>geom</sub> × fraction</span></div><div class="meta"><span class="badge locked">CALC</span><button class="formula-btn" data-f="workVol">View Formula</button><div class="val" id="r-workVolM3">–</div></div></div>
       <div class="row"><div class="label">Working liquid volume</div><div class="meta"><button class="formula-btn" data-f="workVolL">View Formula</button><div class="val" id="r-workVolL">–</div></div></div>
     </div>
@@ -495,15 +592,15 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
 
   <div class="card">
     <h2>Tube &amp; U-Bend Count Calculation</h2>
-    <p class="footnote">The physical tube count is calculated from the <b>geometric reactor volume</b>. Working-volume fraction affects liquid fill only; it is not used to size the physical tube count. For a serpentine arrangement with N<sub>loops</sub> independent loops, N<sub>U-bends</sub> = N<sub>tubes</sub> − N<sub>loops</sub>.</p>
+    <p class="footnote"><b>Automatic tube sizing:</b> Enter the required geometric reactor volume, tube ID/OD, straight-tube length, U-bend centre-to-centre dimension, and number of loops. The model automatically calculates the whole number of straight tubes required and then calculates the U-bend count. The count is always rounded <b>up</b> so the physical reactor is not undersized.</p>
     <div class="row"><div class="label">Internal cross-sectional area<span class="sub">A<sub>tube</sub> = πD<sub>ID</sub>²/4</span></div><div class="meta"><button class="formula-btn" data-f="tubeVol">View Formula</button><div class="val" id="r-tubeAreaGeom">–</div></div></div>
     <div class="row"><div class="label">Volume per straight tube<span class="sub">V<sub>tube</sub> = A<sub>tube</sub> × L<sub>tube</sub></span></div><div class="meta"><button class="formula-btn" data-f="tubeVol">View Formula</button><div class="val" id="r-tubeVol">–</div></div></div>
     <div class="row"><div class="label">Volume per U-bend<span class="sub">V<sub>U</sub> = A<sub>tube</sub> × L<sub>U</sub></span></div><div class="meta"><button class="formula-btn" data-f="ubendVol">View Formula</button><div class="val" id="r-ubendVol">–</div></div></div>
     <div class="row"><div class="label">Theoretical tube count<span class="sub">N<sub>tubes,theory</sub> = (V<sub>geom</sub> + N<sub>loops</sub>V<sub>U</sub>)/(V<sub>tube</sub> + V<sub>U</sub>)</span></div><div class="meta"><button class="formula-btn" data-f="tubeCount">View Formula</button><div class="val" id="r-tubeCountTheory">–</div></div></div>
-    <div class="row"><div class="label">Selected straight-tube count<span class="sub">Nearest whole tube to theoretical count</span></div><div class="meta"><span class="calc-badge">CALC</span><div class="val" id="r-numStraightCalc">–</div></div></div>
+    <div class="row"><div class="label">Selected straight-tube count<span class="sub">Whole-tube count selected by the volume criterion</span></div><div class="meta"><span class="calc-badge">CALC</span><div class="val" id="r-numStraightCalc">–</div></div></div>
     <div class="row"><div class="label">Calculated U-bend count<span class="sub">N<sub>U-bends</sub> = N<sub>tubes</sub> − N<sub>loops</sub></span></div><div class="meta"><button class="formula-btn" data-f="ubendCount">View Formula</button><div class="val" id="r-numUbendsCalc">–</div></div></div>
     <div class="row"><div class="label">Reconciled geometric volume<span class="sub">V<sub>actual</sub> = N<sub>tubes</sub>V<sub>tube</sub> + N<sub>U-bends</sub>V<sub>U</sub></span></div><div class="meta"><button class="formula-btn" data-f="volumeReconcile">View Formula</button><div class="val" id="r-volumeAchieved">–</div></div></div>
-    <div class="row"><div class="label">Volume deviation from target<span class="sub">ΔV = V<sub>actual</sub> − V<sub>geom</sub></span></div><div class="meta"><div class="val" id="r-volumeError">–</div></div></div>
+    <div class="row"><div class="label">Volume deviation from target<span class="sub">ΔV = V<sub>actual</sub> − V<sub>geom</sub>; positive means capacity is at or above target</span></div><div class="meta"><div class="val" id="r-volumeError">–</div></div></div>
     <div class="row"><div class="label">Average tubes per loop<span class="sub">N<sub>tubes</sub>/N<sub>loops</sub> — actual loop split may differ by ±1 tube</span></div><div class="meta"><div class="val" id="r-tubesPerLoop">–</div></div></div>
   </div>
 
@@ -564,7 +661,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   <div class="section-header">
     <div class="tag">04 / HYDRAULICS</div>
     <h1>Internal Recirculation Hydraulics</h1>
-    <p class="lead">This is internal recirculation flow within the closed-loop reactor — <b>not</b> the batch feed flow and not an HRT-based continuous feed flow. The reactor basis is batch cultivation, so no HRT feed-flow figure is introduced here.</p>
+    <p class="lead" id="hydraulicModeLead">This is internal recirculation flow within the closed-loop reactor — <b>not</b> the batch feed flow and not an HRT-based continuous feed flow. The reactor basis is batch cultivation, so no HRT feed-flow figure is introduced here.</p>
   </div>
 
   <div class="card">
@@ -573,6 +670,26 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
     <div class="row"><div class="label">Flow per loop<span class="sub">Q<sub>loop</sub> = v × A</span></div><div class="meta"><button class="formula-btn" data-f="qLoop">View Formula</button><div class="val" id="r-qLoop">–</div></div></div>
     <div class="row"><div class="label">Total internal circulation<span class="sub">Q<sub>total</sub> = Q<sub>loop</sub> × N<sub>loops</sub></span></div><div class="meta"><button class="formula-btn" data-f="qTotal">View Formula</button><div class="val" id="r-qTotal">–</div></div></div>
     <div class="row"><div class="label">Reynolds number check<span class="sub">Re = ρvD / μ</span></div><div class="meta"><button class="formula-btn" data-f="reCheck">View Formula</button><div class="val" id="r-reCheck">–</div></div></div>
+     <div class="row"><div class="label">Main-header cross-sectional area<span class="sub">A<sub>h</sub> = πD<sub>h</sub>²/4</span></div><div class="meta"><button class="formula-btn" data-f="headerArea">View Formula</button><div class="val" id="r-headerArea">–</div></div></div>
+     <div class="row"><div class="label">Main-header velocity<span class="sub">v<sub>h</sub> = Q<sub>total</sub> / A<sub>h</sub></span></div><div class="meta"><button class="formula-btn" data-f="headerVelocity">View Formula</button><div class="val" id="r-headerVelocity">–</div></div></div>
+     <div class="row"><div class="label">Main-header Reynolds number<span class="sub">Re<sub>h</sub> = ρv<sub>h</sub>D<sub>h</sub>/μ</span></div><div class="meta"><button class="formula-btn" data-f="headerRe">View Formula</button><div class="val" id="r-headerRe">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Pressure Drop &amp; Pump Duty</h2>
+    <div class="row"><div class="label">Tube friction pressure drop<span class="sub">ΔP = f(L/D)(ρv²/2)</span></div><div class="meta"><button class="formula-btn" data-f="dpTube">View Formula</button><div class="val" id="r-dpTube">–</div></div></div>
+    <div class="row"><div class="label">U-bend pressure drop<span class="sub">ΔP = KΣ(ρv²/2)</span></div><div class="meta"><button class="formula-btn" data-f="dpUBend">View Formula</button><div class="val" id="r-dpUBend">–</div></div></div>
+    <div class="row"><div class="label">Supply-header pressure drop<span class="sub">Σ f(L/D)(ρv²/2), section-by-section</span></div><div class="meta"><button class="formula-btn" data-f="dpSupplyHeader">View Formula</button><div class="val" id="r-dpSupplyHeader">–</div></div></div>
+    <div class="row"><div class="label">Return-header pressure drop<span class="sub">Σ f(L/D)(ρv²/2), section-by-section</span></div><div class="meta"><button class="formula-btn" data-f="dpReturnHeader">View Formula</button><div class="val" id="r-dpReturnHeader">–</div></div></div>
+    <div class="row"><div class="label">Total header pressure drop</div><div class="meta"><button class="formula-btn" data-f="dpHeader">View Formula</button><div class="val" id="r-dpHeader">–</div></div></div>
+    <div class="row"><div class="label">Branch pressure drop<span class="sub">Darcy-Weisbach + branch loss</span></div><div class="meta"><button class="formula-btn" data-f="dpBranch">View Formula</button><div class="val" id="r-dpBranch">–</div></div></div>
+    <div class="row"><div class="label">Component fittings / local losses</div><div class="meta"><button class="formula-btn" data-f="dpFittings">View Formula</button><div class="val" id="r-dpFittings">–</div></div></div>
+    <div class="row"><div class="label">Frictional hydraulic head</div><div class="meta"><div class="val" id="r-tdhFriction">–</div></div></div>
+    <div class="row"><div class="label">Static head difference</div><div class="meta"><div class="val" id="r-staticHead">–</div></div></div>
+    <div class="row"><div class="label">Total hydraulic pressure drop</div><div class="meta"><button class="formula-btn" data-f="dpTotal">View Formula</button><div class="val" id="r-dpTotal">–</div></div></div>
+    <div class="row"><div class="label">Required TDH</div><div class="meta"><button class="formula-btn" data-f="tdh">View Formula</button><div class="val" id="r-tdh">–</div></div></div>
+    <div class="row"><div class="label">Hydraulic power</div><div class="meta"><button class="formula-btn" data-f="pumpPower">View Formula</button><div class="val" id="r-pumpPower">–</div></div></div>
+    <div class="row"><div class="label">Pump shaft power</div><div class="meta"><button class="formula-btn" data-f="pumpShaft">View Formula</button><div class="val" id="r-pumpShaft">–</div></div></div>
   </div>
 
   <div class="card chart-card">
@@ -581,12 +698,63 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   </div>
 </section>
 
-<!-- ============ 05 ENERGY ============ -->
+<!-- ============ 05 MASS BALANCE ============ -->
+<section class="section" id="sec-massbalance">
+  <div class="section-header">
+    <div class="tag">05 / MASS BALANCE</div>
+    <h1>Process Mass Balance — <span class="mode-text" data-batch="Batch Reactor" data-continuous="Continuous Reactor">Batch Reactor</span></h1>
+    <p class="lead"><span id="massBalanceLead">Batch material accounting</span> for liquid inventory, biomass formation, lipid product, CO₂ input/utilization and preliminary nutrient demand. The model does not force an artificial overall closure where validated composition/yield data are unavailable.</p>
+  </div>
+
+  <div class="qualif" id="massBalanceBasis">MASS-BALANCE BASIS: 90% working volume and 8-day batch. Biomass/lipid values are target/design-basis values. CO₂ utilization is a process design basis; final biological uptake and elemental closure require validated experimental/off-gas data.</div>
+
+  <div class="card">
+    <h2><span class="mode-text" data-batch="Batch Inventory &amp; Biomass Balance" data-continuous="Continuous Inventory &amp; Biomass Balance">Batch Inventory &amp; Biomass Balance</span></h2>
+    <div class="row"><div class="label">Working liquid inventory<span class="sub">M<sub>liq</sub> = V<sub>working</sub> × ρ<sub>liq</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbLiquidMass">View Formula</button><div class="val" id="r-mbLiquidMass">–</div></div></div>
+    <div class="row mode-continuous-only" style="display:none"><div class="label">Continuous liquid flow<span class="sub">Q = V<sub>working</sub> / τ</span></div><div class="meta"><button class="formula-btn" data-f="continuousFlow">View Formula</button><div class="val" id="r-contFlow">–</div></div></div>
+    <div class="row"><div class="label">Initial biomass inventory<span class="sub">M<sub>X,0</sub> = X<sub>0</sub> × V<sub>working</sub> / 1000</span></div><div class="meta"><button class="formula-btn" data-f="mbBiomassInitial">View Formula</button><div class="val" id="r-mbBiomassInitial">–</div></div></div>
+    <div class="row"><div class="label">Final biomass inventory<span class="sub">M<sub>X,f</sub> = X<sub>f</sub> × V<sub>working</sub> / 1000</span></div><div class="meta"><button class="formula-btn" data-f="mbBiomassFinal">View Formula</button><div class="val" id="r-mbBiomassFinal">–</div></div></div>
+    <div class="row"><div class="label" id="mbDeltaLabel">Net biomass formed per batch<span class="sub" id="mbDeltaSub">ΔM<sub>X</sub> = (X<sub>f</sub> − X<sub>0</sub>)V<sub>working</sub>/1000</span></div><div class="meta"><button class="formula-btn" data-f="mbBiomassDelta">View Formula</button><div class="val" id="r-mbBiomassDelta">–</div></div></div>
+    <div class="row"><div class="label" id="mbProdLabel">Biomass productivity<span class="sub" id="mbProdSub">P<sub>X</sub> = (X<sub>f</sub> − X<sub>0</sub>)/t<sub>batch</sub></span></div><div class="meta"><button class="formula-btn" data-f="biomassProductivity">View Formula</button><div class="val" id="r-mbBiomassProd">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Lipid Product Balance</h2>
+    <div class="row"><div class="label">Final lipid concentration<span class="sub">C<sub>lipid</sub> = X<sub>f</sub> × f<sub>lipid</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbLipidConc">View Formula</button><div class="val" id="r-mbLipidConc">–</div></div></div>
+    <div class="row"><div class="label" id="mbLipidLabel">Lipid product per batch<span class="sub" id="mbLipidSub">M<sub>lipid</sub> = V<sub>working</sub> × C<sub>lipid</sub> / 1000</span></div><div class="meta"><button class="formula-btn" data-f="lipidBatch">View Formula</button><div class="val" id="r-mbLipidBatch">–</div></div></div>
+    <div class="row"><div class="label">Non-lipid biomass at harvest<span class="sub">M<sub>non-lipid</sub> = M<sub>X,f</sub> − M<sub>lipid</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbNonLipid">View Formula</button><div class="val" id="r-mbNonLipid">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2 id="co2MassBalanceHeading">CO₂ Batch Mass Balance</h2>
+    <div class="row"><div class="label" id="mbCo2InLabel">CO₂ inlet to reactor per batch<span class="sub" id="mbCo2InSub">M<sub>CO₂,in</sub> = ṁ<sub>CO₂,in</sub> × t<sub>batch</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbCo2In">View Formula</button><div class="val" id="r-mbCo2In">–</div></div></div>
+    <div class="row"><div class="label" id="mbCo2UtilLabel">CO₂ utilized / captured design basis<span class="sub" id="mbCo2UtilSub">M<sub>CO₂,util</sub> = ṁ<sub>CO₂,util</sub> × t<sub>batch</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbCo2Util">View Formula</button><div class="val" id="r-mbCo2Util">–</div></div></div>
+    <div class="row"><div class="label">CO₂ leaving reactor — screening<span class="sub">M<sub>CO₂,out</sub> = M<sub>CO₂,in</sub> − M<sub>CO₂,util</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbCo2Out">View Formula</button><div class="val" id="r-mbCo2Out">–</div></div></div>
+    <div class="row"><div class="label">CO₂ utilization fraction check<span class="sub">η<sub>CO₂</sub> = M<sub>CO₂,util</sub> / M<sub>CO₂,in</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbCo2Eff">View Formula</button><div class="val" id="r-mbCo2Eff">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Elemental / Nutrient Demand — Preliminary</h2>
+    <p class="footnote">These are stoichiometric screening quantities based on assumed biomass elemental mass fractions. They are not fertilizer recipes until biomass composition and nutrient uptake are experimentally validated.</p>
+    <div class="row"><div class="label">Carbon contained in net biomass<span class="sub">M<sub>C,bio</sub> = ΔM<sub>X</sub> × w<sub>C</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbCarbon">View Formula</button><div class="val" id="r-mbCarbon">–</div></div></div>
+    <div class="row"><div class="label">Nitrogen contained in net biomass<span class="sub">M<sub>N,bio</sub> = ΔM<sub>X</sub> × w<sub>N</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbNitrogen">View Formula</button><div class="val" id="r-mbNitrogen">–</div></div></div>
+    <div class="row"><div class="label">Phosphorus contained in net biomass<span class="sub">M<sub>P,bio</sub> = ΔM<sub>X</sub> × w<sub>P</sub></span></div><div class="meta"><button class="formula-btn" data-f="mbPhosphorus">View Formula</button><div class="val" id="r-mbPhosphorus">–</div></div></div>
+    <div class="row"><div class="label">Carbon closure status<span class="sub">Compare carbon in net biomass with carbon represented by CO₂ utilization; respiration/by-products/outlet CO₂ require validation.</span></div><div class="meta"><div class="val" id="r-mbCarbonStatus">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Mass-Balance Scope</h2>
+    <div class="trace-chain">LIQUID FEED / STARTUP CHARGE → PBR → BIOMASS + LIPID HARVEST + DISSOLVED/OUTLET SPECIES + CO₂ OUTLET + WATER / EVAPORATION + BY-PRODUCTS</div>
+    <p class="footnote">A fully closed overall mass balance additionally requires feed composition, evaporation/condensation, dissolved gas, nutrient feed, purge/vent composition, harvest losses and validated elemental/product stoichiometry. The model therefore reports the calculable balances explicitly and labels the remaining closure as TBD.</p>
+  </div>
+</section>
+
+<!-- ============ 06 ENERGY BALANCE ============ -->
 <section class="section" id="sec-energy">
   <div class="section-header">
     <div class="tag">05 / ENERGY</div>
-    <h1>Transient Heating — Screening Model</h1>
-    <p class="lead">IDEAL COMPLETE SENSIBLE-HEAT-TRANSFER SCREENING MODEL. This treats the flue gas as instantaneously and completely transferring its sensible heat to the batch liquid. It is a transient screening calculation, not a temperature-maintenance or full reactor energy balance.</p>
+    <h1>Transient Heating — Engineering Screening Model</h1>
+    <p class="lead">Uses a heat-transfer effectiveness factor and optional ambient UA loss. With ε=1 and UA=0 it reduces to the ideal upper-bound model. It is not a temperature-control model and does not claim maintenance at 35°C.</p>
   </div>
 
   <div class="card">
@@ -595,10 +763,13 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
     <div class="row"><div class="label">Initial heat-transfer rate<span class="sub">Q̇₀ = ṁ<sub>gas</sub> Cp<sub>gas</sub>(T<sub>gas</sub> − T₀)</span></div><div class="meta"><button class="formula-btn" data-f="qDot0">View Formula</button><div class="val" id="r-qDot0">–</div></div></div>
     <div class="row"><div class="label">Liquid thermal capacitance<span class="sub">C = m<sub>liq</sub> Cp<sub>liq</sub></span></div><div class="meta"><button class="formula-btn" data-f="cLiquid">View Formula</button><div class="val" id="r-cLiquid">–</div></div></div>
     <div class="row"><div class="label">Heating coefficient<span class="sub">k = ṁ<sub>gas</sub>Cp<sub>gas</sub> / (m<sub>liq</sub>Cp<sub>liq</sub>)</span></div><div class="meta"><button class="formula-btn" data-f="kCoeff">View Formula</button><div class="val" id="r-kCoeff">–</div></div></div>
+    <div class="row"><div class="label">Heat-transfer effectiveness ε</div><div class="meta"><div class="val" id="r-heatEff">–</div></div></div>
+    <div class="row"><div class="label">Initial actual gas heat-transfer rate</div><div class="meta"><button class="formula-btn" data-f="qDotActual">View Formula</button><div class="val" id="r-qDotActual">–</div></div></div>
+    <div class="row"><div class="label">Ambient heat-loss coefficient UA</div><div class="meta"><div class="val" id="r-ambientUA">–</div></div></div>
   </div>
 
   <div class="card">
-    <h2>Temperature vs Time — T(t) = T<sub>gas</sub> − (T<sub>gas</sub> − T₀)·e<sup>−kt</sup></h2>
+    <h2>Temperature vs Time — transient liquid energy balance</h2>
     <button class="formula-btn" data-f="tOfT" style="margin-bottom:10px;">View Formula</button>
     <table>
       <thead><tr><th>Time (h)</th><th>Temperature (°C)</th><th>Rise from T₀</th></tr></thead>
@@ -607,7 +778,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   </div>
 
   <div class="card chart-card">
-    <h3>Reactor Temperature vs Time (batch horizon)</h3>
+    <h3 id="tempHorizonHeading">Reactor Temperature vs Time (batch horizon)</h3>
     <canvas id="chartTemp" height="240"></canvas>
   </div>
 
@@ -617,13 +788,13 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   </div>
   <div class="row"><div class="label">Temperature at selected time</div><div class="meta"><button class="formula-btn" data-f="tSelect">View Formula</button><div class="val" id="r-tSelectOut">–</div></div></div>
 
-  <div class="qualif">A rigorous overall energy balance requires: heat-transfer effectiveness / UA, ambient heat losses, pump heat, LED heat (if applicable), biological heat, and actual gas–liquid contact/transfer efficiency. None of these are included in the screening model above.</div>
+  <div class="qualif">This live model includes a first-order gas-to-liquid heat-transfer term (εṁCpΔT) and an optional ambient UA loss. Pump heat, LED heat, biological heat, wall/insulation conduction, radiation, evaporation, gas-side heat-capacity change, and detailed gas-liquid exchanger geometry remain outside this screening balance and must be added/validated before thermal design is finalized.</div>
 </section>
 
 <!-- ============ 06 FLUE GAS CLEANING ============ -->
 <section class="section" id="sec-cleaning">
   <div class="section-header">
-    <div class="tag">06 / FLUE GAS CLEANING</div>
+    <div class="tag">07 / FLUE GAS CLEANING</div>
     <h1>Flue-Gas Cleaning &amp; Conditioning</h1>
     <p class="lead">Not every unit is automatically required. Toggle stages on to reflect the actual expected flue-gas composition; each toggle is marked conditional until confirmed by MRPL flue-gas analysis.</p>
   </div>
@@ -651,7 +822,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
 <!-- ============ 07 CYCLONE ============ -->
 <section class="section" id="sec-cyclone">
   <div class="section-header">
-    <div class="tag">07 / CYCLONE</div>
+    <div class="tag">08 / CYCLONE</div>
     <h1>Cyclone — Preliminary Screening Sizing</h1>
     <p class="lead">SCREENING ESTIMATE ONLY — NOT FINAL FABRICATION SIZE. Uses actual flue-gas flow at inlet temperature and an assumed inlet velocity.</p>
   </div>
@@ -662,6 +833,9 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
     <div class="row"><div class="label">Assumed inlet velocity <span class="badge prelim">PRELIM</span></div><div class="meta"><div class="val" id="r-cycVel">–</div></div></div>
     <div class="row"><div class="label">Cyclone inlet area<span class="sub">A<sub>in</sub> = Q / v<sub>inlet</sub></span></div><div class="meta"><button class="formula-btn" data-f="cycA">View Formula</button><div class="val" id="r-cycA">–</div></div></div>
     <div class="row"><div class="label">Screening cyclone diameter<span class="sub">D<sub>c</sub> ≈ √(A<sub>in</sub> / 0.1)</span></div><div class="meta"><button class="formula-btn" data-f="cycD">View Formula</button><div class="val" id="r-cycD">–</div></div></div>
+    <div class="row"><div class="label">Stairmand inlet dimensions<span class="sub">a = 0.5D; b = 0.2D</span></div><div class="meta"><div class="val" id="r-cycInlet">–</div></div></div>
+    <div class="row"><div class="label">Cyclone pressure-drop estimate<span class="sub">ΔP = Eu(ρ<sub>g</sub>v²/2)</span></div><div class="meta"><div class="val" id="r-cycDp">–</div></div></div>
+    <div class="row"><div class="label">Lapple cut-size screening<span class="sub">Only if particle density is supplied</span></div><div class="meta"><div class="val" id="r-cycCut">–</div></div></div>
   </div>
 
   <div class="card">
@@ -681,7 +855,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
 <!-- ============ 08 IMPACT ANALYSIS ============ -->
 <section class="section" id="sec-impact">
   <div class="section-header">
-    <div class="tag">08 / IMPACT ANALYSIS</div>
+    <div class="tag">09 / IMPACT ANALYSIS</div>
     <h1>What Happens If I Change This?</h1>
     <p class="lead">Every input change anywhere in the model is logged here automatically, with the parameter, old and new values, percentage change, and the downstream outputs affected.</p>
   </div>
@@ -698,7 +872,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
 <!-- ============ 09 CASE COMPARISON ============ -->
 <section class="section" id="sec-compare">
   <div class="section-header">
-    <div class="tag">09 / CASE COMPARISON</div>
+    <div class="tag">10 / CASE COMPARISON</div>
     <h1>Compare Design Cases</h1>
     <p class="lead">Snapshot the current live model as Case A or Case B, then compare key results side by side.</p>
   </div>
@@ -718,13 +892,13 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
 <!-- ============ 10 NOTES ============ -->
 <section class="section" id="sec-notes">
   <div class="section-header">
-    <div class="tag">10 / ENGINEERING NOTES</div>
+    <div class="tag">11 / ENGINEERING NOTES</div>
     <h1>Engineering Notes &amp; Data Integrity</h1>
   </div>
 
   <div class="card">
     <h2>Current Locked Design Basis</h2>
-    <p class="inline-note">Batch · 8 days · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h CO₂ utilization · 85% CO₂ capture · ≈173.1 NL/min standard flue gas · ≈223.8 L/min actual flue gas at 80°C · Re ≈ 5000 · 12 internal circulation loops · tube/bend counts calculated from geometric volume and tube/U-bend geometry.</p>
+    <p class="inline-note" id="currentBasisModeNote">Batch · 8 days · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h CO₂ utilization · 85% CO₂ capture · ≈173.1 NL/min standard flue gas · ≈223.8 L/min actual flue gas at 80°C · Re ≈ 5000 · 12 internal circulation loops · tube/bend counts calculated from geometric volume and tube/U-bend geometry.</p>
   </div>
 
   <div class="card">
@@ -767,7 +941,69 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   </div>
 </section>
 
+<!-- ============ 11 COMPLETE DESIGN REQUIREMENTS ============ -->
+<section class="section" id="sec-requirements">
+  <div class="section-header"><div class="tag">12 / COMPLETE DESIGN REQUIREMENTS</div><h1>Complete Reactor Design Requirements &amp; Formula Register</h1><p class="lead">This section closes the gap between the process-calculation model and a complete engineering design package. Green items are calculated from the current basis; amber items require validated design data; red/TBD items require plant, laboratory, vendor or mechanical inputs before final sizing.</p></div>
+  <div class="qualif">STATUS: DESIGN-DEVELOPMENT REGISTER. A formula is shown where a defensible engineering relationship is available. Where the model does not yet have the required physical data, the result remains TBD rather than inventing a value.</div>
+  <div class="card"><h2>A. Biological Performance &amp; Product</h2><table><thead><tr><th>Requirement</th><th>Why required</th><th>Required input</th><th>Formula / design check</th><th>Current status</th></tr></thead><tbody>
+  <tr><td>Initial/final biomass</td><td><span id="reqBiomassWhy">Determines batch biomass inventory and productivity</span></td><td>X₀, Xf (g/L)</td><td id="reqBiomassFormula">ΔX = Xf − X₀; Mx = ΔX·Vw/1000</td><td><span class="badge input">Xf=4 g/L TARGET</span></td></tr>
+  <tr><td>Biomass productivity</td><td id="reqProdWhy">Checks whether 8-day batch can achieve target</td><td id="reqProdInput">Batch time</td><td id="reqProdFormula">Px = (Xf−X₀)/t_batch</td><td>CALC</td></tr>
+  <tr><td>Lipid content</td><td>Core CarbonONE product basis</td><td>Lipid fraction of DCW</td><td>C_L = Xf·f_lipid</td><td><span class="badge input">50% TARGET</span></td></tr>
+  <tr><td>Lipid inventory</td><td>Feeds downstream extraction design</td><td>Vw, Xf, lipid fraction</td><td>M_lipid = Vw·C_L/1000</td><td>CALC</td></tr>
+  <tr><td>CO₂-to-biomass yield</td><td>Closes carbon balance</td><td>Validated Yx/CO₂</td><td>Mx,CO₂ = ṁCO₂,util·Yx/CO₂</td><td>TBD</td></tr>
+  </tbody></table>
+  <div class="row"><div class="label">Biomass productivity</div><div class="meta"><div class="val" id="r-biomassProd">–</div></div></div><div class="row"><div class="label" id="biomassPerModeLabel">Biomass per batch</div><div class="meta"><div class="val" id="r-biomassBatch">–</div></div></div><div class="row"><div class="label">Lipid concentration</div><div class="meta"><div class="val" id="r-lipidConc">–</div></div></div><div class="row"><div class="label" id="lipidPerModeLabel">Lipid per batch</div><div class="meta"><div class="val" id="r-lipidBatch">–</div></div></div>
+  </div>
+  <div class="card"><h2>B. Light / Photobiology</h2><table><thead><tr><th>Requirement</th><th>Why required</th><th>Required input</th><th>Formula / check</th><th>Status</th></tr></thead><tbody>
+  <tr><td>Incident PAR</td><td>Defines photosynthetic energy input</td><td>I₀, µmol/m²/s</td><td>User/validated illumination basis</td><td>TBD</td></tr>
+  <tr><td>Light attenuation</td><td>Determines light availability through culture</td><td>Extinction coefficient, X, path length</td><td>I = I₀ exp(−kX L)</td><td>TBD</td></tr>
+  <tr><td>Photoperiod</td><td>Determines daily photon dose</td><td>Light/dark hours</td><td>Daily light time = t_light; dark = 24−t_light</td><td>TBD</td></tr>
+  <tr><td>LED electrical duty</td><td>Electrical load and heat input</td><td>Illuminated area, W/m²</td><td>P_LED = P_A·A_illum</td><td>TBD</td></tr>
+  </tbody></table><div class="row"><div class="label">Optical depth screening</div><div class="meta"><div class="val" id="r-optDepth">–</div></div></div><div class="row"><div class="label">Relative light transmission</div><div class="meta"><div class="val" id="r-lightTransmission">–</div></div></div><div class="row"><div class="label">LED power</div><div class="meta"><div class="val" id="r-ledPower">–</div></div></div></div>
+  <div class="card"><h2>C. CO₂ Gas–Liquid Mass Transfer</h2><table><thead><tr><th>Requirement</th><th>Why required</th><th>Required input</th><th>Formula</th><th>Status</th></tr></thead><tbody>
+  <tr><td>kLa</td><td>Proves gas supply can meet biological demand</td><td>Validated kLa at operating condition</td><td>N_CO₂ = kLa(C*−CL)V</td><td>TBD</td></tr>
+  <tr><td>CO₂ saturation concentration</td><td>Sets transfer driving force</td><td>Henry constant, T, pCO₂, pH/alkalinity</td><td>C* = H·pCO₂ (form depends on Henry-law convention)</td><td>TBD</td></tr>
+  <tr><td>Transfer capacity</td><td>Must exceed utilization demand</td><td>kLa, C*, CL</td><td>ṁCO₂,transfer ≥ ṁCO₂,util</td><td>TBD</td></tr>
+  </tbody></table><div class="row"><div class="label">CO₂ transfer capacity</div><div class="meta"><div class="val" id="r-co2Transfer">–</div></div></div><div class="row"><div class="label">CO₂ transfer margin</div><div class="meta"><div class="val" id="r-co2Margin">–</div></div></div></div>
+  <div class="card"><h2>D. Gas-Side Equipment &amp; Cleaning Train</h2><table><thead><tr><th>Equipment</th><th>Why required</th><th>Required design data</th><th>Core sizing relation</th><th>Status</th></tr></thead><tbody>
+  <tr><td>Cyclone / PM removal</td><td>Protects reactor from particulate loading</td><td>PM, PSD, density, efficiency, allowable ΔP</td><td>Q=Av; final efficiency from validated cyclone correlation/vendor curve</td><td>SCREENING</td></tr>
+  <tr><td>Fine filter</td><td>Removes residual fine PM</td><td>PM loading, media velocity, ΔP</td><td>A_filter = Q/v_filter</td><td>TBD</td></tr>
+  <tr><td>Scrubber</td><td>Controls acid gases when present</td><td>SOx/NOx/HCl, L/G, packing, target removal</td><td>Material balance + mass-transfer design</td><td>CONDITIONAL</td></tr>
+  <tr><td>Gas cooler</td><td>Prevents excessive gas temperature into PBR</td><td>T_in/out, cooling utility, UA</td><td>Q̇ = ṁCpΔT = UAΔT_lm</td><td>TBD</td></tr>
+  <tr><td>Gas blower</td><td>Overcomes gas-train pressure loss</td><td>Q_act, ΔP_total, efficiency</td><td>P = QΔP/η</td><td>TBD</td></tr>
+  </tbody></table><div class="row"><div class="label">Gas-train pressure drop excluding unspecified units</div><div class="meta"><div class="val" id="r-gasDP">–</div></div></div><div class="row"><div class="label">Blower power screening</div><div class="meta"><div class="val" id="r-blowerPower">–</div></div></div></div>
+  <div class="card"><h2>E. <span class="mode-text" data-batch="Batch Operation, CIP &amp; Utilities" data-continuous="Continuous Operation, CIP &amp; Utilities">Batch Operation, CIP &amp; Utilities</span></h2><table><thead><tr><th>Requirement</th><th>Why required</th><th>Required input</th><th>Formula</th><th>Status</th></tr></thead><tbody>
+  <tr><td><span class="mode-text" data-batch="Batch filling" data-continuous="Startup filling">Batch filling</span></td><td>Defines startup equipment and line sizing</td><td>Fill time</td><td>Q<sub>fill</sub> = V<sub>working</sub>/t<sub>fill</sub></td><td>TBD</td></tr>
+  <tr><td><span class="mode-text" data-batch="Batch harvest" data-continuous="Continuous withdrawal / harvest">Batch harvest</span></td><td>Defines downstream feed and pump sizing</td><td><span class="mode-text" data-batch="Harvest time" data-continuous="Residence/withdrawal basis">Harvest time</span></td><td><span class="mode-text" data-batch="Q_harvest = V_working/t_harvest" data-continuous="Q_cont = V_working/τ">Q_harvest = V_working/t_harvest</span></td><td>TBD</td></tr>
+  <tr><td>CIP velocity</td><td>Ensures cleaning hydraulics</td><td>Validated CIP velocity</td><td>Q_CIP = v_CIP·A; Re_CIP=ρvD/μ</td><td>TBD</td></tr>
+  <tr><td>Drainability / venting</td><td>Prevents trapped liquid/gas</td><td>Routing/slope/low points</td><td>Engineering layout check</td><td>TBD</td></tr>
+  </tbody></table><div class="row"><div class="label">Fill flow</div><div class="meta"><div class="val" id="r-fillFlow">–</div></div></div><div class="row"><div class="label">Harvest flow</div><div class="meta"><div class="val" id="r-harvestFlow">–</div></div></div><div class="row"><div class="label">CIP flow</div><div class="meta"><div class="val" id="r-cipFlow">–</div></div></div><div class="row"><div class="label">CIP Reynolds number</div><div class="meta"><div class="val" id="r-cipRe">–</div></div></div></div>
+  <div class="card"><h2>F. Nutrients, pH &amp; Oxygen</h2><table><thead><tr><th>Requirement</th><th>Why required</th><th>Required data</th><th>Design relation</th><th>Status</th></tr></thead><tbody>
+  <tr><td>N requirement</td><td>Medium preparation and nutrient consumption</td><td>Biomass N fraction + initial/residual N</td><td>M_N = M_biomass·f_N</td><td>SCREENING</td></tr>
+  <tr><td>P requirement</td><td>Medium preparation</td><td>Biomass P fraction + residual P</td><td>M_P = M_biomass·f_P</td><td>SCREENING</td></tr>
+  <tr><td>pH control</td><td>CO₂ absorption changes carbonate chemistry</td><td>pH setpoint, alkalinity, acid/base demand</td><td>Carbonate equilibrium + charge balance</td><td>TBD</td></tr>
+  <tr><td>O₂ balance</td><td>Checks gas exchange / biological constraint</td><td>O₂ production and OUR</td><td>Net O₂ = O₂ production − OUR</td><td>TBD</td></tr>
+  </tbody></table><div class="row"><div class="label"><span class="mode-text" data-batch="Batch N requirement screening" data-continuous="Continuous N requirement rate">Batch N requirement screening</span></div><div class="meta"><div class="val" id="r-Nreq">–</div></div></div><div class="row"><div class="label"><span class="mode-text" data-batch="Batch P requirement screening" data-continuous="Continuous P requirement rate">Batch P requirement screening</span></div><div class="meta"><div class="val" id="r-Preq">–</div></div></div><div class="row"><div class="label">O₂ balance margin</div><div class="meta"><div class="val" id="r-O2margin">–</div></div></div></div>
+  <div class="card"><h2>G. Mechanical, Thermal Expansion &amp; Pressure Design</h2><table><thead><tr><th>Requirement</th><th>Why required</th><th>Required data</th><th>Formula / check</th><th>Status</th></tr></thead><tbody>
+  <tr><td>Pressure thickness</td><td>Tube/header structural integrity</td><td>Design pressure, OD, allowable stress, weld efficiency, corrosion allowance</td><td>Thin-cylinder screening: t = PD/(2SE−P) + CA; final code equation required</td><td>TBD</td></tr>
+  <tr><td>Thermal expansion</td><td>Prevents excessive thermal stress</td><td>α, length, ΔT</td><td>ΔL = αLΔT</td><td>TBD</td></tr>
+  <tr><td>Supports / frame</td><td>Carries dead, operating and thermal loads</td><td>Masses, spans, support spacing, loads</td><td>Structural analysis / code</td><td>TBD</td></tr>
+  <tr><td>Materials</td><td>Corrosion and compatibility</td><td>Medium chemistry, chloride, pH, cleaning chemicals</td><td>Material compatibility review</td><td>TBD</td></tr>
+  </tbody></table><div class="row"><div class="label">Pressure-wall screening thickness</div><div class="meta"><div class="val" id="r-wallThickness">–</div></div></div><div class="row"><div class="label">Thermal expansion screening</div><div class="meta"><div class="val" id="r-expansion">–</div></div></div></div>
+  <div class="card"><h2>H. Instrumentation, Controls &amp; Safety — required for final package</h2><table><thead><tr><th>System</th><th>Minimum requirement</th><th>Purpose</th></tr></thead><tbody>
+  <tr><td>Liquid</td><td>Flow, pressure, temperature, pH, DO, level</td><td>Process monitoring and control</td></tr>
+  <tr><td>Gas</td><td>Flow, CO₂, O₂, temperature, pressure</td><td>Gas balance and biological control</td></tr>
+  <tr><td>Interlocks</td><td>High T, high P, low liquid flow, low gas flow, pump trip</td><td>Equipment/process protection</td></tr>
+  <tr><td>Relief / vent</td><td>PSV/rupture/vacuum protection as applicable</td><td>Pressure protection</td></tr>
+  <tr><td>P&amp;ID</td><td>Complete equipment, valves, instruments, control loops</td><td>Construction/operation basis</td></tr>
+  <tr><td>HAZOP / safety review</td><td>Process hazards and safeguards</td><td>Final safety design</td></tr>
+  </tbody></table></div>
+  <div class="card"><h2>Final Design Deliverables Still Required</h2><div class="trace-chain">Process Flow Diagram → Complete Mass Balance → Energy Balance → CO₂ Mass Transfer → Light/Photobiology → Hydraulic Profile → Pump &amp; Blower Curves → Gas Cleaning Equipment Datasheets → P&amp;ID → Mechanical Design → Structural Supports → Materials Selection → CIP/Drainability → Instrumentation &amp; Control → HAZOP/Safety → GA/Fabrication Drawings → Vendor Validation / Pilot Data</div></div>
+</section>
+
 </main>
+
+
 
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
@@ -781,6 +1017,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
   </div>
 </div>
 
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
 (function(){
 
@@ -788,6 +1025,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
    1. STATE — display-unit values, matching the locked basis
    ============================================================ */
 const DEFAULTS = {
+  reactorMode: 'batch',     // batch or continuous
   geomVol: 10.0117,        // m3
   workFrac: 90,            // %
   batchDays: 8,            // days
@@ -797,8 +1035,7 @@ const DEFAULTS = {
   tubeID: 104,              // mm
   tubeOD: 110,              // mm
   straightLen: 1.5,         // m
-  numStraight: 587,
-  numUbends: 575,
+  countCriterion: 'atLeast', // fixed automatic rule: never undersize geometric volume
   ubendCC: 210,             // mm
   headerID: 50,             // mm
   numLoops: 12,
@@ -814,10 +1051,84 @@ const DEFAULTS = {
   liquidCp: 4.0,               // kJ/kgK
   gasCp: 1.0,                  // kJ/kgK
   pmSize: 50,                  // um
-  cycVel: 15                   // m/s
+  cycVel: 15,                  // m/s preliminary cyclone inlet velocity
+  uBendK: 0.8,                 // preliminary loss coefficient per 180-degree U-bend
+  headerLength: 5.0,          // m; PRELIMINARY editable hydraulic routing basis
+  branchLength: 1.0,          // m; PRELIMINARY editable branch routing basis
+  branchID: 50,               // mm; PRELIMINARY editable branch ID basis
+  fittingK: 0,                  // loop/tube-side K total; preliminary/TBD
+  supplyFittingK: 0,             // supply-header/manifold K total; TBD
+  returnFittingK: 0,             // return-header/manifold K total; TBD
+  branchFittingK: 0,              // branch K total; TBD
+  returnHeaderLength: 5.0,   // m; PRELIMINARY editable hydraulic routing basis
+  staticHead: 0,                  // m; closed-loop static elevation difference, TBD
+  pumpEfficiency: 0.70,        // fraction; preliminary pump efficiency
+  heatEffectiveness: 1.0,      // fraction; 1.0 = ideal upper-bound, replace with validated value
+  ambientTemp: 30,              // C; preliminary ambient temperature
+  ambientUA: 0,                 // kJ/h-K; 0 = TBD / omitted
+  cycloneEuler: 7.0,            // dimensionless; preliminary Stairmand Euler number
+  gasViscosity: 0.018,          // mPa.s; preliminary flue-gas viscosity
+  particleDensity: 0,           // kg/m3; 0 = TBD
+  cycloneEffectiveTurns: 5,      // effective gas turns; preliminary Lapple screening
+  // ---- biological / process design inputs (0 = TBD) ----
+  biomassInitial: 0,            // g/L
+  biomassFinal: 4.0,             // g/L target
+  lipidFraction: 0.50,           // fraction of DCW
+  biomassYieldCO2: 0,             // g biomass / g CO2; TBD unless validated
+  lightIntensity: 0,              // µmol photons/m2/s; TBD
+  photoperiodLight: 0,            // h/day; TBD
+  photoperiodDark: 0,             // h/day; TBD
+  opticalExtCoeff: 0,             // m2/g; TBD
+  tubePitch: 0,                   // m; TBD
+  ledPowerPerArea: 0,             // W/m2; TBD
+  ledEfficiency: 0,               // µmol/J; TBD
+  kla: 0,                         // 1/h; TBD
+  co2SatConc: 0,                  // g/L; TBD from Henry law / pH / T
+  co2LiquidConc: 0,               // g/L; TBD
+  gasResidenceTime: 0,             // s; TBD
+  o2ProductionRate: 0,             // g O2/L/h; TBD
+  ourRate: 0,                     // g O2/L/h; TBD
+  nitrogenFractionBiomass: 0.12,  // mass fraction; preliminary only
+  phosphorusFractionBiomass: 0.02,// mass fraction; preliminary only
+  carbonFractionBiomass: 0.50,    // mass fraction; preliminary only
+  fillTime: 0,                    // h; TBD
+  harvestTime: 0,                 // h; TBD
+  cipVelocity: 0,                 // m/s; TBD
+  cipDensity: 1000,               // kg/m3; preliminary water-like
+  cipViscosity: 1.0,              // mPa.s; preliminary
+  cipPressureDropAllow: 0,        // kPa; TBD
+  designPressure: 0,              // barg; TBD
+  allowableStress: 0,              // MPa; TBD material/design code
+  weldEfficiency: 0,              // fraction; TBD
+  corrosionAllowance: 0,           // mm; TBD
+  thermalExpansionCoeff: 0,        // 1/K; TBD material
+  referenceLength: 0,              // m; TBD
+  designTemp: 0,                  // C; TBD
+  gasBlowerDP: 0,                 // kPa; TBD total gas-train pressure drop
+  blowerEfficiency: 0,             // fraction; TBD
+  gasPBRDP: 0,                    // kPa; TBD gas-side reactor pressure drop
+  filterDP: 0,                    // kPa; TBD
+  scrubberDP: 0,                  // kPa; TBD
+  coolerDP: 0,                    // kPa; TBD
+  gasPipeDP: 0,                   // kPa; TBD
+  coolingWaterIn: 0,              // C; TBD
+  coolingWaterOut: 0,             // C; TBD
+  coolingWaterCp: 4.18,           // kJ/kgK
+  coolingWaterFlow: 0,            // kg/h; TBD
+  gasOutletTemp: 0,               // C; TBD
+  pHSetpoint: 0,                  // TBD
+  pHMin: 0,                       // TBD
+  pHMax: 0,                       // TBD
+  doSetpoint: 0,                  // mg/L; TBD
+  doMax: 0,                       // mg/L; TBD
+  alkalinity: 0,                  // mmol/L; TBD
+  reliefSetPressure: 0,            // barg; TBD
+  highTempTrip: 0,                // C; TBD
+  lowFlowTrip: 0                  // m3/h; TBD
 };
 let state = Object.assign({}, DEFAULTS);
-let prevValues = {}; // for impact analysis, key -> old display value
+let prevValues = {}; // previous calculated values for impact analysis
+let pendingOldActLmin = undefined;
 const changeLog = [];
 let caseA = null, caseB = null;
 let traceMode = false;
@@ -849,23 +1160,22 @@ function compute(s){
 
   // Physical tube/bend count from geometric reactor volume.
   // For N independent serpentine loops: N_bends = N_tubes - N_loops.
+  const loops = Math.max(1, Math.round(Number(s.numLoops)||0));
   const denom = r.tubeVol_m3 + r.ubendVol_m3;
-  r.tubeCountTheory = denom>0
-    ? (s.geomVol + s.numLoops*r.ubendVol_m3) / denom
-    : NaN;
-  r.numStraightCalc = Number.isFinite(r.tubeCountTheory)
-    ? Math.max(Math.round(s.numLoops), Math.round(r.tubeCountTheory))
-    : 0;
-  r.numUbendsCalc = Math.max(0, r.numStraightCalc - Math.max(0, Math.round(s.numLoops)));
-  r.volumeAchieved = r.numStraightCalc*r.tubeVol_m3 + r.numUbendsCalc*r.ubendVol_m3;
-  r.volumeError = r.volumeAchieved - s.geomVol;
-  r.volumeErrorPct = s.geomVol ? (r.volumeError/s.geomVol)*100 : NaN;
-  r.tubesPerLoop = s.numLoops>0 ? r.numStraightCalc/s.numLoops : NaN;
-
-  // Keep the legacy state fields synchronized so all downstream calculations
-  // use the newly calculated tube/bend counts.
-  s.numStraight = r.numStraightCalc;
-  s.numUbends = r.numUbendsCalc;
+  r.tubeCountTheory = denom>0 ? (s.geomVol + loops*r.ubendVol_m3)/denom : NaN;
+  const nFloor = Number.isFinite(r.tubeCountTheory) ? Math.max(loops, Math.floor(r.tubeCountTheory)) : 0;
+  const nCeil = Number.isFinite(r.tubeCountTheory) ? Math.max(loops, Math.ceil(r.tubeCountTheory)) : 0;
+  const volForN = n => n*r.tubeVol_m3 + Math.max(0,n-loops)*r.ubendVol_m3;
+  const errForN = n => volForN(n)-s.geomVol;
+  if(!Number.isFinite(r.tubeCountTheory)) r.numStraightCalc=0;
+  else r.numStraightCalc=nCeil; // FIXED: always round up to meet/exceed target geometric volume
+  r.numUbendsCalc=Math.max(0,r.numStraightCalc-loops);
+  r.volumeAchieved=volForN(r.numStraightCalc);
+  r.volumeError=r.volumeAchieved-s.geomVol;
+  r.volumeErrorPct=s.geomVol?(r.volumeError/s.geomVol)*100:NaN;
+  r.tubesPerLoop=loops>0?r.numStraightCalc/loops:NaN;
+  r.floorTubeCount=nFloor; r.floorVolume=volForN(nFloor); r.floorError=errForN(nFloor);
+  r.ceilTubeCount=nCeil; r.ceilVolume=volForN(nCeil); r.ceilError=errForN(nCeil);
 
   r.lStraight = r.numStraightCalc * s.straightLen;
   r.lBend     = r.numUbendsCalc * r.ubendL_m;
@@ -887,26 +1197,184 @@ function compute(s){
   r.actCO2M3h  = r.co2MolarH * r.actMolVol;                 // m3/h
 
   // ---- hydraulics ----
+  // Closed-loop liquid circulation. Flow is derived from the selected target Reynolds number.
+  // Pressure loss is calculated section-by-section for the complete path:
+  // supply header -> branch -> reactor loop -> return branch -> return header.
   const D = s.tubeID/1000, mu = s.viscosity/1000, rho = s.brothDensity;
-  r.tubeArea = Math.PI * D*D / 4;                            // m2
-  r.velocity = s.targetRe * mu / (rho * D);                  // m/s
+  r.tubeArea = Math.PI * D*D / 4;
+  r.velocity = s.targetRe * mu / (rho * D);
   r.qLoop_m3s = r.velocity * r.tubeArea;
   r.qLoop_m3h = r.qLoop_m3s * 3600;
-  r.qTotal_m3h= r.qLoop_m3h * s.numLoops;
+  r.qTotal_m3h= r.qLoop_m3h * loops;
+  r.qTotal_m3s= r.qTotal_m3h/3600;
   r.reCheck   = rho * r.velocity * D / mu;
+  const fTube = r.reCheck>0 ? 0.3164*Math.pow(r.reCheck,-0.25) : NaN; // Blasius, smooth turbulent screening
+  r.fTube = fTube;
+  r.tubesPerLoopAvg = r.numStraightCalc/loops;
+  r.bendsPerLoopAvg = r.numUbendsCalc/loops;
+  r.loopStraightLen = r.tubesPerLoopAvg * s.straightLen;
+  r.loopBendLen = r.bendsPerLoopAvg * r.ubendL_m;
+  r.loopLength = r.loopStraightLen + r.loopBendLen;
+  const dynTube = rho*r.velocity*r.velocity/2;
+  r.dpTube_Pa = fTube * (r.loopStraightLen/D) * dynTube;
+  r.dpUBend_Pa = r.bendsPerLoopAvg * s.uBendK * dynTube;
+  r.dpLoopFittings_Pa = s.fittingK * dynTube;
+
+  const Dh = s.headerID/1000;
+  r.headerArea = Math.PI * Dh*Dh / 4;
+  r.headerVelocity = r.qTotal_m3s/r.headerArea;
+  r.headerRe = rho*r.headerVelocity*Dh/mu;
+  const headerF = Re => Re>0 ? 0.3164*Math.pow(Re,-0.25) : 0;
+  function calcHeader(L){
+    const sections=[]; let dp=0;
+    if(!(L>0) || !(Dh>0)) return {dp,sections};
+    const Lsec=L/loops;
+    for(let i=0;i<loops;i++){
+      // section i carries flow for the remaining branches; final section approaches one-loop flow.
+      const q=Math.max(r.qLoop_m3s, r.qTotal_m3s*(1-i/loops));
+      const v=q/r.headerArea;
+      const Re=rho*v*Dh/mu;
+      const f=headerF(Re);
+      const dP=f*(Lsec/Dh)*(rho*v*v/2);
+      dp+=dP;
+      sections.push({index:i+1,q_m3h:q*3600,v,Re,dpPa:dP});
+    }
+    return {dp,sections};
+  }
+  const hs=calcHeader(s.headerLength), hr=calcHeader(s.returnHeaderLength);
+  r.supplyHeaderSections=hs.sections;
+  r.returnHeaderSections=hr.sections;
+  r.dpSupplyHeader_Pa=hs.dp;
+  r.dpReturnHeader_Pa=hr.dp;
+  r.dpHeader_Pa=hs.dp+hr.dp;
+
+  r.branchVelocity=NaN; r.branchRe=NaN; r.dpBranch_Pa=NaN;
+  if(s.branchID>0 && s.branchLength>0){
+    const Db=s.branchID/1000; const Ab=Math.PI*Db*Db/4;
+    r.branchVelocity=r.qLoop_m3s/Ab;
+    r.branchRe=rho*r.branchVelocity*Db/mu;
+    const fb=headerF(r.branchRe);
+    const dynBranch=rho*r.branchVelocity*r.branchVelocity/2;
+    r.dpBranchFriction_Pa=fb*(s.branchLength/Db)*dynBranch;
+    r.dpBranchFitting_Pa=s.branchFittingK*dynBranch;
+    r.dpBranch_Pa=r.dpBranchFriction_Pa+r.dpBranchFitting_Pa;
+  } else {
+    r.dpBranchFriction_Pa=NaN; r.dpBranchFitting_Pa=NaN;
+  }
+
+  // K values are applied at the velocity of the component they represent.
+  // Header K values use the maximum header velocity as a conservative preliminary screen.
+  const dynHeader=rho*r.headerVelocity*r.headerVelocity/2;
+  r.dpSupplyFitting_Pa=s.supplyFittingK*dynHeader;
+  r.dpReturnFitting_Pa=s.returnFittingK*dynHeader;
+  r.dpFittings_Pa=r.dpLoopFittings_Pa+r.dpSupplyFitting_Pa+r.dpReturnFitting_Pa+(Number.isFinite(r.dpBranchFitting_Pa)?r.dpBranchFitting_Pa:0);
+  r.hydraulicFriction_Pa = r.dpTube_Pa+r.dpUBend_Pa+r.dpLoopFittings_Pa+r.dpSupplyHeader_Pa+r.dpReturnHeader_Pa+2*(Number.isFinite(r.dpBranchFriction_Pa)?r.dpBranchFriction_Pa:0)+r.dpSupplyFitting_Pa+r.dpReturnFitting_Pa+2*(Number.isFinite(r.dpBranchFitting_Pa)?r.dpBranchFitting_Pa:0);
+  r.hydraulicsComplete = s.headerLength>=0 && s.returnHeaderLength>=0 && s.branchLength>=0 && s.branchID>0;
+  r.dpTotal_Pa = r.hydraulicsComplete ? r.hydraulicFriction_Pa : NaN;
+  r.tdhFriction_m = Number.isFinite(r.dpTotal_Pa) ? r.dpTotal_Pa/(rho*9.80665) : NaN;
+  r.tdh_m = Number.isFinite(r.tdhFriction_m) ? r.tdhFriction_m + (Number(s.staticHead)||0) : NaN;
+  r.qPump_m3s = r.qTotal_m3s;
+  r.pumpHydraulic_W = Number.isFinite(r.tdh_m) ? rho*9.80665*r.qPump_m3s*r.tdh_m : NaN;
+  r.pumpShaft_W = Number.isFinite(r.pumpHydraulic_W) && s.pumpEfficiency>0 ? r.pumpHydraulic_W/s.pumpEfficiency : NaN;
 
   // ---- energy ----
-  r.mLiquid = r.workVolM3 * s.brothDensity;                  // kg
-  r.mDotGas = r.stdNm3h * s.normDensity;                     // kg/h
-  r.qDot0   = r.mDotGas * s.gasCp * (s.flueTempIn - s.tempInit); // kJ/h
-  r.cLiquid = r.mLiquid * s.liquidCp;                        // kJ/K
-  r.kCoeff  = (r.mDotGas * s.gasCp) / (r.mLiquid * s.liquidCp); // 1/h
-  r.tempAt = function(t){ return s.flueTempIn - (s.flueTempIn - s.tempInit) * Math.exp(-r.kCoeff * t); };
+  r.mLiquid = r.workVolM3 * s.brothDensity;
+  r.mDotGas = r.stdNm3h * s.normDensity;
+  r.qDot0   = r.mDotGas * s.gasCp * (s.flueTempIn - s.tempInit);
+  r.heatEffectiveness = s.heatEffectiveness;
+  r.qDotActual0 = r.heatEffectiveness * r.qDot0;
+  r.cLiquid = r.mLiquid * s.liquidCp;
+  r.ambientUA = s.ambientUA;
+  // ODE: C dT/dt = H(Tg-T) - UA(T-Tamb), with H=epsilon*mDot*Cp.
+  const Hgas = r.heatEffectiveness*r.mDotGas*s.gasCp;
+  const UA = Math.max(0, Number(s.ambientUA)||0);
+  r.kOverall = (Hgas + UA) / r.cLiquid;
+  r.tSteady = r.kOverall>0 ? (Hgas*s.flueTempIn + UA*s.ambientTemp)/(Hgas+UA) : s.tempInit;
+  r.tempAt = function(t){ return r.tSteady + (s.tempInit-r.tSteady)*Math.exp(-r.kOverall*t); };
+  r.kCoeff = r.kOverall;
+  r.tempHorizon = r.tempAt((Number(s.batchDays)>0?Number(s.batchDays):8)*24);
+  r.tempTargetDelta = r.tempHorizon - s.tempTarget;
+  r.targetReached = r.tempHorizon >= s.tempTarget;
 
-  // ---- cyclone ----
+  // ---- cyclone: Stairmand high-efficiency geometric screening basis ----
   const Qact_m3s = r.actM3h / 3600;
-  r.cycA = Qact_m3s / s.cycVel;                              // m2
-  r.cycD = Math.sqrt(r.cycA / 0.1);                           // m
+  r.cycA = Qact_m3s / s.cycVel;
+  r.cycD = Math.sqrt(r.cycA / 0.1);
+  r.cycInletWidth = 0.5*r.cycD;
+  r.cycInletHeight = 0.2*r.cycD;
+  r.cycOutletDiameter = 0.5*r.cycD;
+  r.cycBodyHeight = 1.5*r.cycD;
+  r.cycConeHeight = 2.5*r.cycD;
+  r.cycTotalHeight = 4.0*r.cycD;
+  r.cycDp_Pa = s.cycloneEuler * (r.actM3h/3600>0 ? (r.mDotGas/(r.actM3h/3600))*s.cycVel*s.cycVel/2 : NaN);
+  r.cycCutSize_um = NaN;
+  if(s.particleDensity>0 && s.gasViscosity>0 && r.cycD>0){
+    const muG=s.gasViscosity/1000; const b=r.cycInletHeight; const Ne=Math.max(1,s.cycloneEffectiveTurns);
+    const rhoP=s.particleDensity; const Vi=s.cycVel;
+    const dpc=Math.sqrt((9*muG*b)/(2*Math.PI*Ne*rhoP*Vi));
+    r.cycCutSize_um=dpc*1e6;
+  }
+
+  // ---- complete design-development calculations ----
+  r.operatingMode = s.reactorMode === 'continuous' ? 'continuous' : 'batch';
+  r.isContinuous = r.operatingMode === 'continuous';
+  r.continuousFlowM3h = s.batchDays>0 ? r.workVolM3/s.batchDays/24 : NaN;
+  r.continuousFlowLh = Number.isFinite(r.continuousFlowM3h) ? r.continuousFlowM3h*1000 : NaN;
+  r.biomassDelta=s.biomassFinal-s.biomassInitial;
+  r.biomassProductivity=r.biomassDelta>0 && s.batchDays>0 ? r.biomassDelta/s.batchDays : NaN;
+  r.biomassBatchKg=r.biomassDelta>0 ? r.biomassDelta*r.workVolL/1000 : NaN;
+  r.lipidConc_gL=r.biomassFinal>0 && s.lipidFraction>0 ? s.biomassFinal*s.lipidFraction : NaN;
+  r.lipidBatchKg=Number.isFinite(r.lipidConc_gL) ? r.lipidConc_gL*r.workVolL/1000 : NaN;
+  r.lipidProductivity=Number.isFinite(r.lipidConc_gL)&&s.batchDays>0 ? r.lipidConc_gL/s.batchDays : NaN;
+  r.co2ToBiomassYield= s.biomassYieldCO2>0 ? s.biomassYieldCO2 : NaN;
+  r.co2BasedBiomassPotential= s.biomassYieldCO2>0 ? r.co2UtilH*s.biomassYieldCO2 : NaN;
+  r.lightDutyW = s.ledPowerPerArea>0 ? s.ledPowerPerArea * (s.tubePitch>0 ? r.lTotal*s.tubePitch : NaN) : NaN;
+  r.opticalDepth = s.opticalExtCoeff>0 ? s.opticalExtCoeff*s.biomassFinal*0.001*(s.tubeID/1000) : NaN;
+  r.lightTransmission = Number.isFinite(r.opticalDepth) ? Math.exp(-r.opticalDepth) : NaN;
+  r.co2TransferRate = s.kla>0 && s.co2SatConc>=0 && s.co2LiquidConc>=0 ? s.kla*(s.co2SatConc-s.co2LiquidConc) : NaN;
+  r.co2TransferCapacityKgH = Number.isFinite(r.co2TransferRate) ? r.co2TransferRate*r.workVolL/1000 : NaN;
+  r.co2TransferMargin = Number.isFinite(r.co2TransferCapacityKgH) ? r.co2TransferCapacityKgH-r.co2UtilH : NaN;
+  r.o2ProductionKgH = s.o2ProductionRate>0 ? s.o2ProductionRate*r.workVolL/1000 : NaN;
+  r.ourKgH = s.ourRate>0 ? s.ourRate*r.workVolL/1000 : NaN;
+  r.o2MarginKgH = Number.isFinite(r.o2ProductionKgH)&&Number.isFinite(r.ourKgH) ? r.o2ProductionKgH-r.ourKgH : NaN;
+  r.NRequirementKgBatch = s.nitrogenFractionBiomass>0 && Number.isFinite(r.biomassBatchKg) ? r.biomassBatchKg*s.nitrogenFractionBiomass : NaN;
+  r.PRequirementKgBatch = s.phosphorusFractionBiomass>0 && Number.isFinite(r.biomassBatchKg) ? r.biomassBatchKg*s.phosphorusFractionBiomass : NaN;
+  r.CRequirementKgBatch = s.carbonFractionBiomass>0 && Number.isFinite(r.biomassBatchKg) ? r.biomassBatchKg*s.carbonFractionBiomass : NaN;
+  r.biomassInitialKg = s.biomassInitial>=0 ? s.biomassInitial*r.workVolL/1000 : NaN;
+  r.biomassFinalKg = s.biomassFinal>=0 ? s.biomassFinal*r.workVolL/1000 : NaN;
+  r.nonLipidBatchKg = Number.isFinite(r.biomassFinalKg) && Number.isFinite(r.lipidBatchKg) ? r.biomassFinalKg-r.lipidBatchKg : NaN;
+  r.co2BatchInKg = Number.isFinite(r.co2InletH) ? r.co2InletH*(s.batchDays*24) : NaN;
+  r.co2BatchUtilKg = Number.isFinite(r.co2UtilH) ? r.co2UtilH*(s.batchDays*24) : NaN;
+  r.co2BatchOutKg = Number.isFinite(r.co2BatchInKg) && Number.isFinite(r.co2BatchUtilKg) ? r.co2BatchInKg-r.co2BatchUtilKg : NaN;
+  r.co2UtilizationFraction = Number.isFinite(r.co2BatchInKg) && r.co2BatchInKg>0 ? r.co2BatchUtilKg/r.co2BatchInKg : NaN;
+  r.co2CarbonUtilizedKg = Number.isFinite(r.co2BatchUtilKg) ? r.co2BatchUtilKg*(s.co2MW>0?12/s.co2MW:NaN) : NaN;
+  r.carbonClosureRatio = Number.isFinite(r.CRequirementKgBatch) && Number.isFinite(r.co2CarbonUtilizedKg) && r.co2CarbonUtilizedKg>0 ? r.CRequirementKgBatch/r.co2CarbonUtilizedKg : NaN;
+  // Mode-specific material accounting: batch reports per-cycle quantities; continuous reports steady-state rates.
+  if(r.isContinuous){
+    r.biomassInventoryKg = r.biomassFinalKg;
+    r.biomassProductionRateKgH = Number.isFinite(r.continuousFlowLh) ? s.biomassFinal*r.continuousFlowLh/1000 : NaN;
+    r.lipidProductionRateKgH = Number.isFinite(r.continuousFlowLh) && Number.isFinite(r.lipidConc_gL) ? r.lipidConc_gL*r.continuousFlowLh/1000 : NaN;
+    r.co2OutH = Number.isFinite(r.co2InletH) && Number.isFinite(r.co2UtilH) ? r.co2InletH-r.co2UtilH : NaN;
+    r.NRequirementKgH = Number.isFinite(r.biomassProductionRateKgH) ? r.biomassProductionRateKgH*s.nitrogenFractionBiomass : NaN;
+    r.PRequirementKgH = Number.isFinite(r.biomassProductionRateKgH) ? r.biomassProductionRateKgH*s.phosphorusFractionBiomass : NaN;
+  } else {
+    r.biomassInventoryKg = r.biomassFinalKg;
+    r.biomassProductionRateKgH = Number.isFinite(r.biomassBatchKg) && s.batchDays>0 ? r.biomassBatchKg/(s.batchDays*24) : NaN;
+    r.lipidProductionRateKgH = Number.isFinite(r.lipidBatchKg) && s.batchDays>0 ? r.lipidBatchKg/(s.batchDays*24) : NaN;
+    r.co2OutH = Number.isFinite(r.co2InletH) && Number.isFinite(r.co2UtilH) ? r.co2InletH-r.co2UtilH : NaN;
+    r.NRequirementKgH = Number.isFinite(r.NRequirementKgBatch) && s.batchDays>0 ? r.NRequirementKgBatch/(s.batchDays*24) : NaN;
+    r.PRequirementKgH = Number.isFinite(r.PRequirementKgBatch) && s.batchDays>0 ? r.PRequirementKgBatch/(s.batchDays*24) : NaN;
+  }
+  r.fillFlowLh = s.fillTime>0 ? r.workVolL/s.fillTime : NaN;
+  r.harvestFlowLh = s.harvestTime>0 ? r.workVolL/s.harvestTime : NaN;
+  r.cipRe = s.cipVelocity>0 ? s.cipDensity*s.cipVelocity*(s.tubeID/1000)/(s.cipViscosity/1000) : NaN;
+  r.cipFlowM3h = s.cipVelocity>0 ? (Math.PI*Math.pow(s.tubeID/1000,2)/4)*s.cipVelocity*3600*loops : NaN;
+  r.gasTrainDPkPa = (s.filterDP||0)+(s.scrubberDP||0)+(s.coolerDP||0)+(s.gasPipeDP||0)+(s.gasPBRDP||0);
+  r.blowerPowerW = s.gasBlowerDP>0 && s.blowerEfficiency>0 ? (r.actM3h/3600)*(s.gasBlowerDP*1000)/s.blowerEfficiency : (r.gasTrainDPkPa>0&&s.blowerEfficiency>0 ? (r.actM3h/3600)*(r.gasTrainDPkPa*1000)/s.blowerEfficiency : NaN);
+  r.coolerDutyKJh = s.coolingWaterFlow>0 && s.coolingWaterOut>s.coolingWaterIn ? s.coolingWaterFlow*s.coolingWaterCp*(s.coolingWaterOut-s.coolingWaterIn) : NaN;
+  r.wallThicknessMm = s.designPressure>0 && s.allowableStress>0 && s.weldEfficiency>0 ? ((s.designPressure*0.1)*(s.tubeOD))/(2*s.allowableStress*s.weldEfficiency-(s.designPressure*0.1)) + s.corrosionAllowance : NaN;
+  r.thermalExpansionMm = s.referenceLength>0 && s.thermalExpansionCoeff>0 && s.designTemp>0 ? s.referenceLength*s.thermalExpansionCoeff*(s.designTemp-s.tempInit)*1000 : NaN;
+  r.cipVelocityRatio = s.cipVelocity>0 ? s.cipVelocity/r.velocity : NaN;
 
   return r;
 }
@@ -916,22 +1384,39 @@ function compute(s){
    ============================================================ */
 function computeWarnings(s, r){
   const w = [];
+  if(s.headerLength===5 && s.returnHeaderLength===5 && s.branchLength===1 && s.branchID===50) w.push({level:'notice', msg:'PRELIM: Initial hydraulic routing defaults are 5 m supply header + 5 m return header + 1 m branch at 50 mm ID. Replace with actual manifold/branch geometry for final pump sizing.'});
   if(s.co2Frac<=0 || s.co2Frac>100) w.push({level:'error', msg:'ERROR: CO₂ fraction cannot exceed 100% or be zero/negative.'});
   if(s.captureEff<=0 || s.captureEff>100) w.push({level:'error', msg:'ERROR: Capture efficiency must be between 0 and 100%.'});
   if(s.workFrac<=0 || s.workFrac>100) w.push({level:'error', msg:'ERROR: Working volume fraction must be between 0 and 100%.'});
   if(s.tubeID<=0) w.push({level:'error', msg:'ERROR: Tube ID must be positive.'});
   if(s.geomVol<=0) w.push({level:'error', msg:'ERROR: Geometric reactor volume must be positive.'});
-  if(s.pressure<=0) w.push({level:'error', msg:'ERROR: Absolute pressure must be greater than zero.'});
+  if(!Number.isFinite(s.pressure) || s.pressure<=0) w.push({level:'error', msg:'ERROR: Absolute pressure must be a finite value greater than zero.'});
   if(s.tubeOD<=s.tubeID) w.push({level:'error', msg:'ERROR: Tube OD must be greater than tube ID.'});
+  if(s.batchDays<=0 || !Number.isFinite(s.batchDays)) w.push({level:'error', msg:'ERROR: Batch cultivation time must be a finite value greater than zero.'});
+  if(s.straightLen<=0 || !Number.isFinite(s.straightLen)) w.push({level:'error', msg:'ERROR: Straight tube length must be a finite value greater than zero.'});
+  if(s.ubendCC<=0 || !Number.isFinite(s.ubendCC)) w.push({level:'error', msg:'ERROR: U-bend centre-to-centre dimension must be a finite value greater than zero.'});
+  if(s.headerID<=0 || !Number.isFinite(s.headerID)) w.push({level:'error', msg:'ERROR: Header ID must be a finite value greater than zero.'});
   if(s.numLoops<=0 || !Number.isFinite(s.numLoops)) w.push({level:'error', msg:'ERROR: Internal circulation loop count must be positive.'});
+  if(s.pumpEfficiency<=0 || s.pumpEfficiency>1) w.push({level:'error', msg:'ERROR: Pump efficiency must be >0 and ≤1.'});
+  if(s.heatEffectiveness<0 || s.heatEffectiveness>1) w.push({level:'error', msg:'ERROR: Heat-transfer effectiveness must be between 0 and 1.'});
+  if(s.uBendK<0 || !Number.isFinite(s.uBendK)) w.push({level:'error', msg:'ERROR: U-bend K must be finite and non-negative.'});
+  if(s.headerLength<=0 || s.returnHeaderLength<=0 || s.branchLength<=0 || s.branchID<=0) w.push({level:'notice', msg:'NOTICE: One or more hydraulic geometry inputs are zero/invalid; corresponding pressure-drop terms cannot be fully evaluated. Enter actual plant/mechanical geometry for final sizing.'});
+  if(s.ambientUA<=0) w.push({level:'notice', msg:'TBD: Ambient UA is zero, so ambient heat loss is omitted; temperature prediction is therefore a screening result.'});
+  if(s.heatEffectiveness>=1) w.push({level:'notice', msg:'PRELIM: Heat-transfer effectiveness ε=1.0 represents the ideal upper-bound case; replace with validated gas-liquid heat-transfer effectiveness.'});
+  if(s.particleDensity<=0) w.push({level:'notice', msg:'TBD: Particle density required for cyclone cut-size screening.'});
+  if(!['closest','atLeast','below'].includes(s.countCriterion)) w.push({level:'error', msg:'ERROR: Invalid tube-count selection criterion.'});
   if(Math.abs(r.volumeErrorPct)>0.25) w.push({level:'notice', msg:`NOTICE: Integer tube/bend selection gives ${fmt(r.volumeErrorPct,3)}% geometric-volume deviation from target. Review tube count selection before fabrication.`});
-  if(prevValues.__lastActLmin!==undefined){
-    const delta = Math.abs(r.actLmin - prevValues.__lastActLmin)/prevValues.__lastActLmin;
-    if(delta>0.15) w.push({level:'notice', msg:'NOTICE: Gas-handling equipment loading has changed by more than 15% since last calculation.'});
+  if(Number.isFinite(pendingOldActLmin) && pendingOldActLmin>0){
+    const delta = Math.abs(r.actLmin - pendingOldActLmin)/pendingOldActLmin;
+    if(delta>0.15) w.push({level:'notice', msg:'NOTICE: Gas-handling equipment loading has changed by more than 15% from the previous input state.'});
   }
   if(!document.getElementById('chk-filter') || !document.getElementById('chk-filter').checked){
     // informational only, not shown as warning by default
   }
+  w.push({level:'notice', msg:`DESIGN COMPLETION: Biological kinetics, kLa/CO₂ mass transfer, light design, nutrient/pH/DO balance, ${s.reactorMode==='continuous'?'continuous feed/withdrawal, steady-state operation, CIP':'batch fill/harvest, CIP'}, mechanical/structural design, instrumentation/control and safety still require validated inputs before final design.`});
+  w.push({level:'notice', msg:'HYDRAULIC PATH: Branch loss is now counted on both supply and return branches. Actual manifold topology and individual branch lengths still require confirmation.'});
+  w.push({level:'notice', msg:'THERMAL MODEL: Pump/LED/biological heat, detailed UA, evaporation and gas-side cooling remain outside the transient screening balance unless explicitly entered.'});
+  w.push({level:'notice', msg:'GAS CLEANING: Cyclone/filter/scrubber/cooler sizing requires actual MRPL flue-gas composition and contaminant/PSD data.'});
   w.push({level:'notice', msg:'CYCLONE FINAL SIZING BLOCKED: PM concentration, particle-size distribution and particle density required.'});
   return w;
 }
@@ -1000,14 +1485,14 @@ const FORMULAS = {
     title:'Total Straight-Tube Length', sub:'Reactor Geometry',
     formula:'L_straight = N_tubes × L_tube',
     vars:'<code>N_tubes</code> straight tube count · <code>L_tube</code> straight tube length (m)',
-    subs:`L_straight = ${s.numStraight} × ${fmt(s.straightLen,2)}`,
+    subs:`L_straight = ${r.numStraightCalc} × ${fmt(s.straightLen,2)}`,
     result:`L_straight = ${fmt(r.lStraight,2)} m`
   }),
   lBend: (s,r)=>({
     title:'Total U-Bend Length', sub:'Reactor Geometry',
     formula:'L_bend = N_bends × L_U',
     vars:'<code>N_bends</code> U-bend count · <code>L_U</code> centreline length per bend (m)',
-    subs:`L_bend = ${s.numUbends} × ${fmt(r.ubendL_m,4)}`,
+    subs:`L_bend = ${r.numUbendsCalc} × ${fmt(r.ubendL_m,4)}`,
     result:`L_bend = ${fmt(r.lBend,2)} m`
   }),
   lTotal: (s,r)=>({
@@ -1038,8 +1523,8 @@ const FORMULAS = {
     title:'CO₂ Molar Flow', sub:'CO₂ &amp; Flue Gas',
     formula:'n_CO2 = m_CO2,in / MW_CO2',
     vars:'<code>m_CO2,in</code> CO₂ inlet mass flow (kg/h) · <code>MW_CO2</code> CO₂ molecular weight (kg/kmol)',
-    subs:`n_CO2 = ${fmt(r.co2InletH,4)} / ${fmt(s.co2MW,1)}`,
-    result:`n_CO2 = ${fmt(r.co2MolarH,5)} kmol/h`
+    subs:`n_CO₂ = ${fmt(r.co2InletH,4)} / ${fmt(s.co2MW,1)}`,
+    result:`n_CO₂ = ${fmt(r.co2MolarH,5)} kmol/h`
   }),
   totalMolar: (s,r)=>({
     title:'Total Flue-Gas Molar Flow', sub:'CO₂ &amp; Flue Gas',
@@ -1058,9 +1543,9 @@ const FORMULAS = {
   stdNLmin: (s,r)=>({title:'Standard Flue-Gas Flow in NL/min', sub:'CO₂ &amp; Flue Gas', formula:'Q_std,NL/min = Q_std,Nm³/h × 1000 / 60', vars:'<code>Q_std,Nm³/h</code> standard flue-gas flow (Nm³/h)', subs:`Q_std,NL/min = ${fmt(r.stdNm3h,3)} × 1000 / 60`, result:`Q_std = ${fmt(r.stdNLmin,1)} NL/min`}),
   actFlow: (s,r)=>({
     title:'Actual Flue-Gas Flow at Inlet Temperature', sub:'CO₂ &amp; Flue Gas',
-    formula:'V_m(T) = V_m,NTP × (273.15+T)/273.15;   Q_act = n_total × V_m(T)',
-    vars:'<code>T</code> flue-gas inlet temperature (°C), ideal-gas law at 1 atm',
-    subs:`V_m(${fmt(s.flueTempIn,0)}°C) = 22.414 × ${fmt((273.15+s.flueTempIn)/273.15,4)} = ${fmt(r.actMolVol,3)} m³/kmol\nQ_act = ${fmt(r.totalMolarH,5)} × ${fmt(r.actMolVol,3)}`,
+    formula:'V_m(T,P) = V_m,NTP × (273.15+T)/273.15 ÷ P_abs;   Q_act = n_total × V_m(T,P)',
+    vars:'<code>T</code> flue-gas inlet temperature (°C) · <code>P_abs</code> absolute pressure (atm) · ideal-gas law',
+    subs:`V_m = 22.414 × ${fmt((273.15+s.flueTempIn)/273.15,4)} ÷ ${fmt(s.pressure,3)} = ${fmt(r.actMolVol,3)} m³/kmol\nQ_act = ${fmt(r.totalMolarH,5)} × ${fmt(r.actMolVol,3)}`,
     result:`Q_act = ${fmt(r.actM3h,2)} m³/h  (${fmt(r.actLmin,1)} L/min)`
   }),
   actLmin: (s,r)=>({title:'Actual Flue-Gas Flow in L/min', sub:'CO₂ &amp; Flue Gas', formula:'Q_act,L/min = Q_act,m³/h × 1000 / 60', vars:'<code>Q_act,m³/h</code> actual flue-gas flow at inlet temperature (m³/h)', subs:`Q_act,L/min = ${fmt(r.actM3h,2)} × 1000 / 60`, result:`Q_act = ${fmt(r.actLmin,1)} L/min`}),
@@ -1099,6 +1584,38 @@ const FORMULAS = {
     subs:`Re = (${fmt(s.brothDensity,0)} × ${fmt(r.velocity,4)} × ${fmt(s.tubeID/1000,4)}) / ${fmt(s.viscosity/1000,5)}`,
     result:`Re ≈ ${fmt(r.reCheck,0)}`
   }),
+  headerArea: (s,r)=>({title:'Main-Header Cross-Sectional Area',sub:'Hydraulics',formula:'A_h = πD_h²/4',vars:'<code>D_h</code> main liquid header ID (m)',subs:`A_h = π × ${fmt(s.headerID/1000,4)}² / 4`,result:`A_h = ${fmt(r.headerArea,6)} m²`}),
+  headerVelocity: (s,r)=>({title:'Main-Header Velocity',sub:'Hydraulics — screening',formula:'v_h = Q_total / A_h',vars:'<code>Q_total</code> total circulation flow (m³/s) · <code>A_h</code> header area (m²)',subs:`v_h = (${fmt(r.qTotal_m3h/3600,6)}) / ${fmt(r.headerArea,6)}`,result:`v_h = ${fmt(r.headerVelocity,3)} m/s — SCREENING`}),
+  headerRe: (s,r)=>({title:'Main-Header Reynolds Number',sub:'Hydraulics — screening',formula:'Re_h = ρ v_h D_h / μ',vars:'<code>ρ</code> broth density · <code>v_h</code> header velocity · <code>D_h</code> header ID · <code>μ</code> dynamic viscosity',subs:`Re_h = (${fmt(s.brothDensity,0)} × ${fmt(r.headerVelocity,3)} × ${fmt(s.headerID/1000,4)}) / ${fmt(s.viscosity/1000,5)}`,result:`Re_h ≈ ${fmt(r.headerRe,0)}`}),
+  dpTube: (s,r)=>({title:'Tube Friction Pressure Drop',sub:'Hydraulics — Darcy-Weisbach',formula:'ΔP = f(L/D)(ρv²/2)',vars:'Darcy-Weisbach using average straight-tube length per loop and Blasius friction factor for preliminary turbulent smooth-tube screening.',subs:`ΔP = ${fmt(r.fTube,5)} × (${fmt(r.loopStraightLen,2)}/${fmt(s.tubeID/1000,4)}) × (${fmt(s.brothDensity,0)}×${fmt(r.velocity,4)}²/2)`,result:`ΔP_tube = ${fmt(r.dpTube_Pa,0)} Pa (${fmt(r.dpTube_Pa/1000,3)} kPa)`}),
+  dpUBend: (s,r)=>({title:'U-Bend Pressure Drop',sub:'Hydraulics — preliminary K method',formula:'ΔP_U = N_U,loop × K_U × (ρv²/2)',vars:'K_U is a preliminary loss coefficient per 180° U-bend; vendor/detailed geometry verification required.',subs:`ΔP_U = ${fmt(r.bendsPerLoopAvg,2)} × ${fmt(s.uBendK,2)} × (${fmt(s.brothDensity,0)}×${fmt(r.velocity,4)}²/2)`,result:`ΔP_U = ${fmt(r.dpUBend_Pa,0)} Pa`}),
+  dpSupplyHeader: (s,r)=>({title:'Supply Header Pressure Drop',sub:'Hydraulics — section-by-section Darcy-Weisbach',formula:'ΔP_supply = Σ f_i(L_i/D_h)(ρv_i²/2)',vars:'Each header section carries the remaining loop flow after downstream take-offs.',subs:`L = ${fmt(s.headerLength,2)} m; D_h = ${fmt(s.headerID,1)} mm; ${s.numLoops} equal sections`,result:s.headerLength>0?`ΔP_supply = ${fmt(r.dpSupplyHeader_Pa,0)} Pa`:'TBD — supply-header length required'}),
+  dpReturnHeader: (s,r)=>({title:'Return Header Pressure Drop',sub:'Hydraulics — section-by-section Darcy-Weisbach',formula:'ΔP_return = Σ f_i(L_i/D_h)(ρv_i²/2)',vars:'Each return-header section carries the accumulated return flow toward the pump.',subs:`L = ${fmt(s.returnHeaderLength,2)} m; D_h = ${fmt(s.headerID,1)} mm; ${s.numLoops} equal sections`,result:s.returnHeaderLength>0?`ΔP_return = ${fmt(r.dpReturnHeader_Pa,0)} Pa`:'TBD — return-header length required'}),
+  dpHeader: (s,r)=>({title:'Total Header Pressure Drop',sub:'Hydraulics',formula:'ΔP_header,total = ΔP_supply + ΔP_return',vars:'Both supply and return manifolds are included.',subs:`${fmt(r.dpSupplyHeader_Pa,0)} + ${fmt(r.dpReturnHeader_Pa,0)} Pa`,result:(s.headerLength>0&&s.returnHeaderLength>0)?`ΔP_header,total = ${fmt(r.dpHeader_Pa,0)} Pa`:'TBD — both header lengths required'}),
+  dpBranch: (s,r)=>({title:'Branch Pressure Drop',sub:'Hydraulics — Darcy-Weisbach',formula:'ΔP_branch,total = 2[f(L_b/D_b)(ρv_b²/2) + K_b(ρv_b²/2)]',vars:'Branch ID and branch length are plant/mechanical inputs.',subs:`D_b = ${fmt(s.branchID,1)} mm; L_b = ${fmt(s.branchLength,2)} m`,result:Number.isFinite(r.dpBranch_Pa)?`ΔP_branch = ${fmt(r.dpBranch_Pa,0)} Pa`:'TBD — branch ID and length required'}),
+  dpFittings: (s,r)=>({title:'Fittings / Valve Pressure Drop',sub:'Hydraulics — K method',formula:'ΔP = KΣ(ρv²/2)',vars:'Total K is a preliminary user input until fittings/valves are itemized.',subs:`K_total = ${fmt(s.fittingK,2)}`,result:`ΔP_fittings = ${fmt(r.dpFittings_Pa,0)} Pa`}),
+  dpTotal: (s,r)=>({title:'Total Hydraulic Pressure Drop',sub:'Hydraulics',formula:'ΔP_total = ΔP_tube + ΔP_U + ΔP_header + 2ΔP_branch + ΔP_fittings',vars:'All component losses shown above.',subs:`${fmt(r.dpTube_Pa,0)} + ${fmt(r.dpUBend_Pa,0)} + ${fmt(r.dpHeader_Pa,0)} + 2×${fmt(Number.isFinite(r.dpBranch_Pa)?r.dpBranch_Pa:0,0)} + ${fmt(r.dpFittings_Pa,0)} Pa`,result:Number.isFinite(r.dpTotal_Pa)?`ΔP_total = ${fmt(r.dpTotal_Pa,0)} Pa (${fmt(r.dpTotal_Pa/1000,3)} kPa)`:'TBD — header/branch geometry required'}),
+  mbLiquidMass: (s,r)=>({title:'Working Liquid Mass',sub:'Mass balance',formula:'M_liquid = V_working × ρ_liquid',vars:'V_working (m³) · ρ_liquid (kg/m³)',subs:`M_liquid = ${fmt(r.workVolM3,4)} × ${fmt(s.brothDensity,0)}`,result:`M_liquid = ${fmt(r.mLiquid,1)} kg`} ),
+  continuousFlow: (s,r)=>({title:'Continuous Liquid Flow',sub:'Continuous reactor',formula:'Q = V_working / τ',vars:'V_working (m³) · τ (days)',subs:`Q = ${fmt(r.workVolM3,4)} / (${fmt(s.batchDays,2)} × 24 h)`,result:`Q = ${fmt(r.continuousFlowM3h,4)} m³/h = ${fmt(r.continuousFlowLh,1)} L/h`}),
+  mbBiomassInitial: (s,r)=>({title:'Initial Biomass Inventory',sub:'Mass balance',formula:'M_X,0 = X_0 × V_working / 1000',vars:'X_0 (g/L) · V_working (L)',subs:`M_X,0 = ${fmt(s.biomassInitial,2)} × ${fmt(r.workVolL,2)} / 1000`,result:`M_X,0 = ${fmt(r.biomassInitialKg,2)} kg/batch`} ),
+  mbBiomassFinal: (s,r)=>({title:'Final Biomass Inventory',sub:'Mass balance',formula:'M_X,f = X_f × V_working / 1000',vars:'X_f (g/L) · V_working (L)',subs:`M_X,f = ${fmt(s.biomassFinal,2)} × ${fmt(r.workVolL,2)} / 1000`,result:`M_X,f = ${fmt(r.biomassFinalKg,2)} kg/batch`} ),
+  mbBiomassDelta: (s,r)=> s.reactorMode==='continuous' ? ({title:'Continuous Biomass Production Rate',sub:'Mass balance',formula:'ṁ_X = Q·X_f',vars:'Q (m³/h) · X_f (g/L)',subs:`ṁ_X = ${fmt(r.continuousFlowM3h,4)} × ${fmt(s.biomassFinal,2)} / 1000`,result:`ṁ_X = ${fmt(r.biomassProductionRateKgH,3)} kg/h`}) : ({title:'Net Biomass Formed',sub:'Mass balance',formula:'ΔM_X = (X_f − X_0)V_working / 1000',vars:'X_f, X_0 (g/L) · V_working (L)',subs:`ΔM_X = (${fmt(s.biomassFinal,2)} − ${fmt(s.biomassInitial,2)}) × ${fmt(r.workVolL,2)} / 1000`,result:`ΔM_X = ${fmt(r.biomassBatchKg,2)} kg/batch`} ),
+  mbLipidConc: (s,r)=>({title:'Final Lipid Concentration',sub:'Mass balance',formula:'C_lipid = X_f × f_lipid',vars:'X_f (g/L) · f_lipid (mass fraction)',subs:`C_lipid = ${fmt(s.biomassFinal,2)} × ${fmt(s.lipidFraction,3)}`,result:`C_lipid = ${fmt(r.lipidConc_gL,3)} g/L`} ),
+  mbNonLipid: (s,r)=>({title:'Non-Lipid Biomass at Harvest',sub:'Mass balance',formula:'M_non-lipid = M_X,f − M_lipid',vars:'M_X,f and M_lipid (kg/batch)',subs:`M_non-lipid = ${fmt(r.biomassFinalKg,2)} − ${fmt(r.lipidBatchKg,2)}`,result:`M_non-lipid = ${fmt(r.nonLipidBatchKg,2)} kg/batch`} ),
+  mbCo2In: (s,r)=> s.reactorMode==='continuous' ? ({title:'CO₂ Inlet Rate',sub:'Continuous mass balance',formula:'ṁ_CO₂,in',vars:'CO₂ inlet mass flow (kg/h)',subs:`ṁ_CO₂,in = ${fmt(r.co2InletH,4)} kg/h`,result:`ṁ_CO₂,in = ${fmt(r.co2InletH,4)} kg/h`}) : ({title:'CO₂ Inlet per Batch',sub:'Mass balance',formula:'M_CO2,in = ṁ_CO2,in × t_batch',vars:'ṁ_CO2,in (kg/h) · t_batch (h)',subs:`M_CO2,in = ${fmt(r.co2InletH,4)} × ${fmt(s.batchDays*24,1)}`,result:`M_CO2,in = ${fmt(r.co2BatchInKg,2)} kg/batch`} ),
+  mbCo2Util: (s,r)=> s.reactorMode==='continuous' ? ({title:'CO₂ Utilized Rate',sub:'Continuous mass balance',formula:'ṁ_CO₂,util',vars:'CO₂ utilization mass flow (kg/h)',subs:`ṁ_CO₂,util = ${fmt(r.co2UtilH,4)} kg/h`,result:`ṁ_CO₂,util = ${fmt(r.co2UtilH,4)} kg/h`}) : ({title:'CO₂ Utilized per Batch',sub:'Mass balance',formula:'M_CO2,util = ṁ_CO2,util × t_batch',vars:'ṁ_CO2,util (kg/h) · t_batch (h)',subs:`M_CO2,util = ${fmt(r.co2UtilH,4)} × ${fmt(s.batchDays*24,1)}`,result:`M_CO2,util = ${fmt(r.co2BatchUtilKg,2)} kg/batch`} ),
+  mbCo2Out: (s,r)=> s.reactorMode==='continuous' ? ({title:'CO₂ Outlet Screening',sub:'Continuous mass balance',formula:'ṁ_CO₂,out = ṁ_CO₂,in − ṁ_CO₂,util',vars:'Inlet and utilized CO₂ rates',subs:`ṁ_out = ${fmt(r.co2InletH,4)} − ${fmt(r.co2UtilH,4)}`,result:`ṁ_CO₂,out ≈ ${fmt(r.co2OutH,4)} kg/h — SCREENING`}) : ({title:'CO₂ Outlet Screening',sub:'Mass balance',formula:'M_CO2,out = M_CO2,in − M_CO2,util',vars:'Inlet and utilized CO₂ are design-basis quantities; actual outlet requires off-gas measurement.',subs:`M_CO2,out = ${fmt(r.co2BatchInKg,2)} − ${fmt(r.co2BatchUtilKg,2)}`,result:`M_CO2,out ≈ ${fmt(r.co2BatchOutKg,2)} kg/batch — SCREENING`} ),
+  mbCo2Eff: (s,r)=>({title:'CO₂ Utilization Fraction',sub:'Mass balance',formula:'η_CO2 = M_CO2,util / M_CO2,in',vars:'Batch utilized and inlet CO₂ mass',subs:`η = ${fmt(r.co2BatchUtilKg,2)} / ${fmt(r.co2BatchInKg,2)}`,result:`η_CO2 = ${fmt(r.co2BatchInKg>0?r.co2BatchUtilKg/r.co2BatchInKg:NaN,3)}`} ),
+  mbCarbon: (s,r)=>({title:'Carbon in Net Biomass',sub:'Elemental screening',formula:'M_C,bio = ΔM_X × w_C',vars:'ΔM_X (kg/batch) · w_C biomass carbon mass fraction',subs:`M_C,bio = ${fmt(r.biomassBatchKg,2)} × ${fmt(s.carbonFractionBiomass,3)}`,result:`M_C,bio = ${fmt(r.CRequirementKgBatch,2)} kg C/batch`} ),
+  mbNitrogen: (s,r)=>({title:'Nitrogen in Net Biomass',sub:'Elemental screening',formula:'M_N,bio = ΔM_X × w_N',vars:'ΔM_X (kg/batch) · w_N biomass nitrogen mass fraction',subs:`M_N,bio = ${fmt(r.biomassBatchKg,2)} × ${fmt(s.nitrogenFractionBiomass,3)}`,result:`M_N,bio = ${fmt(r.NRequirementKgBatch,2)} kg N/batch`} ),
+  mbPhosphorus: (s,r)=>({title:'Phosphorus in Net Biomass',sub:'Elemental screening',formula:'M_P,bio = ΔM_X × w_P',vars:'ΔM_X (kg/batch) · w_P biomass phosphorus mass fraction',subs:`M_P,bio = ${fmt(r.biomassBatchKg,2)} × ${fmt(s.phosphorusFractionBiomass,3)}`,result:`M_P,bio = ${fmt(r.PRequirementKgBatch,2)} kg P/batch`} ),
+  biomassProductivity: (s,r)=> s.reactorMode==='continuous' ? ({title:'Continuous Biomass Production Rate',sub:'Continuous performance',formula:'Q = V_working/τ; ṁ_X = Q·X_f',vars:'V_working (m³) · τ (days) · X_f (g/L)',subs:`Q = ${fmt(r.continuousFlowM3h,4)} m³/h; ṁ_X = ${fmt(r.continuousFlowM3h,4)} × ${fmt(s.biomassFinal,2)} / 1000`,result:`ṁ_X = ${fmt(r.biomassProductionRateKgH,3)} kg/h`}) : ({title:'Biomass Productivity',sub:'Batch biological performance',formula:'P_X = (X_f − X_0)/t_batch',vars:'X_f and X_0 biomass concentration (g/L) · t_batch (days)',subs:`P_X = (${fmt(s.biomassFinal,2)} − ${fmt(s.biomassInitial,2)}) / ${fmt(s.batchDays,2)}`,result:`P_X = ${fmt(r.biomassProductivity,3)} g/L/day`}),
+  lipidBatch: (s,r)=> s.reactorMode==='continuous' ? ({title:'Continuous Lipid Production Rate',sub:'Product basis',formula:'ṁ_lipid = Q·C_lipid',vars:'Q (m³/h) · C_lipid (g/L)',subs:`ṁ_lipid = ${fmt(r.continuousFlowM3h,4)} × ${fmt(r.lipidConc_gL,3)} / 1000`,result:`ṁ_lipid = ${fmt(r.lipidProductionRateKgH,3)} kg/h`}) : ({title:'Lipid per Batch',sub:'Product basis',formula:'M_lipid = V_working × X_f × f_lipid / 1000',vars:'V_working (L) · X_f (g/L) · f_lipid (fraction)',subs:`M_lipid = ${fmt(r.workVolL,2)} × ${fmt(s.biomassFinal,2)} × ${fmt(s.lipidFraction,2)} / 1000`,result:`M_lipid = ${fmt(r.lipidBatchKg,2)} kg/batch`}),
+  co2Transfer: (s,r)=>({title:'CO₂ Transfer Capacity',sub:'Gas-liquid mass transfer',formula:'N_CO₂ = kLa(C* − C_L)V',vars:'kLa (1/h) · C*, C_L (g/L) · V (L)',subs:`N_CO₂ = ${fmt(s.kla,3)} × (${fmt(s.co2SatConc,3)} − ${fmt(s.co2LiquidConc,3)}) × ${fmt(r.workVolL,2)}`,result:Number.isFinite(r.co2TransferCapacityKgH)?`Transfer = ${fmt(r.co2TransferCapacityKgH,3)} kg/h`:'TBD'}),
+  tdh: (s,r)=>({title:'Total Dynamic Head',sub:'Pump duty',formula:'H = ΔP_total/(ρg)',vars:'ρ broth density (kg/m³) · g = 9.80665 m/s²',subs:`H = ${fmt(r.dpTotal_Pa,0)} / (${fmt(s.brothDensity,0)}×9.80665)`,result:`TDH = ${fmt(r.tdh_m,2)} m`}),
+  pumpPower: (s,r)=>({title:'Hydraulic Pump Power',sub:'Pump duty',formula:'P_hyd = ρgQH',vars:'Q total internal circulation flow (m³/s) · H TDH (m)',subs:`P = ${fmt(s.brothDensity,0)}×9.80665×${fmt(r.qPump_m3s,5)}×${fmt(r.tdh_m,2)}`,result:`P_hyd = ${fmt(r.pumpHydraulic_W/1000,3)} kW`}),
+  pumpShaft: (s,r)=>({title:'Pump Shaft Power',sub:'Pump duty',formula:'P_shaft = ρgQH/η',vars:'η pump efficiency; preliminary until vendor curve is available.',subs:`P_shaft = ${fmt(r.pumpHydraulic_W,0)} / ${fmt(s.pumpEfficiency,2)}`,result:`P_shaft = ${fmt(r.pumpShaft_W/1000,3)} kW — PRELIMINARY`}),
+  qDotActual: (s,r)=>({title:'Actual Initial Gas Heat Transfer',sub:'Energy',formula:'Q̇_actual = ε ṁ_g Cp_g (T_g,in − T_L)',vars:'ε heat-transfer effectiveness; 0–1.',subs:`Q̇ = ${fmt(s.heatEffectiveness,2)}×${fmt(r.mDotGas,2)}×${fmt(s.gasCp,2)}×(${fmt(s.flueTempIn,1)}−${fmt(s.tempInit,1)})`,result:`Q̇_actual = ${fmt(r.qDotActual0,0)} kJ/h`}),
   mLiquid: (s,r)=>({
     title:'Liquid Mass', sub:'Energy',
     formula:'m_liquid = V_working × ρ_liquid',
@@ -1123,19 +1640,22 @@ const FORMULAS = {
   cLiquid: (s,r)=>({title:'Liquid Thermal Capacitance', sub:'Energy', formula:'C_liquid = m_liquid × Cp_liquid', vars:'<code>m_liquid</code> liquid mass (kg) · <code>Cp_liquid</code> liquid heat capacity (kJ/kg·K)', subs:`C_liquid = ${fmt(r.mLiquid,1)} × ${fmt(s.liquidCp,2)}`, result:`C_liquid = ${fmt(r.cLiquid,0)} kJ/K`}),
   kCoeff: (s,r)=>({
     title:'Heating Coefficient k', sub:'Energy',
-    formula:'k = (ṁ_gas × Cp_gas) / (m_liquid × Cp_liquid)',
+    formula:'k = (εṁ_gasCp_gas + UA_amb) / (m_liquidCp_liquid)',
     vars:'all terms as defined above; Cp_liquid = liquid heat capacity (kJ/kg·K)',
-    subs:`k = (${fmt(r.mDotGas,2)} × ${fmt(s.gasCp,2)}) / (${fmt(r.mLiquid,1)} × ${fmt(s.liquidCp,2)})`,
+    subs:`k = (${fmt(s.heatEffectiveness,2)}×${fmt(r.mDotGas,2)}×${fmt(s.gasCp,2)} + ${fmt(s.ambientUA,0)}) / (${fmt(r.mLiquid,1)}×${fmt(s.liquidCp,2)})`,
     result:`k = ${fmt(r.kCoeff,6)} 1/h`
   }),
-  tOfT: (s,r)=>({
-    title:'Temperature vs Time (integrated)', sub:'Energy',
-    formula:'T(t) = T_gas − (T_gas − T₀) × e^(−k t)',
-    vars:'<code>k</code> heating coefficient (1/h) · <code>t</code> elapsed time (h)',
-    subs:`T(192) = ${fmt(s.flueTempIn,1)} − (${fmt(s.flueTempIn,1)} − ${fmt(s.tempInit,1)}) × e^(−${fmt(r.kCoeff,6)}×192)`,
-    result:`T(192 h) = ${fmt(r.tempAt(192),2)} °C  (rise = ${fmt(r.tempAt(192)-s.tempInit,2)} °C)`
-  }),
-  tSelect: (s,r)=>({title:'Temperature at Selected Time', sub:'Energy', formula:'T(t) = T_gas − (T_gas − T₀) × e^(−k t)', vars:'<code>t</code> selected elapsed time (h) · <code>k</code> heating coefficient (1/h) · <code>T_gas</code> inlet gas temperature · <code>T₀</code> initial liquid temperature', subs:`T(${fmt(getSelectedTimeForFormula(),1)}) = ${fmt(s.flueTempIn,1)} − (${fmt(s.flueTempIn,1)} − ${fmt(s.tempInit,1)}) × e^(−${fmt(r.kCoeff,6)}×${fmt(getSelectedTimeForFormula(),1)})`, result:`T(${fmt(getSelectedTimeForFormula(),1)} h) = ${fmt(r.tempAt(getSelectedTimeForFormula()),2)} °C`}),
+  tOfT: (s,r)=>{
+    const tH = getTimeHorizon();
+    return {
+      title:'Temperature vs Time (integrated)', sub:'Energy',
+      formula:'T(t) = T_ss + (T₀ − T_ss)e^(−kt)',
+      vars:'<code>k</code> heating coefficient (1/h) · <code>t</code> elapsed time (h)',
+      subs:`T(${fmt(tH,1)}) = ${fmt(r.tSteady,2)} + (${fmt(s.tempInit,1)} − ${fmt(r.tSteady,2)}) × e^(−${fmt(r.kCoeff,6)}×${fmt(tH,1)})`,
+      result:`T(${fmt(tH,1)} h) = ${fmt(r.tempAt(tH),2)} °C  (rise = ${fmt(r.tempAt(tH)-s.tempInit,2)} °C; T_ss = ${fmt(r.tSteady,2)} °C)`
+    };
+  },
+  tSelect: (s,r)=>({title:'Temperature at Selected Time', sub:'Energy', formula:'T(t) = T_ss + (T₀ − T_ss)e^(−kt)', vars:'<code>t</code> selected elapsed time (h) · <code>k</code> heating coefficient (1/h) · <code>T_gas</code> inlet gas temperature · <code>T₀</code> initial liquid temperature', subs:`T(t) = ${fmt(r.tSteady,2)} + (${fmt(s.tempInit,1)} − ${fmt(r.tSteady,2)}) × e^(−${fmt(r.kCoeff,6)}×${fmt(getSelectedTimeForFormula(),1)})`, result:`T(${fmt(getSelectedTimeForFormula(),1)} h) = ${fmt(r.tempAt(getSelectedTimeForFormula()),2)} °C`}),
   cycA: (s,r)=>({
     title:'Cyclone Inlet Area', sub:'Cyclone (screening)',
     formula:'A_in = Q_act / v_inlet',
@@ -1145,8 +1665,8 @@ const FORMULAS = {
   }),
   cycD: (s,r)=>({
     title:'Screening Cyclone Diameter', sub:'Cyclone (screening)',
-    formula:'D_c ≈ √(A_in / 0.1)',
-    vars:'<code>A_in</code> cyclone inlet area (m²); 0.1 is a preliminary screening proportionality constant relating inlet area to body diameter',
+    formula:'Stairmand basis: A_in = 0.5D_c × 0.2D_c = 0.1D_c²; therefore D_c = √(A_in/0.1)',
+    vars:'Stairmand high-efficiency geometric proportion: inlet width = 0.5D_c and inlet height = 0.2D_c. This remains preliminary until efficiency/pressure-drop requirements are validated.',
     subs:`D_c = √(${fmt(r.cycA,6)} / 0.1)`,
     result:`D_c ≈ ${fmt(r.cycD,4)} m  (${fmt(r.cycD*1000,0)} mm) — SCREENING ONLY`
   }),
@@ -1177,43 +1697,58 @@ document.addEventListener('click', (e)=>{
    6. IMPACT ANALYSIS
    ============================================================ */
 const IMPACT_MAP = {
-  co2Frac: ['Required total flue-gas flow', 'Standard NL/min', 'Actual gas flow', 'Cyclone gas-handling load', 'Gas velocity through equipment', 'Potential pressure drop'],
+  pressure: ['Actual flue-gas volumetric flow at inlet conditions', 'Cyclone gas-handling load', 'Gas-side velocity/pressure-drop implications'],
+  co2Frac: ['Required total flue-gas flow', 'Standard NL/min', 'Actual gas flow', 'Cyclone gas-handling load', 'Gas velocity through equipment', 'Potential gas-side pressure drop'],
   captureEff: ['CO₂ inlet requirement', 'Total flue-gas flow', 'Cyclone loading'],
   co2Util: ['CO₂ utilization rate', 'CO₂ inlet requirement', 'Total flue-gas flow', 'Flue-gas mass flow', 'Heating coefficient k'],
-  geomVol: ['Working liquid volume', 'CO₂ requirement', 'Flue-gas requirement', 'Liquid thermal capacitance'],
+  geomVol: ['Working liquid volume', 'CO₂ requirement', 'Flue-gas requirement', 'Liquid thermal capacitance', 'Tube-count volume reconciliation'],
   workFrac: ['Liquid inventory', 'CO₂ requirement', 'Flue-gas requirement', 'Internal reactor liquid mass', 'Thermal capacitance'],
   tubeID: ['Tube area', 'Velocity required for same Re', 'Flow per loop', 'Total circulation', 'Pressure-drop implications'],
-  numLoops: ['Total internal circulation flow'],
-  brothDensity: ['Velocity for target Re', 'Flow per loop', 'Total circulation', 'Liquid mass', 'Thermal capacitance'],
-  viscosity: ['Velocity for target Re', 'Flow per loop', 'Total circulation'],
-  targetRe: ['Velocity for target Re', 'Flow per loop', 'Total circulation'],
+  numLoops: ['Tube/bend count reconciliation', 'Total internal circulation flow', 'Header velocity', 'Header Reynolds number', 'Header pressure drop', 'Pump duty'],
+  headerID: ['Main-header area', 'Supply/return header velocity', 'Header Reynolds number', 'Supply/return header pressure drop', 'Total TDH', 'Pump duty'],
+  headerLength: ['Supply-header section velocities', 'Supply-header friction loss', 'Total hydraulic pressure drop', 'TDH', 'Pump duty'],
+  returnHeaderLength: ['Return-header section velocities', 'Return-header friction loss', 'Total hydraulic pressure drop', 'TDH', 'Pump duty'],
+  branchLength: ['Branch friction loss', 'Total hydraulic pressure drop', 'TDH', 'Pump duty'],
+  branchID: ['Branch velocity', 'Branch Reynolds number', 'Branch pressure drop', 'Total TDH', 'Pump duty'],
+  supplyFittingK: ['Supply-header local-loss pressure drop', 'Total TDH', 'Pump duty'],
+  returnFittingK: ['Return-header local-loss pressure drop', 'Total TDH', 'Pump duty'],
+  branchFittingK: ['Branch local-loss pressure drop', 'Total TDH', 'Pump duty'],
+  fittingK: ['Loop local-loss pressure drop', 'Total TDH', 'Pump duty'],
+  uBendK: ['U-bend local-loss pressure drop', 'Total TDH', 'Pump duty'],
+  staticHead: ['Required pump TDH', 'Pump hydraulic power', 'Pump shaft power'],
+  brothDensity: ['Velocity for target Re', 'Flow per loop', 'Total circulation', 'Tube pressure drop', 'Header pressure drop', 'Branch pressure drop', 'Liquid mass', 'Thermal capacitance', 'Pump duty'],
+  viscosity: ['Velocity for target Re', 'Flow per loop', 'Total circulation', 'Tube/header/branch pressure drop', 'Pump duty'],
+  targetRe: ['Velocity for target Re', 'Flow per loop', 'Total circulation', 'Tube/header/branch pressure drop', 'Pump duty'],
   flueTempIn: ['Actual molar volume at inlet T', 'Actual flue-gas flow', 'Cyclone inlet area/diameter', 'Initial heat-transfer rate'],
   normDensity: ['Flue-gas mass flow', 'Initial heat-transfer rate', 'Heating coefficient k'],
-  liquidCp: ['Liquid thermal capacitance', 'Heating coefficient k', 'Temperature profile'],
-  gasCp: ['Initial heat-transfer rate', 'Heating coefficient k', 'Temperature profile'],
-  tempInit: ['Initial ΔT', 'Initial heat-transfer rate', 'Temperature profile'],
+  liquidCp: ['Liquid thermal capacitance', 'Heating coefficient k', 'Temperature profile', 'Temperature at every time point'],
+  gasCp: ['Initial heat-transfer rate', 'Heating coefficient k', 'Temperature profile', 'Temperature at every time point'],
+  tempInit: ['Initial temperature difference', 'Initial heat-transfer rate', 'Temperature profile', 'Temperature at every time point'],
+  batchDays: ['Batch time horizon', 'Temperature at batch horizon', 'Temperature graph/table horizon'],
   tempTarget: ['Reference target for heating outcome comparison'],
-  cycVel: ['Cyclone inlet area', 'Screening cyclone diameter'],
+  cycVel: ['Cyclone inlet area', 'Screening cyclone diameter', 'Cyclone pressure-drop estimate'],
   co2MW: ['CO₂ molar flow', 'Total flue-gas molar flow', 'Standard/actual gas flow'],
-  ubendCC: ['U-bend radius', 'U-bend volume', 'Calculated tube count', 'Calculated U-bend count', 'Total flow-path length'],
-  numUbends: ['Total U-bend length', 'Total flow-path length'],
-  numStraight: ['Total straight-tube length', 'Total flow-path length'],
-  straightLen: ['Total straight-tube length', 'Total flow-path length'],
+  ubendCC: ['U-bend radius', 'U-bend volume', 'Calculated tube count', 'Calculated U-bend count', 'Total flow-path length', 'U-bend pressure drop'],
+  straightLen: ['Tube volume', 'Calculated tube count', 'Total straight-tube length', 'Total flow-path length', 'Tube pressure drop', 'Pump duty'],
+  heatEffectiveness: ['Effective gas-to-liquid heat-transfer coefficient', 'Initial heat-transfer rate', 'Steady-state screening temperature', 'Temperature profile'],
+  ambientTemp: ['Ambient heat-loss driving force', 'Steady-state screening temperature', 'Temperature profile'],
+  ambientUA: ['Ambient heat loss', 'Overall thermal coefficient', 'Steady-state screening temperature', 'Temperature profile'],
+  batchDays: ['Batch time horizon', 'Temperature at batch horizon', 'Temperature graph/table horizon'],
   pmSize: ['Cyclone screening reference (does not change sizing formula)'],
 };
 const LABELS = {
   geomVol:'Geometric reactor volume', workFrac:'Working volume fraction', batchDays:'Batch cultivation time',
   tempTarget:'Operating temperature target', tempInit:'Initial feed temperature', pressure:'Pressure',
-  tubeID:'Tube ID', tubeOD:'Tube OD', straightLen:'Straight tube length', numStraight:'Straight tubes',
-  numUbends:'U-bends', ubendCC:'U-bend centre-to-centre', headerID:'Liquid main header ID', numLoops:'Internal circulation loops',
+  tubeID:'Tube ID', tubeOD:'Tube OD', straightLen:'Straight tube length',
+  ubendCC:'U-bend centre-to-centre', headerID:'Liquid main header ID', numLoops:'Internal circulation loops',
   co2Frac:'CO₂ concentration', co2Util:'CO₂ utilization design basis', captureEff:'CO₂ capture efficiency',
   co2MW:'CO₂ molecular weight', flueTempIn:'Flue-gas inlet temperature', normDensity:'Normal gas density',
   brothDensity:'Broth density', viscosity:'Dynamic viscosity', targetRe:'Target Reynolds number',
-  liquidCp:'Liquid heat capacity', gasCp:'Flue-gas heat capacity', pmSize:'PM reference particle size', cycVel:'Cyclone inlet velocity'
+  liquidCp:'Liquid heat capacity', gasCp:'Flue-gas heat capacity', pmSize:'PM reference particle size', cycVel:'Cyclone inlet velocity', uBendK:'U-bend loss coefficient K', headerLength:'Supply header length', returnHeaderLength:'Return header length', branchLength:'Branch length', branchID:'Branch ID', supplyFittingK:'Supply-header K total', returnFittingK:'Return-header K total', branchFittingK:'Branch K total', fittingK:'Loop / tube-side K total', staticHead:'Static head difference', pumpEfficiency:'Pump efficiency', heatEffectiveness:'Heat-transfer effectiveness', ambientTemp:'Ambient temperature', ambientUA:'Ambient UA', cycloneEuler:'Cyclone Euler number', gasViscosity:'Gas viscosity', particleDensity:'Particle density', cycloneEffectiveTurns:'Effective cyclone turns'
 };
 const UNITS = {
   geomVol:'m³', workFrac:'%', batchDays:'days', tempTarget:'°C', tempInit:'°C', pressure:'atm',
-  tubeID:'mm', tubeOD:'mm', straightLen:'m', numStraight:'', numUbends:'', ubendCC:'mm', headerID:'mm', numLoops:'',
+  tubeID:'mm', tubeOD:'mm', straightLen:'m', ubendCC:'mm', headerID:'mm', headerLength:'m', returnHeaderLength:'m', branchLength:'m', branchID:'mm', supplyFittingK:'', returnFittingK:'', branchFittingK:'', fittingK:'', staticHead:'m', numLoops:'',
   co2Frac:'%', co2Util:'g/L/h', captureEff:'%', co2MW:'kg/kmol', flueTempIn:'°C', normDensity:'kg/Nm³',
   brothDensity:'kg/m³', viscosity:'mPa·s', targetRe:'', liquidCp:'kJ/kg·K', gasCp:'kJ/kg·K', pmSize:'µm', cycVel:'m/s'
 };
@@ -1253,9 +1788,64 @@ function renderChangeLog(){
 }
 
 /* ============================================================
-   7. RENDER — main dashboard values
+   7. RENDER — operating mode UI
+   ============================================================ */
+function updateOperatingModeUI(){
+  const continuous = state.reactorMode === 'continuous';
+  document.querySelectorAll('.mode-text').forEach(el=>{
+    const val = el.getAttribute(continuous ? 'data-continuous' : 'data-batch');
+    if(val!==null) el.innerHTML = val;
+  });
+  const fillLabel=document.getElementById('fillTimeLabel'); if(fillLabel) fillLabel.textContent=continuous?'Startup fill time':'Batch fill time';
+  const harvestLabel=document.getElementById('harvestTimeLabel'); if(harvestLabel) harvestLabel.textContent=continuous?'Continuous withdrawal / harvest basis':'Batch harvest time';
+  const timeLabel=document.getElementById('modeTimeLabel');
+  const timeHint=document.getElementById('modeTimeHint');
+  if(timeLabel) timeLabel.textContent = continuous ? 'Hydraulic residence time (HRT)' : 'Batch cultivation time';
+  if(timeHint) timeHint.textContent = continuous ? 'For continuous operation: HRT basis used to calculate net liquid throughput Q = V/τ.' : 'For batch: total cultivation-cycle duration.';
+  const summary=document.getElementById('modeSummary');
+  if(summary) summary.textContent = continuous ? 'CONTINUOUS MODE — steady liquid feed/withdrawal; HRT determines net process flow and production rates.' : 'BATCH MODE — fixed cultivation cycle; batch mass balances are reported per batch.';
+  const lead=document.getElementById('massBalanceLead');
+  if(lead) lead.textContent = continuous ? 'Continuous material accounting' : 'Batch material accounting';
+  const basis=document.getElementById('massBalanceBasis');
+  if(basis) basis.textContent = continuous ? `MASS-BALANCE BASIS: 90% working volume and ${fmt(state.batchDays,2)}-day HRT. Biomass/lipid values are target/design-basis values. CO₂ utilization is a process design basis; final biological uptake and elemental closure require validated experimental/off-gas data.` : `MASS-BALANCE BASIS: 90% working volume and ${fmt(state.batchDays,2)}-day batch. Biomass/lipid values are target/design-basis values. CO₂ utilization is a process design basis; final biological uptake and elemental closure require validated experimental/off-gas data.`;
+  document.querySelectorAll('.mode-continuous-only').forEach(el=>el.style.display=continuous?'flex':'none');
+  // Change unit-bearing result labels for the active mode.
+  const hyd=document.getElementById('hydraulicModeLead');
+  if(hyd) hyd.innerHTML = continuous ? 'This is internal recirculation flow within the closed-loop reactor — <b>not</b> the net continuous process flow. The net liquid process flow is calculated separately from HRT as Q = V/τ.' : 'This is internal recirculation flow within the closed-loop reactor — <b>not</b> the batch feed flow and not an HRT-based continuous feed flow. The reactor basis is batch cultivation, so no HRT feed-flow figure is introduced here.';
+  const th=document.getElementById('tempHorizonHeading');
+  if(th) th.textContent = continuous ? 'Reactor Temperature vs Time (HRT / analysis horizon)' : 'Reactor Temperature vs Time (batch horizon)';
+  const cb=document.getElementById('currentBasisModeNote');
+  if(cb) cb.textContent = continuous ? `Continuous · ${fmt(state.batchDays,2)} days HRT · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h CO₂ utilization · 85% CO₂ capture · ≈173.1 NL/min standard flue gas · ≈223.8 L/min actual flue gas at 80°C · Re ≈ 5000 · 12 internal circulation loops · tube/bend counts calculated from geometric volume and tube/U-bend geometry.` : `Batch · ${fmt(state.batchDays,2)} days · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h CO₂ utilization · 85% CO₂ capture · ≈173.1 NL/min standard flue gas · ≈223.8 L/min actual flue gas at 80°C · Re ≈ 5000 · 12 internal circulation loops · tube/bend counts calculated from geometric volume and tube/U-bend geometry.`;
+  const bw=document.getElementById('reqBiomassWhy'); if(bw) bw.textContent=continuous?'Determines steady-state biomass inventory and continuous biomass production rate':'Determines batch biomass inventory and productivity';
+  const pi=document.getElementById('reqProdInput'); if(pi) pi.textContent=continuous?'HRT / residence time':'Batch cultivation time';
+  const pw=document.getElementById('reqProdWhy'); if(pw) pw.textContent=continuous?'Determines steady-state throughput and production rate':'Checks whether the batch can achieve the target';
+  const pf=document.getElementById('reqProdFormula'); if(pf) pf.textContent=continuous?'Q = V_working/τ; ṁ_X = Q·X_f':'P_X = (X_f−X₀)/t_batch';
+  const bp=document.getElementById('biomassPerModeLabel'); if(bp) bp.textContent=continuous?'Biomass production rate':'Biomass per batch';
+  const lp=document.getElementById('lipidPerModeLabel'); if(lp) lp.textContent=continuous?'Lipid production rate':'Lipid per batch';
+  const ch=document.getElementById('co2MassBalanceHeading'); if(ch) ch.textContent=continuous?'CO₂ Continuous Mass Balance':'CO₂ Batch Mass Balance';
+  const dl=document.getElementById('mbDeltaLabel'), ds=document.getElementById('mbDeltaSub'); if(dl&&ds){ dl.childNodes[0].textContent=continuous?'Biomass production rate':'Net biomass formed per batch'; ds.innerHTML=continuous?'ṁ<sub>X</sub> = Q·X<sub>f</sub>':'ΔM<sub>X</sub> = (X<sub>f</sub> − X<sub>0</sub>)V<sub>working</sub>/1000'; }
+  const pl=document.getElementById('mbProdLabel'), ps=document.getElementById('mbProdSub'); if(pl&&ps){ pl.childNodes[0].textContent=continuous?'Continuous biomass production rate':'Biomass productivity'; ps.innerHTML=continuous?'ṁ<sub>X</sub> = Q·X<sub>f</sub>':'P<sub>X</sub> = (X<sub>f</sub> − X<sub>0</sub>)/t<sub>batch</sub>'; }
+  const il=document.getElementById('mbCo2InLabel'), is=document.getElementById('mbCo2InSub'); if(il&&is){ il.childNodes[0].textContent=continuous?'CO₂ inlet rate':'CO₂ inlet to reactor per batch'; is.innerHTML=continuous?'ṁ<sub>CO₂,in</sub>':'M<sub>CO₂,in</sub> = ṁ<sub>CO₂,in</sub> × t<sub>batch</sub>'; }
+  const ul=document.getElementById('mbCo2UtilLabel'), us=document.getElementById('mbCo2UtilSub'); if(ul&&us){ ul.childNodes[0].textContent=continuous?'CO₂ utilized rate':'CO₂ utilized / captured design basis'; us.innerHTML=continuous?'ṁ<sub>CO₂,util</sub>':'M<sub>CO₂,util</sub> = ṁ<sub>CO₂,util</sub> × t<sub>batch</sub>'; }
+  const ll=document.getElementById('mbLipidLabel'), ls=document.getElementById('mbLipidSub'); if(ll&&ls){ ll.childNodes[0].textContent=continuous?'Lipid production rate':'Lipid product per batch'; ls.innerHTML=continuous?'ṁ<sub>lipid</sub> = Q·C<sub>lipid</sub>':'M<sub>lipid</sub> = V<sub>working</sub> × C<sub>lipid</sub> / 1000'; }
+  const map = {
+    'r-mbBiomassInitial':'Initial biomass inventory',
+    'r-mbBiomassFinal':'Final biomass inventory / steady-state inventory',
+    'r-mbBiomassDelta': continuous ? 'Biomass production rate' : 'Net biomass formed per batch',
+    'r-mbBiomassProd': continuous ? 'Biomass production rate' : 'Biomass productivity',
+    'r-mbLipidBatch': continuous ? 'Lipid production rate' : 'Lipid product per batch',
+    'r-mbCo2In': continuous ? 'CO₂ inlet rate' : 'CO₂ inlet to reactor per batch',
+    'r-mbCo2Util': continuous ? 'CO₂ utilized rate' : 'CO₂ utilized / captured design basis per batch',
+    'r-mbCo2Out': continuous ? 'CO₂ outlet rate (screening)' : 'CO₂ outlet screening per batch'
+  };
+  Object.entries(map).forEach(([id,label])=>{ const el=document.getElementById(id); if(el){ const row=el.closest('.row'); const lab=row&&row.querySelector('.label'); if(lab){ const sub=lab.querySelector('.sub'); lab.childNodes[0].textContent=label; }}});
+}
+
+/* ============================================================
+   8. RENDER — main dashboard values
    ============================================================ */
 function renderAll(){
+  updateOperatingModeUI();
   const r = compute(state);
 
   // geometry
@@ -1297,6 +1887,22 @@ function renderAll(){
   set('r-qLoop', fmt(r.qLoop_m3h,3)+' <span class="unit">m³/h</span>');
   set('r-qTotal', fmt(r.qTotal_m3h,2)+' <span class="unit">m³/h</span>');
   set('r-reCheck', fmt(r.reCheck,0));
+  set('r-headerArea', fmt(r.headerArea,6)+' <span class="unit">m²</span>');
+  set('r-headerVelocity', fmt(r.headerVelocity,3)+' <span class="unit">m/s</span>');
+  set('r-headerRe', fmt(r.headerRe,0));
+  set('r-dpTube', fmt(r.dpTube_Pa/1000,3)+' <span class="unit">kPa</span>');
+  set('r-dpUBend', fmt(r.dpUBend_Pa/1000,3)+' <span class="unit">kPa</span>');
+  set('r-dpSupplyHeader', (state.headerLength>0?fmt(r.dpSupplyHeader_Pa/1000,3)+' <span class="unit">kPa</span>':'TBD — supply header'));
+  set('r-dpReturnHeader', (state.returnHeaderLength>0?fmt(r.dpReturnHeader_Pa/1000,3)+' <span class="unit">kPa</span>':'TBD — return header'));
+  set('r-dpHeader', (state.headerLength>0&&state.returnHeaderLength>0?fmt(r.dpHeader_Pa/1000,3)+' <span class="unit">kPa</span>':'TBD — both headers'));
+  set('r-dpBranch', Number.isFinite(r.dpBranch_Pa)?fmt(r.dpBranch_Pa/1000,3)+' kPa':'TBD — branch geometry');
+  set('r-dpFittings', fmt(r.dpFittings_Pa/1000,3)+' <span class="unit">kPa</span>');
+  set('r-tdhFriction', Number.isFinite(r.tdhFriction_m)?fmt(r.tdhFriction_m,2)+' <span class="unit">m</span>':'TBD');
+  set('r-staticHead', fmt(state.staticHead,2)+' <span class="unit">m</span>');
+  set('r-dpTotal', Number.isFinite(r.dpTotal_Pa)?fmt(r.dpTotal_Pa/1000,3)+' <span class="unit">kPa</span>':'TBD — complete manifold geometry');
+  set('r-tdh', Number.isFinite(r.tdh_m)?fmt(r.tdh_m,2)+' <span class="unit">m</span>':'TBD — complete hydraulic path');
+  set('r-pumpPower', Number.isFinite(r.pumpHydraulic_W)?fmt(r.pumpHydraulic_W/1000,3)+' <span class="unit">kW</span>':'TBD — complete hydraulic path');
+  set('r-pumpShaft', Number.isFinite(r.pumpShaft_W)?fmt(r.pumpShaft_W/1000,3)+' <span class="unit">kW</span>':'TBD — complete hydraulic path');
 
   // energy
   set('r-mLiquid', fmt(r.mLiquid,1)+' <span class="unit">kg</span>');
@@ -1304,17 +1910,64 @@ function renderAll(){
   set('r-qDot0', fmt(r.qDot0,0)+' <span class="unit">kJ/h</span>');
   set('r-cLiquid', fmt(r.cLiquid,0)+' <span class="unit">kJ/K</span>');
   set('r-kCoeff', fmt(r.kCoeff,6)+' <span class="unit">1/h</span>');
+  set('r-heatEff', fmt(r.heatEffectiveness,2));
+  set('r-qDotActual', fmt(r.qDotActual0,0)+' <span class="unit">kJ/h</span>');
+  set('r-ambientUA', fmt(r.ambientUA,0)+' <span class="unit">kJ/h-K</span>');
+  if(document.getElementById('r-tempHorizon')) set('r-tempHorizon', fmt(r.tempHorizon,2)+' <span class="unit">°C</span>');
+  if(document.getElementById('r-tempTargetDelta')) set('r-tempTargetDelta', (r.tempTargetDelta>=0?'+':'')+fmt(r.tempTargetDelta,2)+' <span class="unit">°C</span>');
   renderTempTable(r);
   drawTempChart(r);
   const horizon = getTimeHorizon();
   const tSel = Math.min(Math.max(parseFloat(document.getElementById('in-tSelect').value) || 0, 0), horizon);
   set('r-tSelectOut', fmt(r.tempAt(tSel),2)+' <span class="unit">°C at '+fmt(tSel,1)+' h</span>');
 
+  // complete design-development outputs
+  set('r-biomassProd', Number.isFinite(r.biomassProductivity)?fmt(r.biomassProductivity,3)+' g/L/day':'TBD — biomass basis');
+  set('r-mbLiquidMass', Number.isFinite(r.mLiquid)?fmt(r.mLiquid,1)+' kg':'TBD');
+  if(document.getElementById('r-contFlow')) set('r-contFlow', Number.isFinite(r.continuousFlowM3h)?fmt(r.continuousFlowM3h,4)+' <span class="unit">m³/h</span>':'TBD');
+  set('r-mbBiomassInitial', Number.isFinite(r.biomassInitialKg)?fmt(r.biomassInitialKg,2)+' '+(state.reactorMode==='continuous'?'kg inventory':'kg/batch'):'TBD — initial biomass');
+  set('r-mbBiomassFinal', Number.isFinite(r.biomassFinalKg)?fmt(r.biomassFinalKg,2)+' '+(state.reactorMode==='continuous'?'kg inventory':'kg/batch'):'TBD');
+  set('r-mbBiomassDelta', state.reactorMode==='continuous' ? (Number.isFinite(r.biomassProductionRateKgH)?fmt(r.biomassProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.biomassBatchKg)?fmt(r.biomassBatchKg,2)+' kg/batch':'TBD'));
+  set('r-mbBiomassProd', state.reactorMode==='continuous' ? (Number.isFinite(r.biomassProductionRateKgH)?fmt(r.biomassProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.biomassProductivity)?fmt(r.biomassProductivity,3)+' g/L/day':'TBD'));
+  set('r-mbLipidConc', Number.isFinite(r.lipidConc_gL)?fmt(r.lipidConc_gL,3)+' g/L':'TBD');
+  set('r-mbLipidBatch', state.reactorMode==='continuous' ? (Number.isFinite(r.lipidProductionRateKgH)?fmt(r.lipidProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.lipidBatchKg)?fmt(r.lipidBatchKg,2)+' kg/batch':'TBD'));
+  set('r-mbNonLipid', Number.isFinite(r.nonLipidBatchKg)?fmt(r.nonLipidBatchKg,2)+' '+(state.reactorMode==='continuous'?'kg inventory':'kg/batch'):'TBD');
+  set('r-mbCo2In', state.reactorMode==='continuous' ? (Number.isFinite(r.co2InletH)?fmt(r.co2InletH,3)+' kg/h':'TBD') : (Number.isFinite(r.co2BatchInKg)?fmt(r.co2BatchInKg,2)+' kg/batch':'TBD'));
+  set('r-mbCo2Util', state.reactorMode==='continuous' ? (Number.isFinite(r.co2UtilH)?fmt(r.co2UtilH,3)+' kg/h':'TBD') : (Number.isFinite(r.co2BatchUtilKg)?fmt(r.co2BatchUtilKg,2)+' kg/batch':'TBD'));
+  set('r-mbCo2Out', state.reactorMode==='continuous' ? (Number.isFinite(r.co2OutH)?fmt(r.co2OutH,3)+' kg/h':'TBD') : (Number.isFinite(r.co2BatchOutKg)?fmt(r.co2BatchOutKg,2)+' kg/batch':'TBD'));
+  set('r-mbCo2Eff', Number.isFinite(r.co2UtilizationFraction)?fmt(r.co2UtilizationFraction*100,1)+' %':'TBD');
+  set('r-mbCarbon', state.reactorMode==='continuous' ? (Number.isFinite(r.biomassProductionRateKgH)?fmt(r.biomassProductionRateKgH*s.carbonFractionBiomass,3)+' kg C/h':'TBD') : (Number.isFinite(r.CRequirementKgBatch)?fmt(r.CRequirementKgBatch,2)+' kg C/batch':'TBD'));
+  set('r-mbNitrogen', state.reactorMode==='continuous' ? (Number.isFinite(r.NRequirementKgH)?fmt(r.NRequirementKgH,3)+' kg N/h':'TBD') : (Number.isFinite(r.NRequirementKgBatch)?fmt(r.NRequirementKgBatch,2)+' kg N/batch':'TBD'));
+  set('r-mbPhosphorus', state.reactorMode==='continuous' ? (Number.isFinite(r.PRequirementKgH)?fmt(r.PRequirementKgH,3)+' kg P/h':'TBD') : (Number.isFinite(r.PRequirementKgBatch)?fmt(r.PRequirementKgBatch,2)+' kg P/batch':'TBD'));
+  set('r-mbCarbonStatus', Number.isFinite(r.carbonClosureRatio)?fmt(r.carbonClosureRatio*100,1)+' % of CO₂-derived carbon in net biomass — closure not complete':'TBD — validated carbon uptake/stoichiometry required');
+  set('r-biomassBatch', state.reactorMode==='continuous' ? (Number.isFinite(r.biomassProductionRateKgH)?fmt(r.biomassProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.biomassBatchKg)?fmt(r.biomassBatchKg,2)+' kg/batch':'TBD'));
+  set('r-lipidConc', Number.isFinite(r.lipidConc_gL)?fmt(r.lipidConc_gL,3)+' g/L':'TBD');
+  set('r-lipidBatch', state.reactorMode==='continuous' ? (Number.isFinite(r.lipidProductionRateKgH)?fmt(r.lipidProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.lipidBatchKg)?fmt(r.lipidBatchKg,2)+' kg/batch':'TBD'));
+  set('r-optDepth', Number.isFinite(r.opticalDepth)?fmt(r.opticalDepth,3)+' –':'TBD — optical coefficient/path length');
+  set('r-lightTransmission', Number.isFinite(r.lightTransmission)?fmt(r.lightTransmission*100,1)+' %':'TBD');
+  set('r-ledPower', Number.isFinite(r.lightDutyW)?fmt(r.lightDutyW/1000,2)+' kW':'TBD — illuminated area / LED load');
+  set('r-co2Transfer', Number.isFinite(r.co2TransferCapacityKgH)?fmt(r.co2TransferCapacityKgH,3)+' kg/h':'TBD — kLa/C*−CL');
+  set('r-co2Margin', Number.isFinite(r.co2TransferMargin)?fmt(r.co2TransferMargin,3)+' kg/h':'TBD');
+  set('r-gasDP', fmt(r.gasTrainDPkPa,2)+' kPa from entered gas-unit losses');
+  set('r-blowerPower', Number.isFinite(r.blowerPowerW)?fmt(r.blowerPowerW/1000,3)+' kW':'TBD — gas ΔP & efficiency');
+  set('r-fillFlow', Number.isFinite(r.fillFlowLh)?fmt(r.fillFlowLh,1)+' L/h':'TBD — fill time');
+  set('r-harvestFlow', Number.isFinite(r.harvestFlowLh)?fmt(r.harvestFlowLh,1)+' L/h':'TBD — harvest time');
+  set('r-cipFlow', Number.isFinite(r.cipFlowM3h)?fmt(r.cipFlowM3h,2)+' m³/h':'TBD — CIP velocity');
+  set('r-cipRe', Number.isFinite(r.cipRe)?fmt(r.cipRe,0):'TBD');
+  set('r-Nreq', state.reactorMode==='continuous' ? (Number.isFinite(r.NRequirementKgH)?fmt(r.NRequirementKgH,3)+' kg N/h':'TBD') : (Number.isFinite(r.NRequirementKgBatch)?fmt(r.NRequirementKgBatch,2)+' kg N/batch':'TBD'));
+  set('r-Preq', state.reactorMode==='continuous' ? (Number.isFinite(r.PRequirementKgH)?fmt(r.PRequirementKgH,3)+' kg P/h':'TBD') : (Number.isFinite(r.PRequirementKgBatch)?fmt(r.PRequirementKgBatch,2)+' kg P/batch':'TBD'));
+  set('r-O2margin', Number.isFinite(r.o2MarginKgH)?fmt(r.o2MarginKgH,3)+' kg/h':'TBD — O₂ production and OUR');
+  set('r-wallThickness', Number.isFinite(r.wallThicknessMm)?fmt(r.wallThicknessMm,2)+' mm':'TBD — pressure/material code data');
+  set('r-expansion', Number.isFinite(r.thermalExpansionMm)?fmt(r.thermalExpansionMm,2)+' mm':'TBD — α, length and design temperature');
+
   // cyclone
   set('r-pmRef', fmt(state.pmSize,0)+' <span class="unit">µm</span>');
   set('r-cycVel', fmt(state.cycVel,1)+' <span class="unit">m/s</span>');
   set('r-cycA', fmt(r.cycA,6)+' <span class="unit">m²</span>');
   set('r-cycD', fmt(r.cycD*1000,0)+' <span class="unit">mm</span>');
+  set('r-cycInlet', fmt(r.cycInletWidth*1000,0)+' × '+fmt(r.cycInletHeight*1000,0)+' <span class="unit">mm</span>');
+  set('r-cycDp', fmt(r.cycDp_Pa/1000,2)+' <span class="unit">kPa</span>');
+  set('r-cycCut', Number.isFinite(r.cycCutSize_um)?fmt(r.cycCutSize_um,1)+' <span class="unit">µm</span>':'TBD — particle density');
 
   drawCO2ConcChart(r);
   drawCO2VolChart(r);
@@ -1325,10 +1978,33 @@ function renderAll(){
   // warnings
   const warns = computeWarnings(state, r);
   const bar = document.getElementById('warningBar');
-  bar.innerHTML = warns.map(w=>`<div class="warning ${w.level}"><span class="wtag">${w.level==='error'?'ERROR':'NOTICE'}</span><span>${w.msg}</span></div>`).join('');
+  const wasCollapsed = bar.dataset.collapsed === '1';
+  const errorCount = warns.filter(w => w.level === 'error').length;
+  const noticeCount = warns.filter(w => w.level !== 'error').length;
+  const totalCount = warns.length;
+  bar.innerHTML = `
+    <div class="warning-controls">
+      <div class="warning-summary">⚠ <span class="count">${totalCount}</span> design ${totalCount===1?'notice':'notices'}${errorCount ? ` · <span style="color:var(--tbd)">${errorCount} error${errorCount===1?'':'s'}</span>` : ''}${noticeCount ? ` · ${noticeCount} preliminary/TBD` : ''}</div>
+      <button type="button" class="warning-toggle" id="warningToggleBtn">${wasCollapsed ? 'Show notices' : 'Minimize notices'}</button>
+    </div>
+    <div class="warning-items">
+      ${warns.map(w=>`<div class="warning ${w.level}"><span class="wtag">${w.level==='error'?'ERROR':'NOTICE'}</span><span>${w.msg}</span></div>`).join('')}
+    </div>`;
+  bar.dataset.collapsed = wasCollapsed ? '1' : '0';
+  bar.classList.toggle('collapsed', wasCollapsed);
+  const toggleBtn = document.getElementById('warningToggleBtn');
+  if(toggleBtn){
+    toggleBtn.addEventListener('click', ()=>{
+      const collapsed = bar.dataset.collapsed === '1';
+      bar.dataset.collapsed = collapsed ? '0' : '1';
+      bar.classList.toggle('collapsed', !collapsed);
+      toggleBtn.textContent = collapsed ? 'Minimize notices' : 'Show notices';
+      updateWarningLayout();
+    });
+  }
   updateWarningLayout();
 
-  prevValues.__lastActLmin = r.actLmin;
+  if(pendingOldActLmin !== undefined){ prevValues.__lastActLmin = pendingOldActLmin; pendingOldActLmin = undefined; }
 }
 function set(id, html){ const el=document.getElementById(id); if(el) el.innerHTML = html; }
 
@@ -1341,7 +2017,7 @@ function updateWarningLayout(){
 
 function getTimeHorizon(){
   const days = Number(state.batchDays);
-  return Number.isFinite(days) && days > 0 ? Math.max(24, days * 24) : 192;
+  return Number.isFinite(days) && days > 0 ? days * 24 : 192;
 }
 
 function renderTempTable(r){
@@ -1438,7 +2114,7 @@ function drawCircTubeChart(r){
 function renderSchematic(){
   const el = document.getElementById('schematicSvg');
   const loops = Math.max(1, Math.round(state.numLoops));
-  const cols = 2, rows = Math.ceil(loops/cols);
+  const cols = 4, rows = Math.ceil(loops/cols);
   const w = 640, hpad=30, rowH = 46;
   const h = rowH*rows + hpad*2 + 30;
   let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:640px; display:block; margin:0 auto;">`;
@@ -1473,7 +2149,7 @@ const FLOW_STAGES = [
   {id:'source', title:'MRPL Flue Gas', type:'gas', status:'LOCKED', always:true,
     info:{purpose:'Source flue-gas stream from the MRPL process.', principle:'Raw combustion / process off-gas, 13 vol% CO₂, 80°C inlet.', input:'MRPL process outlet', output:'Raw flue gas to cyclone', formula:'—', design:'LOCKED', data:'Requires full flue-gas analysis (PM, SOx, NOx, moisture).'}},
   {id:'cyclone', title:'Cyclone Separator', type:'gas', status:'PRELIM', always:true,
-    info:{purpose:'Coarse particulate / dust (PM) removal.', principle:'Tangential-entry reverse-flow cyclone; centrifugal separation of solids.', input:'Raw flue gas', output:'De-dusted gas + collected solids', formula:'A_in = Q/v_inlet; D_c ≈ √(A_in/0.1)', design:'PRELIMINARY / SCREENING', data:'PM concentration, PSD, particle density, target efficiency, allowable ΔP — TBD.'}},
+    info:{purpose:'Coarse particulate / dust (PM) removal.', principle:'Tangential-entry reverse-flow cyclone; centrifugal separation of solids.', input:'Raw flue gas', output:'De-dusted gas + collected solids', formula:'A_in = Q/v_inlet; Stairmand: a=0.5D_c, b=0.2D_c, A_in=0.1D_c²', design:'PRELIMINARY / SCREENING', data:'PM concentration, PSD, particle density, target efficiency, allowable ΔP — TBD.'}},
   {id:'filter', title:'Fine Filter', type:'gas', status:'COND', toggle:'chk-filter',
     info:{purpose:'Fine PM polishing beyond cyclone cut.', principle:'Cartridge or fabric (bag) filtration.', input:'Cyclone outlet gas', output:'Fine-filtered gas', formula:'Sizing requires face velocity and dust loading — TBD', design:'CONDITIONAL', data:'Only required if fine PM fraction is significant.'}},
   {id:'cooler', title:'Gas Cooler', type:'gas', status:'COND', toggle:'chk-cooler',
@@ -1577,6 +2253,27 @@ document.getElementById('clearCases').addEventListener('click', ()=>{ caseA=null
 /* ============================================================
    12. NAVIGATION
    ============================================================ */
+const sidebar = document.getElementById('sidebar');
+const sectionsToggle = document.getElementById('sectionsToggle');
+const sectionsToggleBtn = document.getElementById('sectionsToggleBtn');
+function setSectionsExpanded(expanded){
+  sidebar.classList.toggle('sections-collapsed', !expanded);
+  sectionsToggle.setAttribute('aria-expanded', String(expanded));
+  sectionsToggleBtn.setAttribute('aria-expanded', String(expanded));
+  sectionsToggleBtn.setAttribute('aria-label', expanded ? 'Minimize model sections' : 'Expand model sections');
+  sectionsToggleBtn.textContent = expanded ? '−' : '+';
+}
+sectionsToggle.addEventListener('click', (e)=>{
+  if(e.target === sectionsToggleBtn) return;
+  setSectionsExpanded(sidebar.classList.contains('sections-collapsed'));
+});
+sectionsToggle.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); setSectionsExpanded(sidebar.classList.contains('sections-collapsed')); }
+});
+sectionsToggleBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  setSectionsExpanded(sidebar.classList.contains('sections-collapsed'));
+});
 document.querySelectorAll('.navitem').forEach(item=>{
   item.addEventListener('click', ()=>{
     document.querySelectorAll('.navitem').forEach(i=>i.classList.remove('active'));
@@ -1604,8 +2301,16 @@ function bindInputs(){
     inp.value = state[key];
     inp.addEventListener('change', ()=>{
       const old = state[key];
-      const val = parseFloat(inp.value);
-      if(isNaN(val)) return;
+      if(key !== 'countCriterion') pendingOldActLmin = compute(state).actLmin;
+      let val;
+      if(inp.tagName === 'SELECT') {
+        val = inp.value;
+        if(key === 'reactorMode' && !['batch','continuous'].includes(val)) return;
+        if(key === 'countCriterion' && !['closest','atLeast','below'].includes(val)) return;
+      } else {
+        val = parseFloat(inp.value);
+        if(!Number.isFinite(val)) return;
+      }
       state[key] = val;
       logChange(key, old, val);
       if(key === 'batchDays') syncTimeSelector();
@@ -1655,14 +2360,12 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const r = compute(state);
 
   /*
-   * Excel-compatible export:
-   * The downloaded .xls file is an HTML table workbook that opens directly
-   * in Microsoft Excel. It contains separate sheets/sections for:
+   * Excel export: SheetJS is used for genuine .xlsx output when the CDN is available; fallback remains Excel-compatible HTML .xls. It contains separate sheets/sections for:
    * 1) Design Basis
    * 2) Reactor Geometry
    * 3) CO2 & Flue Gas
    * 4) Hydraulics
-   * 5) Energy
+   * 5) Mass Balance / 6) Energy
    * 6) Cyclone
    * 7) Impact / Change Log
    * 8) Case Comparison
@@ -1684,9 +2387,9 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
       ${rows.join('')}
     </table>`;
 
-  const designBasisRows = Object.keys(DEFAULTS).map(k =>
+  const designBasisRows = [row('Reactor operating mode', state.reactorMode==='continuous'?'Continuous Reactor':'Batch Reactor', '', 'SELECTED MODE'), ...Object.keys(DEFAULTS).filter(k=>k!=='reactorMode').map(k =>
     row(LABELS[k] || k, state[k], UNITS[k] || '', k === 'cycVel' ? 'PRELIM' : 'LIVE INPUT')
-  );
+  )];
 
   const geometryRows = [
     row('Geometric reactor volume', fmt(state.geomVol,4), 'm³', 'INPUT BASIS'),
@@ -1697,7 +2400,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     row('Volume per straight tube', fmt(r.tubeVol_m3*1000,3), 'L/tube', 'CALCULATED'),
     row('Volume per U-bend', fmt(r.ubendVol_m3*1000,3), 'L/bend', 'CALCULATED'),
     row('Theoretical tube count', fmt(r.tubeCountTheory,3), 'tubes', 'CALCULATED'),
-    row('Selected straight-tube count', r.numStraightCalc, 'tubes', 'CALCULATED — nearest whole'),
+    row('Selected straight-tube count', r.numStraightCalc, 'tubes', 'CALCULATED — criterion-based'),
     row('Calculated U-bend count', r.numUbendsCalc, 'U-bends', 'CALCULATED — N_tubes − N_loops'),
     row('Reconciled geometric volume', fmt(r.volumeAchieved,4), 'm³', 'CALCULATED'),
     row('Volume deviation', fmt(r.volumeError,4), 'm³', 'CALCULATED'),
@@ -1724,7 +2427,21 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     row('Velocity for target Reynolds number', fmt(r.velocity,4), 'm/s', `Re target=${state.targetRe}`),
     row('Flow per loop', fmt(r.qLoop_m3h,3), 'm³/h', 'CALCULATED'),
     row('Total internal circulation', fmt(r.qTotal_m3h,2), 'm³/h', `${state.numLoops} loops`),
-    row('Reynolds number check', fmt(r.reCheck,0), '—', 'CALCULATED')
+    row('Reynolds number check', fmt(r.reCheck,0), '—', 'CALCULATED') ,
+    row('Main-header cross-sectional area', fmt(r.headerArea,6), 'm²', 'CALCULATED'),
+    row('Main-header velocity', fmt(r.headerVelocity,3), 'm/s', 'SCREENING — actual header length/fittings required for pressure drop'),
+    row('Main-header Reynolds number', fmt(r.headerRe,0), '—', 'SCREENING'),
+    row('Tube friction pressure drop', fmt(r.dpTube_Pa/1000,3), 'kPa', 'CALCULATED'),
+    row('U-bend pressure drop', fmt(r.dpUBend_Pa/1000,3), 'kPa', 'PRELIMINARY K'),
+    row('Supply-header pressure drop', state.headerLength>0?fmt(r.dpSupplyHeader_Pa/1000,3):'TBD', 'kPa', state.headerLength>0?'CALCULATED — sectionwise':'TBD'),
+    row('Return-header pressure drop', state.returnHeaderLength>0?fmt(r.dpReturnHeader_Pa/1000,3):'TBD', 'kPa', state.returnHeaderLength>0?'CALCULATED — sectionwise':'TBD'),
+    row('Total header pressure drop', state.headerLength>0&&state.returnHeaderLength>0?fmt(r.dpHeader_Pa/1000,3):'TBD', 'kPa', state.headerLength>0&&state.returnHeaderLength>0?'CALCULATED':'TBD — both headers'),
+    row('Branch pressure drop', Number.isFinite(r.dpBranch_Pa)?fmt(r.dpBranch_Pa/1000,3):'TBD', 'kPa', Number.isFinite(r.dpBranch_Pa)?'CALCULATED':'TBD — branch geometry'),
+    row('Fittings / valves pressure drop', fmt(r.dpFittings_Pa/1000,3), 'kPa', 'K input'),
+    row('Total hydraulic pressure drop', Number.isFinite(r.dpTotal_Pa)?fmt(r.dpTotal_Pa/1000,3):'TBD', 'kPa', Number.isFinite(r.dpTotal_Pa)?'CALCULATED':'TBD — complete manifold geometry'),
+    row('TDH', Number.isFinite(r.tdh_m)?fmt(r.tdh_m,2):'TBD', 'm', Number.isFinite(r.tdh_m)?'CALCULATED':'TBD — complete hydraulic path'),
+    row('Hydraulic pump power', Number.isFinite(r.pumpHydraulic_W)?fmt(r.pumpHydraulic_W/1000,3):'TBD', 'kW', Number.isFinite(r.pumpHydraulic_W)?'CALCULATED':'TBD — complete hydraulic path'),
+    row('Pump shaft power', Number.isFinite(r.pumpShaft_W)?fmt(r.pumpShaft_W/1000,3):'TBD', 'kW', Number.isFinite(r.pumpShaft_W)?'PRELIMINARY — efficiency input':'TBD — complete hydraulic path')
   ];
 
   const energyRows = [
@@ -1732,15 +2449,14 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     row('Flue-gas mass flow', fmt(r.mDotGas,2), 'kg/h', 'CALCULATED'),
     row('Initial heat-transfer rate', fmt(r.qDot0,0), 'kJ/h', 'IDEAL SCREENING'),
     row('Liquid thermal capacitance', fmt(r.cLiquid,0), 'kJ/K', 'CALCULATED'),
-    row('Heating coefficient', fmt(r.kCoeff,6), '1/h', 'CALCULATED'),
-    row(`Temperature at 24 h`, fmt(r.tempAt(24),2), '°C', 'SCREENING'),
-    row(`Temperature at 48 h`, fmt(r.tempAt(48),2), '°C', 'SCREENING'),
-    row(`Temperature at 72 h`, fmt(r.tempAt(72),2), '°C', 'SCREENING'),
-    row(`Temperature at 96 h`, fmt(r.tempAt(96),2), '°C', 'SCREENING'),
-    row(`Temperature at 120 h`, fmt(r.tempAt(120),2), '°C', 'SCREENING'),
-    row(`Temperature at 144 h`, fmt(r.tempAt(144),2), '°C', 'SCREENING'),
-    row(`Temperature at 168 h`, fmt(r.tempAt(168),2), '°C', 'SCREENING'),
-    row(`Temperature at ${state.batchDays*24} h`, fmt(r.tempAt(state.batchDays*24),2), '°C', 'SCREENING')
+    row('Heating coefficient', fmt(r.kCoeff,6), '1/h', 'CALCULATED — includes ε and UA'),
+    row('Heat-transfer effectiveness', fmt(r.heatEffectiveness,2), 'fraction', 'PRELIMINARY'),
+    row('Actual initial heat-transfer rate', fmt(r.qDotActual0,0), 'kJ/h', 'PRELIMINARY ε'),
+    row('Ambient UA', fmt(r.ambientUA,0), 'kJ/h-K', r.ambientUA>0?'INPUT':'TBD / omitted'),
+    row('Temperature target', fmt(state.tempTarget,2), '°C', 'INPUT TARGET'),
+    row(state.reactorMode==='continuous'?'Temperature at HRT / analysis horizon':'Temperature at batch horizon', fmt(r.tempHorizon,2), '°C', 'SCREENING'),
+    row('Temperature deviation from target', fmt(r.tempTargetDelta,2), '°C', r.targetReached ? 'TARGET REACHED' : 'TARGET NOT REACHED'),
+    ...Array.from({length:8}, (_,i)=>{ const h=getTimeHorizon(); const t=Math.round(Math.min(h,(i+1)*h/8)); return row(`Temperature at ${t} h`, fmt(r.tempAt(t),2), '°C', 'SCREENING'); })
   ];
 
   const cycloneRows = [
@@ -1748,7 +2464,13 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     row('PM reference particle size', state.pmSize, 'µm', 'REFERENCE ONLY'),
     row('Assumed inlet velocity', state.cycVel, 'm/s', 'PRELIMINARY'),
     row('Cyclone inlet area', fmt(r.cycA,6), 'm²', 'SCREENING'),
-    row('Screening cyclone diameter', fmt(r.cycD*1000,0), 'mm', 'SCREENING — NOT FINAL SIZE'),
+    row('Screening cyclone diameter', fmt(r.cycD*1000,0), 'mm', 'STAIRMAND PRELIMINARY'),
+    row('Stairmand inlet width × height', `${fmt(r.cycInletWidth*1000,0)} × ${fmt(r.cycInletHeight*1000,0)}`, 'mm', 'PRELIMINARY GEOMETRY'),
+    row('Cyclone outlet diameter', fmt(r.cycOutletDiameter*1000,0), 'mm', 'PRELIMINARY GEOMETRY'),
+    row('Cyclone body height', fmt(r.cycBodyHeight*1000,0), 'mm', 'PRELIMINARY GEOMETRY'),
+    row('Cyclone cone height', fmt(r.cycConeHeight*1000,0), 'mm', 'PRELIMINARY GEOMETRY'),
+    row('Cyclone pressure-drop estimate', fmt(r.cycDp_Pa/1000,2), 'kPa', 'PRELIMINARY Euler-number estimate'),
+    row('Cyclone cut-size screening', Number.isFinite(r.cycCutSize_um)?fmt(r.cycCutSize_um,1):'TBD', 'µm', Number.isFinite(r.cycCutSize_um)?'LAPPLE SCREENING':'TBD — particle density'),
     row('Final PM concentration', 'TBD', '', 'REQUIRED'),
     row('Particle-size distribution', 'TBD', '', 'REQUIRED'),
     row('Particle density', 'TBD', '', 'REQUIRED'),
@@ -1785,11 +2507,12 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   });
 
   const notesRows = [
-    row('Current design basis', 'Batch · 8 days · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h · 85% capture · Re≈5000 · 12 loops', '', 'REFERENCE'),
+    row('Current design basis', `${state.reactorMode==='continuous'?'Continuous · '+state.batchDays+' days HRT':'Batch · '+state.batchDays+' days'} · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h · 85% capture · Re≈5000 · 12 loops`, '', 'REFERENCE'),
     row('Gas flow basis', `${fmt(r.stdNLmin,1)} NL/min standard`, 'NL/min', 'LIVE'),
     row('Actual gas flow basis', `${fmt(r.actLmin,1)} L/min at ${state.flueTempIn}°C`, 'L/min', `LIVE; P=${state.pressure} atm abs`),
-    row('Energy model', 'Ideal complete sensible-heat-transfer screening model', '', 'NOT FINAL ENERGY BALANCE'),
+    row('Energy model', 'Transient model with heat-transfer effectiveness ε and optional ambient UA loss', '', 'PRELIMINARY — validate ε and UA'),
     row('Cyclone', 'Preliminary screening only', '', 'FINAL SIZING REQUIRES PLANT/VENDOR DATA'),
+    row('Hydraulic completion', r.hydraulicsComplete ? 'Header + branch geometry entered; TDH/pump duty calculated' : 'Enter valid hydraulic geometry to complete TDH/pump duty', '', r.hydraulicsComplete ? 'CALCULATED' : 'TBD — PLANT/MECHANICAL DATA REQUIRED'),
     row('Validation', 'Plant flue-gas analysis and vendor/equipment data required', '', 'BEFORE FABRICATION')
   ];
 
@@ -1819,6 +2542,25 @@ ${section('ENGINEERING NOTES', notesRows)}
 </body>
 </html>`;
 
+  if(window.XLSX){
+    const wb = XLSX.utils.book_new();
+    const makeSheet = (title, rows) => XLSX.utils.aoa_to_sheet([
+      ['CARBONONE MRPL — '+title],
+      ['Parameter','Value','Unit','Status / Notes'],
+      ...rows.map(x=>{
+        const m = x.match(/<td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td>/);
+        return m ? [m[1].replace(/<[^>]+>/g,''),m[2].replace(/<[^>]+>/g,''),m[3].replace(/<[^>]+>/g,''),m[4].replace(/<[^>]+>/g,'')] : [x,'','',''];
+      })
+    ]);
+    const sheets = [
+      ['Design Basis',designBasisRows],['Reactor Geometry',geometryRows],['CO2 & Flue Gas',gasRows],
+      ['Hydraulics',hydraulicRows],['Energy',energyRows],['Cyclone',cycloneRows],
+      ['Impact Log',impactRows],['Case Comparison',compareRows],['Engineering Notes',notesRows]
+    ];
+    sheets.forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb, makeSheet(name,rows), name.slice(0,31)));
+    XLSX.writeFile(wb,'CarbonONE_MRPL_Calculation_Report.xlsx');
+    return;
+  }
   const blob = new Blob([workbook], {type:'application/vnd.ms-excel'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
