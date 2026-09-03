@@ -327,6 +327,19 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
 ::-webkit-scrollbar{width:10px; height:10px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--border); border-radius:5px;}
+
+/* ---------- Calculated geometry fields ---------- */
+.calc-field input[readonly]{
+  background:var(--bg-panel-2);
+  color:var(--locked);
+  border-color:rgba(79,174,122,.35);
+  cursor:not-allowed;
+}
+.calc-badge{
+  display:inline-flex; align-items:center; gap:5px; font-family:var(--mono); font-size:10.5px;
+  padding:2px 7px; border-radius:2px; font-weight:600; letter-spacing:.02em; white-space:nowrap;
+  color:var(--locked); background:var(--locked-bg); border:1px solid rgba(79,174,122,.35);
+}
 </style>
 </head>
 <body>
@@ -406,10 +419,10 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
         <div class="inputwrap"><input type="number" step="1" id="in-tubeOD" data-key="tubeOD"><span class="unit-suffix">mm</span></div></div>
       <div class="field"><label>Straight tube length <span class="badge locked">LOCKED</span></label>
         <div class="inputwrap"><input type="number" step="0.1" id="in-straightLen" data-key="straightLen"><span class="unit-suffix">m</span></div></div>
-      <div class="field"><label>Straight tubes <span class="badge locked">LOCKED</span></label>
-        <div class="inputwrap"><input type="number" step="1" id="in-numStraight" data-key="numStraight"><span class="unit-suffix">count</span></div></div>
-      <div class="field"><label>U-bends <span class="badge locked">LOCKED</span></label>
-        <div class="inputwrap"><input type="number" step="1" id="in-numUbends" data-key="numUbends"><span class="unit-suffix">count</span></div></div>
+      <div class="field calc-field"><label>Straight tubes — calculated <span class="calc-badge">CALC</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-numStraight" data-key="numStraight" readonly><span class="unit-suffix">count</span></div></div>
+      <div class="field calc-field"><label>U-bends — calculated <span class="calc-badge">CALC</span></label>
+        <div class="inputwrap"><input type="number" step="1" id="in-numUbends" data-key="numUbends" readonly><span class="unit-suffix">count</span></div></div>
       <div class="field"><label>U-bend centre-to-centre <span class="badge locked">LOCKED</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-ubendCC" data-key="ubendCC"><span class="unit-suffix">mm</span></div></div>
       <div class="field"><label>Liquid main header ID <span class="badge locked">LOCKED</span></label>
@@ -478,6 +491,20 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
       <div class="row"><div class="label">U-bend centreline radius<span class="sub">R = C-C / 2</span></div><div class="meta"><button class="formula-btn" data-f="ubendR">View Formula</button><div class="val" id="r-ubendR">–</div></div></div>
       <div class="row"><div class="label">U-bend centreline length<span class="sub">L<sub>U</sub> = πR (per bend)</span></div><div class="meta"><button class="formula-btn" data-f="ubendL">View Formula</button><div class="val" id="r-ubendL">–</div></div></div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Tube &amp; U-Bend Count Calculation</h2>
+    <p class="footnote">The physical tube count is calculated from the <b>geometric reactor volume</b>. Working-volume fraction affects liquid fill only; it is not used to size the physical tube count. For a serpentine arrangement with N<sub>loops</sub> independent loops, N<sub>U-bends</sub> = N<sub>tubes</sub> − N<sub>loops</sub>.</p>
+    <div class="row"><div class="label">Internal cross-sectional area<span class="sub">A<sub>tube</sub> = πD<sub>ID</sub>²/4</span></div><div class="meta"><button class="formula-btn" data-f="tubeVol">View Formula</button><div class="val" id="r-tubeAreaGeom">–</div></div></div>
+    <div class="row"><div class="label">Volume per straight tube<span class="sub">V<sub>tube</sub> = A<sub>tube</sub> × L<sub>tube</sub></span></div><div class="meta"><button class="formula-btn" data-f="tubeVol">View Formula</button><div class="val" id="r-tubeVol">–</div></div></div>
+    <div class="row"><div class="label">Volume per U-bend<span class="sub">V<sub>U</sub> = A<sub>tube</sub> × L<sub>U</sub></span></div><div class="meta"><button class="formula-btn" data-f="ubendVol">View Formula</button><div class="val" id="r-ubendVol">–</div></div></div>
+    <div class="row"><div class="label">Theoretical tube count<span class="sub">N<sub>tubes,theory</sub> = (V<sub>geom</sub> + N<sub>loops</sub>V<sub>U</sub>)/(V<sub>tube</sub> + V<sub>U</sub>)</span></div><div class="meta"><button class="formula-btn" data-f="tubeCount">View Formula</button><div class="val" id="r-tubeCountTheory">–</div></div></div>
+    <div class="row"><div class="label">Selected straight-tube count<span class="sub">Nearest whole tube to theoretical count</span></div><div class="meta"><span class="calc-badge">CALC</span><div class="val" id="r-numStraightCalc">–</div></div></div>
+    <div class="row"><div class="label">Calculated U-bend count<span class="sub">N<sub>U-bends</sub> = N<sub>tubes</sub> − N<sub>loops</sub></span></div><div class="meta"><button class="formula-btn" data-f="ubendCount">View Formula</button><div class="val" id="r-numUbendsCalc">–</div></div></div>
+    <div class="row"><div class="label">Reconciled geometric volume<span class="sub">V<sub>actual</sub> = N<sub>tubes</sub>V<sub>tube</sub> + N<sub>U-bends</sub>V<sub>U</sub></span></div><div class="meta"><button class="formula-btn" data-f="volumeReconcile">View Formula</button><div class="val" id="r-volumeAchieved">–</div></div></div>
+    <div class="row"><div class="label">Volume deviation from target<span class="sub">ΔV = V<sub>actual</sub> − V<sub>geom</sub></span></div><div class="meta"><div class="val" id="r-volumeError">–</div></div></div>
+    <div class="row"><div class="label">Average tubes per loop<span class="sub">N<sub>tubes</sub>/N<sub>loops</sub> — actual loop split may differ by ±1 tube</span></div><div class="meta"><div class="val" id="r-tubesPerLoop">–</div></div></div>
   </div>
 
   <div class="card">
@@ -697,7 +724,7 @@ hr.soft{border:none; border-top:1px solid var(--border-soft); margin:16px 0;}
 
   <div class="card">
     <h2>Current Locked Design Basis</h2>
-    <p class="inline-note">Batch · 8 days · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h CO₂ utilization · 85% CO₂ capture · ≈173.1 NL/min standard flue gas · ≈223.8 L/min actual flue gas at 80°C · Re ≈ 5000 · 12 internal circulation loops.</p>
+    <p class="inline-note">Batch · 8 days · 90% working volume · 35°C target · 30°C initial feed · 1 atm abs · 13% CO₂ · 0.25 g/L/h CO₂ utilization · 85% CO₂ capture · ≈173.1 NL/min standard flue gas · ≈223.8 L/min actual flue gas at 80°C · Re ≈ 5000 · 12 internal circulation loops · tube/bend counts calculated from geometric volume and tube/U-bend geometry.</p>
   </div>
 
   <div class="card">
@@ -814,10 +841,34 @@ function compute(s){
   // ---- geometry ----
   r.workVolM3 = s.geomVol * (s.workFrac/100);
   r.workVolL  = r.workVolM3 * 1000;
-  r.ubendR_m  = (s.ubendCC/1000) / 2; // locked design basis: R = C-C / 2
+  r.ubendR_m  = (s.ubendCC/1000) / 2; // C-C / 2
   r.ubendL_m  = Math.PI * r.ubendR_m;
-  r.lStraight = s.numStraight * s.straightLen;
-  r.lBend     = s.numUbends * r.ubendL_m;
+  r.tubeAreaGeom = Math.PI * Math.pow(s.tubeID/1000,2) / 4;
+  r.tubeVol_m3 = r.tubeAreaGeom * s.straightLen;
+  r.ubendVol_m3 = r.tubeAreaGeom * r.ubendL_m;
+
+  // Physical tube/bend count from geometric reactor volume.
+  // For N independent serpentine loops: N_bends = N_tubes - N_loops.
+  const denom = r.tubeVol_m3 + r.ubendVol_m3;
+  r.tubeCountTheory = denom>0
+    ? (s.geomVol + s.numLoops*r.ubendVol_m3) / denom
+    : NaN;
+  r.numStraightCalc = Number.isFinite(r.tubeCountTheory)
+    ? Math.max(Math.round(s.numLoops), Math.round(r.tubeCountTheory))
+    : 0;
+  r.numUbendsCalc = Math.max(0, r.numStraightCalc - Math.max(0, Math.round(s.numLoops)));
+  r.volumeAchieved = r.numStraightCalc*r.tubeVol_m3 + r.numUbendsCalc*r.ubendVol_m3;
+  r.volumeError = r.volumeAchieved - s.geomVol;
+  r.volumeErrorPct = s.geomVol ? (r.volumeError/s.geomVol)*100 : NaN;
+  r.tubesPerLoop = s.numLoops>0 ? r.numStraightCalc/s.numLoops : NaN;
+
+  // Keep the legacy state fields synchronized so all downstream calculations
+  // use the newly calculated tube/bend counts.
+  s.numStraight = r.numStraightCalc;
+  s.numUbends = r.numUbendsCalc;
+
+  r.lStraight = r.numStraightCalc * s.straightLen;
+  r.lBend     = r.numUbendsCalc * r.ubendL_m;
   r.lTotal    = r.lStraight + r.lBend;
 
   // ---- CO2 / flue gas ----
@@ -872,6 +923,8 @@ function computeWarnings(s, r){
   if(s.geomVol<=0) w.push({level:'error', msg:'ERROR: Geometric reactor volume must be positive.'});
   if(s.pressure<=0) w.push({level:'error', msg:'ERROR: Absolute pressure must be greater than zero.'});
   if(s.tubeOD<=s.tubeID) w.push({level:'error', msg:'ERROR: Tube OD must be greater than tube ID.'});
+  if(s.numLoops<=0 || !Number.isFinite(s.numLoops)) w.push({level:'error', msg:'ERROR: Internal circulation loop count must be positive.'});
+  if(Math.abs(r.volumeErrorPct)>0.25) w.push({level:'notice', msg:`NOTICE: Integer tube/bend selection gives ${fmt(r.volumeErrorPct,3)}% geometric-volume deviation from target. Review tube count selection before fabrication.`});
   if(prevValues.__lastActLmin!==undefined){
     const delta = Math.abs(r.actLmin - prevValues.__lastActLmin)/prevValues.__lastActLmin;
     if(delta>0.15) w.push({level:'notice', msg:'NOTICE: Gas-handling equipment loading has changed by more than 15% since last calculation.'});
@@ -907,6 +960,41 @@ const FORMULAS = {
     vars:'<code>R</code> U-bend centreline radius (m), per bend',
     subs:`L_U = π × ${fmt(r.ubendR_m,4)}`,
     result:`L_U = ${fmt(r.ubendL_m,4)} m per bend`
+  }),
+  tubeVol: (s,r)=>({
+    title:'Volume per Straight Tube', sub:'Tube & U-Bend Count Calculation',
+    formula:'A_tube = πD_ID²/4   ;   V_tube = A_tube × L_tube',
+    vars:'<code>D_ID</code> tube internal diameter (m) · <code>L_tube</code> straight tube length (m)',
+    subs:`A_tube = π × ${fmt(s.tubeID/1000,4)}² / 4 = ${fmt(r.tubeAreaGeom,6)} m²\\nV_tube = ${fmt(r.tubeAreaGeom,6)} × ${fmt(s.straightLen,2)}`,
+    result:`V_tube = ${fmt(r.tubeVol_m3,6)} m³ = ${fmt(r.tubeVol_m3*1000,3)} L/tube`
+  }),
+  ubendVol: (s,r)=>({
+    title:'Volume per U-Bend', sub:'Tube & U-Bend Count Calculation',
+    formula:'V_U = A_tube × L_U',
+    vars:'<code>A_tube</code> tube internal area (m²) · <code>L_U</code> U-bend centreline length (m)',
+    subs:`V_U = ${fmt(r.tubeAreaGeom,6)} × ${fmt(r.ubendL_m,5)}`,
+    result:`V_U = ${fmt(r.ubendVol_m3,6)} m³ = ${fmt(r.ubendVol_m3*1000,3)} L/U-bend`
+  }),
+  tubeCount: (s,r)=>({
+    title:'Theoretical Straight-Tube Count', sub:'Tube & U-Bend Count Calculation',
+    formula:'N_tubes,theory = (V_geom + N_loops×V_U) / (V_tube + V_U)',
+    vars:'<code>V_geom</code> geometric reactor volume (m³) · <code>N_loops</code> independent loops · <code>V_tube</code> volume/tube · <code>V_U</code> volume/U-bend',
+    subs:`N_tubes,theory = (${fmt(s.geomVol,4)} + ${Math.round(s.numLoops)} × ${fmt(r.ubendVol_m3,6)}) / (${fmt(r.tubeVol_m3,6)} + ${fmt(r.ubendVol_m3,6)})`,
+    result:`N_tubes,theory = ${fmt(r.tubeCountTheory,3)} → selected ${r.numStraightCalc} whole tubes`
+  }),
+  ubendCount: (s,r)=>({
+    title:'U-Bend Count', sub:'Tube & U-Bend Count Calculation',
+    formula:'N_U-bends = N_tubes − N_loops',
+    vars:'<code>N_tubes</code> selected straight-tube count · <code>N_loops</code> independent loops',
+    subs:`N_U-bends = ${r.numStraightCalc} − ${Math.round(s.numLoops)}`,
+    result:`N_U-bends = ${r.numUbendsCalc}`
+  }),
+  volumeReconcile: (s,r)=>({
+    title:'Geometric Volume Reconciliation', sub:'Tube & U-Bend Count Calculation',
+    formula:'V_actual = N_tubes×V_tube + N_U-bends×V_U',
+    vars:'<code>N_tubes</code> selected tube count · <code>N_U-bends</code> bend count · <code>V_tube</code>, <code>V_U</code> internal volumes',
+    subs:`V_actual = ${r.numStraightCalc}×${fmt(r.tubeVol_m3,6)} + ${r.numUbendsCalc}×${fmt(r.ubendVol_m3,6)}`,
+    result:`V_actual = ${fmt(r.volumeAchieved,6)} m³ = ${fmt(r.volumeAchieved*1000,2)} L; deviation = ${fmt(r.volumeError,6)} m³ (${fmt(r.volumeErrorPct,3)}%)`
   }),
   lStraight: (s,r)=>({
     title:'Total Straight-Tube Length', sub:'Reactor Geometry',
@@ -1107,7 +1195,7 @@ const IMPACT_MAP = {
   tempTarget: ['Reference target for heating outcome comparison'],
   cycVel: ['Cyclone inlet area', 'Screening cyclone diameter'],
   co2MW: ['CO₂ molar flow', 'Total flue-gas molar flow', 'Standard/actual gas flow'],
-  ubendCC: ['U-bend radius', 'U-bend length', 'Total U-bend length', 'Total flow-path length'],
+  ubendCC: ['U-bend radius', 'U-bend volume', 'Calculated tube count', 'Calculated U-bend count', 'Total flow-path length'],
   numUbends: ['Total U-bend length', 'Total flow-path length'],
   numStraight: ['Total straight-tube length', 'Total flow-path length'],
   straightLen: ['Total straight-tube length', 'Total flow-path length'],
@@ -1176,6 +1264,17 @@ function renderAll(){
   set('r-workVolL', fmt(r.workVolL,2)+' <span class="unit">L</span>');
   set('r-ubendR', fmt(r.ubendR_m,4)+' <span class="unit">m</span>');
   set('r-ubendL', fmt(r.ubendL_m,4)+' <span class="unit">m/bend</span>');
+  set('r-tubeAreaGeom', fmt(r.tubeAreaGeom,6)+' <span class="unit">m²</span>');
+  set('r-tubeVol', fmt(r.tubeVol_m3*1000,3)+' <span class="unit">L/tube</span>');
+  set('r-ubendVol', fmt(r.ubendVol_m3*1000,3)+' <span class="unit">L/bend</span>');
+  set('r-tubeCountTheory', fmt(r.tubeCountTheory,3)+' <span class="unit">tubes</span>');
+  set('r-numStraightCalc', fmt(r.numStraightCalc,0)+' <span class="unit">tubes</span>');
+  set('r-numUbendsCalc', fmt(r.numUbendsCalc,0)+' <span class="unit">U-bends</span>');
+  set('r-volumeAchieved', fmt(r.volumeAchieved,4)+' <span class="unit">m³</span>');
+  set('r-volumeError', (r.volumeError>=0?'+':'')+fmt(r.volumeError,4)+' <span class="unit">m³ ('+fmt(r.volumeErrorPct,3)+'%)</span>');
+  set('r-tubesPerLoop', fmt(r.tubesPerLoop,2)+' <span class="unit">tubes/loop</span>');
+  const tubeInp=document.getElementById('in-numStraight'); if(tubeInp) tubeInp.value=r.numStraightCalc;
+  const bendInp=document.getElementById('in-numUbends'); if(bendInp) bendInp.value=r.numUbendsCalc;
   set('r-lStraight', fmt(r.lStraight,2)+' <span class="unit">m</span>');
   set('r-lBend', fmt(r.lBend,2)+' <span class="unit">m</span>');
   set('r-lTotal', fmt(r.lTotal,2)+' <span class="unit">m</span>');
@@ -1590,11 +1689,18 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   );
 
   const geometryRows = [
-    row('Geometric reactor volume', fmt(state.geomVol,4), 'm³', 'LOCKED'),
+    row('Geometric reactor volume', fmt(state.geomVol,4), 'm³', 'INPUT BASIS'),
     row('Working liquid volume', fmt(r.workVolM3,4), 'm³', 'CALCULATED'),
     row('Working liquid volume', fmt(r.workVolL,2), 'L', 'CALCULATED'),
     row('U-bend centreline radius', fmt(r.ubendR_m,4), 'm', 'CALCULATED'),
     row('U-bend centreline length', fmt(r.ubendL_m,4), 'm/bend', 'CALCULATED'),
+    row('Volume per straight tube', fmt(r.tubeVol_m3*1000,3), 'L/tube', 'CALCULATED'),
+    row('Volume per U-bend', fmt(r.ubendVol_m3*1000,3), 'L/bend', 'CALCULATED'),
+    row('Theoretical tube count', fmt(r.tubeCountTheory,3), 'tubes', 'CALCULATED'),
+    row('Selected straight-tube count', r.numStraightCalc, 'tubes', 'CALCULATED — nearest whole'),
+    row('Calculated U-bend count', r.numUbendsCalc, 'U-bends', 'CALCULATED — N_tubes − N_loops'),
+    row('Reconciled geometric volume', fmt(r.volumeAchieved,4), 'm³', 'CALCULATED'),
+    row('Volume deviation', fmt(r.volumeError,4), 'm³', 'CALCULATED'),
     row('Total straight-tube length', fmt(r.lStraight,2), 'm', 'CALCULATED'),
     row('Total U-bend length', fmt(r.lBend,2), 'm', 'CALCULATED'),
     row('Total flow-path length', fmt(r.lTotal,2), 'm', 'CALCULATED')
