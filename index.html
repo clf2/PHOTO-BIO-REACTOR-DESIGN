@@ -492,6 +492,32 @@ canvas.interactive-chart{cursor:crosshair;}
   }
 </style>
 
+
+<style id="export-selection-style">
+.export-select-overlay{position:fixed;inset:0;background:rgba(8,18,30,.66);display:none;align-items:center;justify-content:center;z-index:250;padding:20px;backdrop-filter:blur(2px)}
+.export-select-overlay.open{display:flex}
+.export-select-modal{width:min(720px,94vw);max-height:88vh;overflow:auto;background:#fff;border:1px solid #c9d8e6;border-radius:10px;box-shadow:0 22px 70px rgba(0,0,0,.32);padding:22px;position:relative;font-family:Rockwell,"Rockwell Nova","Roboto Slab",Georgia,serif}
+.export-select-modal h2{margin:0 0 5px;color:#17324d;font-size:21px}
+.export-select-modal .export-subtitle{margin:0 0 16px;color:#607487;font-size:12px;line-height:1.45}
+.export-select-close{position:absolute;right:14px;top:9px;border:0;background:none;color:#6b7f90;font-size:28px;line-height:1;cursor:pointer}
+.export-select-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.export-select-actions button{border:1px solid #b9ccdc;background:#f4f8fb;color:#17324d;border-radius:5px;padding:7px 11px;cursor:pointer;font-family:inherit;font-weight:600}
+.export-select-actions button:hover{background:#e8f1f8}
+.export-select-list{border:1px solid #d6e1ea;border-radius:7px;overflow:hidden;background:#fbfdff}
+.export-select-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #e5edf3;cursor:pointer}
+.export-select-item:last-child{border-bottom:0}
+.export-select-item:hover{background:#f1f7fb}
+.export-select-item input{width:17px;height:17px;accent-color:#0b5ea8;cursor:pointer;flex:0 0 auto}
+.export-select-number{font-family:Rockwell,"Rockwell Nova",Georgia,serif;color:#6c8396;font-size:12px;min-width:25px}
+.export-select-label{font-size:13px;color:#17324d;font-weight:600}
+.export-select-footer{display:flex;justify-content:flex-end;gap:9px;margin-top:16px}
+.export-select-footer button{padding:9px 15px;border-radius:5px;border:1px solid #b8cbd9;cursor:pointer;font-family:inherit;font-weight:650}
+.export-cancel{background:#fff;color:#3f596d}
+.export-confirm{background:#0b5ea8;color:#fff;border-color:#0b5ea8!important}
+.export-confirm:hover{background:#084d8b}
+.export-count{margin-left:auto;color:#607487;font-size:12px;align-self:center}
+</style>
+
 </head>
 <body>
 
@@ -1229,7 +1255,7 @@ canvas.interactive-chart{cursor:crosshair;}
   </div>
 </div>
 
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
 (function(){
 
@@ -2796,7 +2822,85 @@ document.getElementById('traceToggleBtn').addEventListener('click', function(){
 /* ============================================================
    14. EXPORT REPORT
    ============================================================ */
+/* Export section selector: the user chooses exactly which model sections go into Excel. */
+(function setupExportSelection(){
+  const exportBtn = document.getElementById('exportBtn');
+  if(!exportBtn) return;
+  const exportSections = [
+    ['01','DESIGN BASIS'],
+    ['02','REACTOR GEOMETRY'],
+    ['03','CO₂ & FLUE GAS'],
+    ['04','INTERNAL RECIRCULATION HYDRAULICS'],
+    ['05','PROCESS MASS BALANCE'],
+    ['06','ENERGY / THERMAL IMPACT'],
+    ['07','FLUE GAS CLEANING'],
+    ['08','CYCLONE'],
+    ['09','IMPACT ANALYSIS / CHANGE LOG'],
+    ['10','CASE COMPARISON'],
+    ['11','ENGINEERING NOTES'],
+    ['12','MODEL VERIFICATION & VALIDATION'],
+    ['13','COMPLETE DESIGN REQUIREMENTS']
+  ];
+
+  const overlay = document.createElement('div');
+  overlay.className='export-select-overlay';
+  overlay.id='exportSelectOverlay';
+  overlay.innerHTML=`
+    <div class="export-select-modal" role="dialog" aria-modal="true" aria-labelledby="exportSelectTitle">
+      <button class="export-select-close" type="button" aria-label="Close">×</button>
+      <h2 id="exportSelectTitle">Select Excel Export Sections</h2>
+      <p class="export-subtitle">Choose which parts of the CarbonONE MRPL live model you want to include in the Excel sheet. By default, all sections are selected.</p>
+      <div class="export-select-actions">
+        <button type="button" data-export-select-all>Select All</button>
+        <button type="button" data-export-clear>Clear All</button>
+        <span class="export-count" data-export-count></span>
+      </div>
+      <div class="export-select-list">
+        ${exportSections.map(([num,label])=>`<label class="export-select-item"><input type="checkbox" data-export-section="${num}" checked><span class="export-select-number">${num}</span><span class="export-select-label">${label}</span></label>`).join('')}
+      </div>
+      <div class="export-select-footer">
+        <button type="button" class="export-cancel" data-export-cancel>Cancel</button>
+        <button type="button" class="export-confirm" data-export-confirm>Export Selected to Excel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const countEl=overlay.querySelector('[data-export-count]');
+  const boxes=()=>[...overlay.querySelectorAll('input[data-export-section]')];
+  const updateCount=()=>{ const n=boxes().filter(x=>x.checked).length; countEl.textContent=`${n} of ${exportSections.length} sections selected`; };
+  const close=()=>overlay.classList.remove('open');
+  const open=()=>{ boxes().forEach(x=>x.checked=true); updateCount(); overlay.classList.add('open'); };
+
+  overlay.querySelector('[data-export-select-all]').addEventListener('click',()=>{boxes().forEach(x=>x.checked=true);updateCount();});
+  overlay.querySelector('[data-export-clear]').addEventListener('click',()=>{boxes().forEach(x=>x.checked=false);updateCount();});
+  overlay.addEventListener('change',e=>{if(e.target.matches('input[data-export-section]')) updateCount();});
+  overlay.querySelector('[data-export-cancel]').addEventListener('click',close);
+  overlay.querySelector('.export-select-close').addEventListener('click',close);
+  overlay.addEventListener('click',e=>{if(e.target===overlay) close();});
+  overlay.addEventListener('keydown',e=>{if(e.key==='Escape') close();});
+  overlay.querySelector('[data-export-confirm]').addEventListener('click',()=>{
+    const selected=boxes().filter(x=>x.checked).map(x=>x.dataset.exportSection);
+    if(!selected.length){
+      alert('Please select at least one section to export.');
+      return;
+    }
+    window.__carbonExportSelected=selected;
+    window.__carbonExportSelectionConfirmed=true;
+    close();
+    exportBtn.click();
+  });
+  exportBtn.addEventListener('click', ()=>{
+    if(!window.__carbonExportSelectionConfirmed){ open(); return; }
+  });
+  updateCount();
+})();
+
+/* ============================================================
+   14. EXPORT REPORT
+   ============================================================ */
 document.getElementById('exportBtn').addEventListener('click', ()=>{
+  if(!window.__carbonExportSelectionConfirmed) return;
+  window.__carbonExportSelectionConfirmed=false;
   const r = compute(state);
 
   /*
@@ -3058,67 +3162,172 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     ['13 — COMPLETE DESIGN REQUIREMENTS', domRequirementsRows()]
   ];
 
-  /* ---------- SINGLE-SHEET XLSX ---------- */
+  /* Apply the section choices made in the export dialog. */
+  const selectedCodes = new Set((window.__carbonExportSelected || []).map(String));
+  const selectedSections = sections.filter(([title]) => selectedCodes.has(title.slice(0,2)));
+
+  /* ---------- SINGLE-SHEET XLSX — PROFESSIONAL ENGINEERING REPORT ---------- */
   if(window.XLSX){
     const data = [
-      ['CARBONONE MRPL — LIVE REACTOR DESIGN & CALCULATION REPORT','','','',''],
-      ['Generated from current live model state','','','',''],
-      ['Section','Parameter','Value','Unit','Status / Notes']
+      ['CARBONONE MRPL — LIVE REACTOR DESIGN & CALCULATION REPORT','','',''],
+      ['Generated from current live model state — selected sections only','','',''],
+      ['Parameter','Value','Unit','Status / Notes']
     ];
-    const sectionRows=[];
+    const sectionRows = [];
+    const subsectionRows = [];
 
-    sections.forEach(([title, rows])=>{
-      const sectionRow = data.length;
-      data.push([title,'','','','']);
-      sectionRows.push(sectionRow);
+    selectedSections.forEach(([title, rows])=>{
+      const secRow = data.length;
+      data.push([title,'','','']);
+      sectionRows.push(secRow);
       rows.forEach(x=>{
-        const a=rowArray(x);
-        if(a.length===4) data.push([title,a[0],a[1],a[2],a[3]]);
-        else if(a.length>0) data.push([title,a[0]||'',a.slice(1).join(' | '),'','']);
+        const a = rowArray(x);
+        if(a.length === 4){
+          /* Special subsection markers become compact subheaders. */
+          if(a[0] === 'SUBSECTION'){
+            const sr = data.length;
+            data.push([a[1],'','','']);
+            subsectionRows.push(sr);
+          }else{
+            data.push([a[0]||'',a[1]||'',a[2]||'',a[3]||'']);
+          }
+        }else if(a.length > 0){
+          data.push([a[0]||'',a.slice(1).join(' | '),'','']);
+        }
       });
-      data.push(['','','','','']);
+      data.push(['','','','']);
     });
 
     const ws = XLSX.utils.aoa_to_sheet(data);
+
+    /* Professional engineering-report layout. */
     ws['!cols'] = [
-      {wch:34},
-      {wch:48},
-      {wch:24},
-      {wch:16},
-      {wch:64}
-    ];
-    ws['!rows'] = [
-      {hpt:28},
-      {hpt:20},
-      {hpt:22}
+      {wch:42},   // Parameter
+      {wch:28},   // Value
+      {wch:16},   // Unit
+      {wch:72}    // Status / Notes
     ];
     ws['!freeze'] = {xSplit:0, ySplit:3};
-    ws['!autofilter'] = {ref:`A3:E${data.length}`};
+    ws['!autofilter'] = {ref:`A3:D${data.length}`};
     ws['!merges'] = [
-      {s:{r:0,c:0},e:{r:0,c:4}},
-      {s:{r:1,c:0},e:{r:1,c:4}},
-      ...sectionRows.map(r=>({s:{r,c:0},e:{r,c:4}}))
+      {s:{r:0,c:0},e:{r:0,c:3}},
+      {s:{r:1,c:0},e:{r:1,c:3}},
+      ...sectionRows.map(r=>({s:{r,c:0},e:{r,c:3}})),
+      ...subsectionRows.map(r=>({s:{r,c:0},e:{r,c:3}}))
     ];
 
-    /* Basic cell formatting where supported by the loaded SheetJS build. */
-    const setStyle = (addr, style) => { if(ws[addr]) ws[addr].s = style; };
-    const titleStyle = {font:{bold:true,sz:16,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'0B5EA8'}},alignment:{vertical:'center'}};
-    const subStyle = {font:{italic:true,color:{rgb:'55718A'}},alignment:{vertical:'center'}};
-    const headStyle = {font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1769AA'}},alignment:{vertical:'center'}};
-    const sectionStyle = {font:{bold:true,sz:12,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'0B5EA8'}},alignment:{vertical:'center'}};
-    setStyle('A1',titleStyle);
-    setStyle('A2',subStyle);
-    ['A3','B3','C3','D3','E3'].forEach(a=>setStyle(a,headStyle));
-    sectionRows.forEach(r=>setStyle(`A${r+1}`,sectionStyle));
+    const border = {
+      top:{style:'thin',color:{rgb:'D7E0E8'}},
+      bottom:{style:'thin',color:{rgb:'D7E0E8'}},
+      left:{style:'thin',color:{rgb:'D7E0E8'}},
+      right:{style:'thin',color:{rgb:'D7E0E8'}}
+    };
+    const titleStyle = {
+      font:{name:'Aptos Display',bold:true,sz:16,color:{rgb:'FFFFFF'}},
+      fill:{fgColor:{rgb:'0B5EA8'}},
+      alignment:{horizontal:'left',vertical:'center'}
+    };
+    const subStyle = {
+      font:{name:'Aptos',italic:true,sz:10,color:{rgb:'5A7184'}},
+      fill:{fgColor:{rgb:'EAF2F8'}},
+      alignment:{horizontal:'left',vertical:'center'}
+    };
+    const headStyle = {
+      font:{name:'Aptos',bold:true,sz:11,color:{rgb:'FFFFFF'}},
+      fill:{fgColor:{rgb:'1769AA'}},
+      alignment:{horizontal:'left',vertical:'center',wrap_text:true},
+      border
+    };
+    const sectionStyle = {
+      font:{name:'Aptos Display',bold:true,sz:12,color:{rgb:'FFFFFF'}},
+      fill:{fgColor:{rgb:'0B5EA8'}},
+      alignment:{horizontal:'left',vertical:'center'},
+      border
+    };
+    const subsectionStyle = {
+      font:{name:'Aptos',bold:true,sz:10,color:{rgb:'17324D'}},
+      fill:{fgColor:{rgb:'DCECF9'}},
+      alignment:{horizontal:'left',vertical:'center'},
+      border
+    };
+    const bodyStyle = {
+      font:{name:'Aptos',sz:10,color:{rgb:'243B53'}},
+      alignment:{vertical:'top',wrap_text:true},
+      border
+    };
+    const valueStyle = {
+      font:{name:'Aptos',sz:10,bold:true,color:{rgb:'17324D'}},
+      alignment:{horizontal:'right',vertical:'top',wrap_text:true},
+      border
+    };
+    const unitStyle = {
+      font:{name:'Aptos',sz:10,color:{rgb:'526777'}},
+      alignment:{horizontal:'center',vertical:'top',wrap_text:true},
+      border
+    };
+    const noteStyle = {
+      font:{name:'Aptos',sz:9,color:{rgb:'526777'}},
+      alignment:{vertical:'top',wrap_text:true},
+      border
+    };
+
+    const addr=(r,c)=>XLSX.utils.encode_cell({r,c});
+    const applyRowStyle=(r, style)=>{
+      for(let c=0;c<4;c++){
+        const a=addr(r,c);
+        if(ws[a]) ws[a].s=style;
+      }
+    };
+
+    ws['A1'].s=titleStyle;
+    ws['A2'].s=subStyle;
+    for(let c=0;c<4;c++) ws[addr(2,c)].s=headStyle;
+
+    const sectionSet=new Set(sectionRows);
+    const subsectionSet=new Set(subsectionRows);
+    for(let r=3;r<data.length;r++){
+      if(sectionSet.has(r)){
+        applyRowStyle(r,sectionStyle);
+      }else if(subsectionSet.has(r)){
+        applyRowStyle(r,subsectionStyle);
+      }else{
+        if(data[r][0]==='' && data[r][1]==='' && data[r][2]==='' && data[r][3]==='') continue;
+        if(ws[addr(r,0)]) ws[addr(r,0)].s=bodyStyle;
+        if(ws[addr(r,1)]) ws[addr(r,1)].s=valueStyle;
+        if(ws[addr(r,2)]) ws[addr(r,2)].s=unitStyle;
+        if(ws[addr(r,3)]) ws[addr(r,3)].s=noteStyle;
+      }
+    }
+
+    /* Status highlighting — makes PRELIM/TBD/REQUIRED/CALCULATED immediately visible. */
+    for(let r=3;r<data.length;r++){
+      const note=String(data[r][3]||'').toUpperCase();
+      const cell=ws[addr(r,3)];
+      if(!cell || sectionSet.has(r) || subsectionSet.has(r)) continue;
+      if(note.includes('TBD') || note.includes('REQUIRED')){
+        cell.s={...noteStyle,font:{name:'Aptos',sz:9,bold:true,color:{rgb:'B42318'}},fill:{fgColor:{rgb:'FDECEC'}}};
+      }else if(note.includes('PRELIM')){
+        cell.s={...noteStyle,font:{name:'Aptos',sz:9,bold:true,color:{rgb:'8A5A00'}},fill:{fgColor:{rgb:'FFF4D6'}}};
+      }else if(note.includes('CALCULATED') || note.includes('LIVE')){
+        cell.s={...noteStyle,font:{name:'Aptos',sz:9,color:{rgb:'146C43'}},fill:{fgColor:{rgb:'EAF7EF'}}};
+      }
+    }
+
+    ws['!rows'] = [{hpt:30},{hpt:20},{hpt:24}];
+    for(let r=3;r<data.length;r++){
+      if(sectionSet.has(r)) ws['!rows'][r]={hpt:23};
+      else if(subsectionSet.has(r)) ws['!rows'][r]={hpt:21};
+      else ws['!rows'][r]={hpt:32};
+    }
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Calculation Report');
-    XLSX.writeFile(wb,'CarbonONE_MRPL_Calculation_Report.xlsx', {cellStyles:true});
+    XLSX.utils.book_append_sheet(wb,ws,'Calculation Report');
+    XLSX.writeFile(wb,'CarbonONE_MRPL_Calculation_Report.xlsx',{cellStyles:true});
     return;
   }
 
   /* ---------- FALLBACK: SINGLE-SHEET EXCEL-COMPATIBLE HTML ---------- */
-  const sectionHtml = sections.map(([title,rows])=>{
+  const sectionHtml = selectedSections.map(([title,rows])=>{
     const body = rows.join('');
     return `<table class="sheet"><tr class="section-title"><th colspan="5">${esc(title)}</th></tr><tr class="head"><th>Section</th><th>Parameter</th><th>Value</th><th>Unit</th><th>Status / Notes</th></tr>${body.replace(/<tr><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><\/tr>/g,(_,a,b,c,d)=>`<tr><td>${esc(title)}</td><td>${a}</td><td>${b}</td><td>${c}</td><td>${d}</td></tr>`)}</table>`;
   }).join('');
