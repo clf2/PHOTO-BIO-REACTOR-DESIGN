@@ -493,6 +493,20 @@ canvas.interactive-chart{cursor:crosshair;}
 </style>
 
 
+<style id="design-completion-style">
+.design-completion-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
+.design-completion-toggle{display:flex;align-items:center;gap:9px;cursor:pointer;flex:0 0 auto;user-select:none}
+.design-completion-toggle input{position:absolute;opacity:0;pointer-events:none}
+.toggle-track{width:42px;height:23px;border-radius:999px;background:#b9c7d3;position:relative;transition:.18s;display:inline-block}
+.toggle-thumb{width:17px;height:17px;border-radius:50%;background:#fff;position:absolute;left:3px;top:3px;box-shadow:0 1px 3px rgba(0,0,0,.22);transition:.18s}
+.design-completion-toggle input:checked + .toggle-track{background:#0b5ea8}
+.design-completion-toggle input:checked + .toggle-track .toggle-thumb{transform:translateX(19px)}
+.toggle-label{font-size:12px;font-weight:700;color:#17324d;white-space:nowrap}
+.design-completion-status{margin:12px 0 14px;padding:9px 11px;border:1px solid #d7e1e8;border-radius:6px;background:#f6f9fb;color:#607487;font-size:12px}
+.design-completion-status.on{border-color:#a8cfae;background:#f1f9f2;color:#2e6b38}
+.design-completion-fields[hidden]{display:none!important}
+@media(max-width:700px){.design-completion-header{flex-direction:column}.design-completion-toggle{align-self:flex-start}}
+</style>
 <style id="export-selection-style">
 .export-select-overlay{position:fixed;inset:0;background:rgba(8,18,30,.66);display:none;align-items:center;justify-content:center;z-index:250;padding:20px;backdrop-filter:blur(2px)}
 .export-select-overlay.open{display:flex}
@@ -699,7 +713,21 @@ canvas.interactive-chart{cursor:crosshair;}
     </div>
   </div>
 
-  <div class="card"><h2>Additional Engineering Inputs — Design Completion</h2><div class="fieldgrid">
+  <div class="card design-completion-card" id="designCompletionCard">
+    <div class="design-completion-header">
+      <div>
+        <h2>Additional Engineering Inputs — Design Completion</h2>
+        <p class="hint" style="margin:4px 0 0">Optional engineering-completion calculations. Nothing in this group is treated as an active design input until you explicitly enable it.</p>
+      </div>
+      <label class="design-completion-toggle" title="Enable optional design-completion calculations">
+        <input type="checkbox" id="in-designCompletionEnabled" data-key="designCompletionEnabled">
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        <span class="toggle-label" id="designCompletionToggleLabel">Enable calculations</span>
+      </label>
+    </div>
+    <div class="design-completion-status" id="designCompletionStatus">OFF — optional inputs are inactive and will not be calculated or exported.</div>
+    <div id="designCompletionFields" class="design-completion-fields" hidden>
+<div class="fieldgrid">
     <div class="field"><label>Initial biomass <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-biomassInitial" data-key="biomassInitial"><span class="unit-suffix">g/L</span></div></div>
     <div class="field"><label>Final biomass target <span class="badge input">TARGET</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-biomassFinal" data-key="biomassFinal"><span class="unit-suffix">g/L</span></div></div>
     <div class="field"><label>Lipid fraction of DCW <span class="badge input">TARGET</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" max="1" id="in-lipidFraction" data-key="lipidFraction"><span class="unit-suffix">fraction</span></div></div>
@@ -724,6 +752,8 @@ canvas.interactive-chart{cursor:crosshair;}
     <div class="field"><label>Gas blower ΔP <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-gasBlowerDP" data-key="gasBlowerDP"><span class="unit-suffix">kPa</span></div></div>
     <div class="field"><label>Blower efficiency <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" max="1" id="in-blowerEfficiency" data-key="blowerEfficiency"><span class="unit-suffix">fraction</span></div></div>
   </div></div>
+    </div>
+  </div>
 
   <p class="footnote">All percentages above are entered and displayed as %, not as decimal fractions — the model converts internally (e.g. 13% → 0.13) so a typo can't silently create a 99% CO₂ stream. Data basis: CarbonONE MRPL model-basis workbook ("Live Model Inputs" / "Final Design" sheets), overridden where noted by the current locked design basis (batch, 8-day, 90% working volume, 35°C target, 13% CO₂, 0.25 g/L/h utilization, 85% capture, Re≈5000, 12 loops).</p>
 </section>
@@ -1362,7 +1392,9 @@ const DEFAULTS = {
   gasViscosity: 0.018,          // mPa.s; preliminary flue-gas viscosity
   particleDensity: 0,           // kg/m3; 0 = TBD
   cycloneEffectiveTurns: 5,      // effective gas turns; preliminary Lapple screening
-  // ---- biological / process design inputs (0 = TBD) ----
+  // ---- optional biological / process design completion ----
+  // Disabled by default so placeholder zero values are not treated as real design inputs.
+  designCompletionEnabled: false,
   biomassInitial: 0,            // g/L
   biomassFinal: 4.0,             // g/L target
   lipidFraction: 0.50,           // fraction of DCW
@@ -1426,6 +1458,22 @@ let caseA = null, caseB = null;
 let traceMode = false;
 
 const NTP_MOLVOL = 22.414; // m3/kmol at 0C, 1atm
+
+// Optional Design Completion inputs. These are only active when the user explicitly enables
+// Design Completion Calculations. Zero is used internally as an empty/TBD placeholder only.
+const DESIGN_COMPLETION_KEYS = [
+  'biomassInitial','biomassFinal','lipidFraction','biomassYieldCO2','lightIntensity',
+  'photoperiodLight','photoperiodDark','opticalExtCoeff','tubePitch','ledPowerPerArea',
+  'ledEfficiency','kla','co2SatConc','co2LiquidConc','gasResidenceTime','o2ProductionRate',
+  'ourRate','nitrogenFractionBiomass','phosphorusFractionBiomass','carbonFractionBiomass',
+  'fillTime','harvestTime','cipVelocity','cipDensity','cipViscosity','cipPressureDropAllow',
+  'designPressure','allowableStress','weldEfficiency','corrosionAllowance',
+  'thermalExpansionCoeff','referenceLength','designTemp','gasBlowerDP','blowerEfficiency',
+  'gasPBRDP','filterDP','scrubberDP','coolerDP','gasPipeDP','coolingWaterIn','coolingWaterOut',
+  'coolingWaterCp','coolingWaterFlow','gasOutletTemp','pHSetpoint','pHMin','pHMax','doSetpoint',
+  'doMax','alkalinity','reliefSetPressure','highTempTrip','lowFlowTrip'
+];
+const isDesignCompletionKey = key => DESIGN_COMPLETION_KEYS.includes(key);
 
 /* ============================================================
    2. NUMBER FORMATTING
@@ -1650,7 +1698,11 @@ function compute(s){
     r.cycCutSize_um=dpc*1e6;
   }
 
-  // ---- complete design-development calculations ----
+  // ---- optional complete design-development calculations ----
+  // These calculations are intentionally opt-in. When disabled, their outputs remain NaN so
+  // placeholder zeros cannot propagate into mass balance, design completion, or Excel export.
+  r.designCompletionEnabled = !!s.designCompletionEnabled;
+  if(r.designCompletionEnabled){
   r.operatingMode = s.reactorMode === 'continuous' ? 'continuous' : 'batch';
   r.isContinuous = r.operatingMode === 'continuous';
   r.continuousFlowM3h = s.batchDays>0 ? r.workVolM3/s.batchDays/24 : NaN;
@@ -1710,6 +1762,21 @@ function compute(s){
   r.wallThicknessMm = s.designPressure>0 && s.allowableStress>0 && s.weldEfficiency>0 ? ((s.designPressure*0.1)*(s.tubeOD))/(2*s.allowableStress*s.weldEfficiency-(s.designPressure*0.1)) + s.corrosionAllowance : NaN;
   r.thermalExpansionMm = s.referenceLength>0 && s.thermalExpansionCoeff>0 && s.designTemp>0 ? s.referenceLength*s.thermalExpansionCoeff*(s.designTemp-s.tempInit)*1000 : NaN;
   r.cipVelocityRatio = s.cipVelocity>0 ? s.cipVelocity/r.velocity : NaN;
+  } else {
+    // Explicitly mark optional completion outputs as unavailable when the feature is OFF.
+    [
+      'operatingMode','continuousFlowM3h','continuousFlowLh','biomassDelta','biomassProductivity',
+      'biomassBatchKg','lipidConc_gL','lipidBatchKg','lipidProductivity','co2ToBiomassYield',
+      'co2BasedBiomassPotential','lightDutyW','opticalDepth','lightTransmission','co2TransferRate',
+      'co2TransferCapacityKgH','co2TransferMargin','o2ProductionKgH','ourKgH','o2MarginKgH',
+      'NRequirementKgBatch','PRequirementKgBatch','CRequirementKgBatch','biomassInitialKg',
+      'biomassFinalKg','nonLipidBatchKg','co2BatchInKg','co2BatchUtilKg','co2BatchOutKg',
+      'co2UtilizationFraction','co2CarbonUtilizedKg','carbonClosureRatio','biomassInventoryKg',
+      'biomassProductionRateKgH','lipidProductionRateKgH','co2OutH','NRequirementKgH',
+      'PRequirementKgH','fillFlowLh','harvestFlowLh','cipRe','cipFlowM3h','gasTrainDPkPa',
+      'blowerPowerW','coolerDutyKJh','wallThicknessMm','thermalExpansionMm','cipVelocityRatio'
+    ].forEach(k=>r[k]=NaN);
+  }
 
   return r;
 }
@@ -2199,7 +2266,29 @@ function updateOperatingModeUI(){
 /* ============================================================
    8. RENDER — main dashboard values
    ============================================================ */
+function updateDesignCompletionUI(){
+  const enabled = !!state.designCompletionEnabled;
+  const toggle = document.getElementById('in-designCompletionEnabled');
+  const fields = document.getElementById('designCompletionFields');
+  const status = document.getElementById('designCompletionStatus');
+  const label = document.getElementById('designCompletionToggleLabel');
+  if(toggle) toggle.checked = enabled;
+  if(fields){
+    fields.hidden = !enabled;
+    fields.querySelectorAll('input,select,textarea').forEach(el=>{
+      if(el.id !== 'in-designCompletionEnabled') el.disabled = !enabled;
+    });
+  }
+  if(status){
+    status.classList.toggle('on', enabled);
+    status.textContent = enabled
+      ? 'ON — optional inputs are active. Enter only the values you have; remaining fields stay TBD and are not assumed to be zero.'
+      : 'OFF — optional inputs are inactive and will not be calculated or exported.';
+  }
+  if(label) label.textContent = enabled ? 'Calculations enabled' : 'Enable calculations';
+}
 function renderAll(){
+  updateDesignCompletionUI();
   updateOperatingModeUI();
   const r = compute(state);
 
@@ -2288,14 +2377,14 @@ function renderAll(){
   set('r-tSelectOut', fmt(r.tempAt(tSel),2)+' <span class="unit">°C at '+fmt(tSel,1)+' h</span>');
 
   // complete design-development outputs
-  set('r-biomassProd', Number.isFinite(r.biomassProductivity)?fmt(r.biomassProductivity,3)+' g/L/day':'TBD — biomass basis');
+  set('r-biomassProd', !state.designCompletionEnabled ? 'NOT ENABLED' : (Number.isFinite(r.biomassProductivity)?fmt(r.biomassProductivity,3)+' g/L/day':'TBD — biomass basis'));
   set('r-mbLiquidMass', Number.isFinite(r.mLiquid)?fmt(r.mLiquid,1)+' kg':'TBD');
   if(document.getElementById('r-contFlow')) set('r-contFlow', Number.isFinite(r.continuousFlowM3h)?fmt(r.continuousFlowM3h,4)+' <span class="unit">m³/h</span>':'TBD');
-  set('r-mbBiomassInitial', Number.isFinite(r.biomassInitialKg)?fmt(r.biomassInitialKg,2)+' '+(state.reactorMode==='continuous'?'kg inventory':'kg/batch'):'TBD — initial biomass');
-  set('r-mbBiomassFinal', Number.isFinite(r.biomassFinalKg)?fmt(r.biomassFinalKg,2)+' '+(state.reactorMode==='continuous'?'kg inventory':'kg/batch'):'TBD');
+  set('r-mbBiomassInitial', !state.designCompletionEnabled ? 'NOT ENABLED' : (Number.isFinite(r.biomassInitialKg)?fmt(r.biomassInitialKg,2)+' '+(state.reactorMode==='continuous'?'kg inventory':'kg/batch'):'TBD — initial biomass'));
+  set('r-mbBiomassFinal', !state.designCompletionEnabled ? 'NOT ENABLED' : (Number.isFinite(r.biomassFinalKg)?fmt(r.biomassFinalKg,2)+' '+(state.reactorMode==='continuous'?'kg inventory':'kg/batch'):'TBD'));
   set('r-mbBiomassDelta', state.reactorMode==='continuous' ? (Number.isFinite(r.biomassProductionRateKgH)?fmt(r.biomassProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.biomassBatchKg)?fmt(r.biomassBatchKg,2)+' kg/batch':'TBD'));
   set('r-mbBiomassProd', state.reactorMode==='continuous' ? (Number.isFinite(r.biomassProductionRateKgH)?fmt(r.biomassProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.biomassProductivity)?fmt(r.biomassProductivity,3)+' g/L/day':'TBD'));
-  set('r-mbLipidConc', Number.isFinite(r.lipidConc_gL)?fmt(r.lipidConc_gL,3)+' g/L':'TBD');
+  set('r-mbLipidConc', !state.designCompletionEnabled ? 'NOT ENABLED' : (Number.isFinite(r.lipidConc_gL)?fmt(r.lipidConc_gL,3)+' g/L':'TBD'));
   set('r-mbLipidBatch', state.reactorMode==='continuous' ? (Number.isFinite(r.lipidProductionRateKgH)?fmt(r.lipidProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.lipidBatchKg)?fmt(r.lipidBatchKg,2)+' kg/batch':'TBD'));
   set('r-mbNonLipid', Number.isFinite(r.nonLipidBatchKg)?fmt(r.nonLipidBatchKg,2)+' '+(state.reactorMode==='continuous'?'kg inventory':'kg/batch'):'TBD');
   set('r-mbCo2In', state.reactorMode==='continuous' ? (Number.isFinite(r.co2InletH)?fmt(r.co2InletH,3)+' kg/h':'TBD') : (Number.isFinite(r.co2BatchInKg)?fmt(r.co2BatchInKg,2)+' kg/batch':'TBD'));
@@ -2769,7 +2858,9 @@ function bindInputs(){
       const old = state[key];
       if(key !== 'countCriterion') pendingOldActLmin = compute(state).actLmin;
       let val;
-      if(inp.tagName === 'SELECT') {
+      if(inp.type === 'checkbox') {
+        val = inp.checked;
+      } else if(inp.tagName === 'SELECT') {
         val = inp.value;
         if(key === 'reactorMode' && !['batch','continuous'].includes(val)) return;
         if(key === 'countCriterion' && !['closest','atLeast','below'].includes(val)) return;
@@ -2797,7 +2888,9 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
   caseB = null;
   prevValues = {};
   document.querySelectorAll('[data-key]').forEach(inp => {
-    inp.value = state[inp.getAttribute('data-key')];
+    const key = inp.getAttribute('data-key');
+    if(inp.type === 'checkbox') inp.checked = !!state[key];
+    else inp.value = state[key];
   });
   ['chk-filter','chk-cooler','chk-scrubber','chk-nox'].forEach(id => {
     document.getElementById(id).checked = false;
@@ -2849,7 +2942,7 @@ document.getElementById('traceToggleBtn').addEventListener('click', function(){
     <div class="export-select-modal" role="dialog" aria-modal="true" aria-labelledby="exportSelectTitle">
       <button class="export-select-close" type="button" aria-label="Close">×</button>
       <h2 id="exportSelectTitle">Select Excel Export Sections</h2>
-      <p class="export-subtitle">Choose which parts of the CarbonONE MRPL live model you want to include in the Excel sheet. By default, all sections are selected.</p>
+      <p class="export-subtitle">Choose which parts of the CarbonONE MRPL live model you want to include in the Excel sheet. Optional Design Completion inputs are exported only when that module is enabled.</p>
       <div class="export-select-actions">
         <button type="button" data-export-select-all>Select All</button>
         <button type="button" data-export-clear>Clear All</button>
@@ -3020,10 +3113,21 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
 
   const designBasisRows = [
     row('Reactor operating mode', state.reactorMode==='continuous'?'Continuous Reactor':'Batch Reactor', '', 'SELECTED MODE'),
-    ...Object.keys(DEFAULTS).filter(k=>k!=='reactorMode').map(k =>
-      row(LABELS[k] || k, state[k], UNITS[k] || '', k === 'cycVel' ? 'PRELIM' : 'LIVE INPUT')
-    )
+    ...Object.keys(DEFAULTS).filter(k=>k!=='reactorMode' && k!=='designCompletionEnabled' && (state.designCompletionEnabled || !isDesignCompletionKey(k))).map(k => {
+      const isOptional = isDesignCompletionKey(k);
+      const raw = state[k];
+      const isPlaceholder = isOptional && (raw === 0 || raw === '' || raw === null || raw === undefined);
+      return row(
+        LABELS[k] || k,
+        isPlaceholder ? 'TBD — not entered' : raw,
+        UNITS[k] || '',
+        isOptional ? (isPlaceholder ? 'TBD — optional input' : 'OPTIONAL INPUT') : (k === 'cycVel' ? 'PRELIM' : 'LIVE INPUT')
+      );
+    })
   ];
+  if(state.designCompletionEnabled){
+    designBasisRows.splice(1,0,row('Design completion calculations','ENABLED','','OPTIONAL MODULE'));
+  }
 
   const geometryRows = [
     row('Geometric reactor volume', fmt(state.geomVol,4), 'm³', 'INPUT BASIS'),
