@@ -2644,6 +2644,21 @@ function updateDesignCompletionUI(){
   }
   if(label) label.textContent = enabled ? 'Calculations enabled' : 'Enable calculations';
 }
+let chartRedrawQueued = false;
+function redrawChartsWhenVisible(){
+  if(chartRedrawQueued) return;
+  chartRedrawQueued = true;
+  requestAnimationFrame(()=>{
+    chartRedrawQueued = false;
+    const r = compute(state);
+    drawTempChart(r);
+    drawHeatingFlowChart(r);
+    drawCO2ConcChart(r);
+    drawCO2VolChart(r);
+    drawCircTubeChart(r);
+  });
+}
+
 function renderAll(){
   updateDesignCompletionUI();
   updateOperatingModeUI();
@@ -2864,10 +2879,7 @@ function renderAll(){
   set('r-cycCut', Number.isFinite(r.cycCutSize_um)?fmt(r.cycCutSize_um,1)+' <span class="unit">µm</span>':'TBD — particle density');
 
   renderValidation(r);
-  drawHeatingFlowChart(r);
-  drawCO2ConcChart(r);
-  drawCO2VolChart(r);
-  drawCircTubeChart(r);
+  redrawChartsWhenVisible();
   renderSchematic();
   renderFlow();
 
@@ -2996,9 +3008,15 @@ function drawLineChart(canvas, xs, ys, opts){
   opts = opts||{};
   if(!canvas || !xs || !ys || !xs.length || xs.length!==ys.length) return;
   if(xs.some(v=>!Number.isFinite(v)) || ys.some(v=>!Number.isFinite(v))) return;
+  // Do not redraw a chart while its section/card is hidden. A hidden canvas has
+  // clientWidth === 0; resizing it to 1px here used to destroy the last valid plot
+  // when any input in another section was changed. The chart is redrawn once the
+  // section becomes visible.
   const dpr = window.devicePixelRatio||1;
   const parentW = canvas.parentElement ? canvas.parentElement.clientWidth : 0;
-  const cssW = canvas.clientWidth || parentW || 800, cssH = parseInt(canvas.getAttribute('height'))||220;
+  const cssW = canvas.clientWidth || parentW;
+  if(!(cssW > 40)) return;
+  const cssH = parseInt(canvas.getAttribute('height'))||220;
   canvas.width = Math.max(1,Math.round(cssW*dpr)); canvas.height = Math.max(1,Math.round(cssH*dpr));
   const ctx = canvas.getContext('2d');
   ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -3286,14 +3304,7 @@ document.querySelectorAll('.navitem').forEach(item=>{
     document.getElementById('sec-'+item.getAttribute('data-sec')).classList.add('active');
     window.scrollTo(0,0);
     renderAll();
-    requestAnimationFrame(() => {
-      const rr = compute(state);
-      drawTempChart(rr);
-      drawHeatingFlowChart(rr);
-      drawCO2ConcChart(rr);
-      drawCO2VolChart(rr);
-      drawCircTubeChart(rr);
-    });
+    redrawChartsWhenVisible();
   });
 });
 
@@ -3329,6 +3340,7 @@ function bindInputs(){
       logChange(key, old, val);
       if(key === 'batchDays') syncTimeSelector();
       renderAll();
+      redrawChartsWhenVisible();
     });
   });
   syncTimeSelector();
@@ -4022,15 +4034,8 @@ if (heatingSummary) {
 bindInputs();
 renderAll();
 renderCompare();
-requestAnimationFrame(() => { const rr = compute(state); drawTempChart(rr); drawHeatingFlowChart(rr); drawCO2ConcChart(rr); drawCO2VolChart(rr); drawCircTubeChart(rr); });
-window.addEventListener('resize', () => {
-  const r = compute(state);
-  drawTempChart(r);
-  drawHeatingFlowChart(r);
-  drawCO2ConcChart(r);
-  drawCO2VolChart(r);
-  drawCircTubeChart(r);
-});
+redrawChartsWhenVisible();
+window.addEventListener('resize', redrawChartsWhenVisible);
 
 })();
 </script>
