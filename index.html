@@ -162,6 +162,7 @@ p.lead{color:var(--text-dim); font-size:14px; max-width:70ch; margin:0 0 20px;}
 .legend .item{display:flex; align-items:center; gap:6px;}
 
 /* ---------- Rows / fields ---------- */
+.mini-stat{padding:12px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.02)}.mini-stat span,.mini-stat small{display:block;color:#93a3b3;font-size:11px}.mini-stat strong{display:block;font-size:20px;margin:4px 0}.arrangement-note{margin-top:14px;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:rgba(91,141,239,.06);font-size:13px;line-height:1.5}.arrangement-study-card .primary-btn{margin-top:12px}
 .row{
   display:flex; align-items:center; justify-content:space-between; gap:14px;
   padding:9px 0; border-bottom:1px solid var(--border-soft);
@@ -755,6 +756,69 @@ canvas.interactive-chart{cursor:crosshair;}
     </div>
   </div>
 
+  <div class="card kinetics-reference-card" id="kineticsReferenceCard">
+    <div class="design-completion-header">
+      <div>
+        <h2>Experimental Biological &amp; Kinetic Reference Data</h2>
+        <p class="hint" style="margin:4px 0 0">Source: <b>LIPID KINETICS REPORT — CarbonONE System (8-Day Study)</b>, Caliche Integrated Labs, Rev. 01, 08.04.2026. <b>REFERENCE ONLY</b> — these values are added for engineering comparison and traceability; they do not overwrite or change the existing CarbonONE design basis.</p>
+      </div>
+      <span class="badge prelim">REFERENCE DATA</span>
+    </div>
+    <div class="grid3">
+      <div class="mini-stat"><span>Study duration</span><strong>192</strong><small>h · 8 days</small></div>
+      <div class="mini-stat"><span>Final dry biomass</span><strong>4.0</strong><small>g/L</small></div>
+      <div class="mini-stat"><span>CO₂-stress lipid</span><strong>50–52</strong><small>% DCW</small></div>
+    </div>
+    <div class="grid2">
+      <div class="card compact-card">
+        <h3>Gas–Liquid Mass Transfer Reference</h3>
+        <div class="row"><div class="label">Low-flow kLa reference<span class="sub">Ug = 0.005 m/s</span></div><div class="meta"><div class="val">18 h⁻¹</div></div></div>
+        <div class="row"><div class="label">Baseline kLa reference<span class="sub">Ug = 0.010 m/s</span></div><div class="meta"><div class="val">30 h⁻¹</div></div></div>
+        <div class="row"><div class="label">Pilot-target kLa reference<span class="sub">Ug = 0.015 m/s</span></div><div class="meta"><div class="val">50 h⁻¹</div></div></div>
+        <p class="footnote">These kLa values were obtained in the report's bubble-column experiment. They are <b>not</b> treated as validated kLa for the CarbonONE tubular recirculation reactor.</p>
+      </div>
+      <div class="card compact-card">
+        <h3>CO₂ Uptake Reference</h3>
+        <div class="row"><div class="label">Measured GUR<span class="sub">X = 3.5 g/L DCW</span></div><div class="meta"><div class="val">108 mg/L/h</div></div></div>
+        <div class="row"><div class="label">Specific CO₂ uptake q<sub>CO₂</sub></div><div class="meta"><div class="val">30.8 mg/g/h</div></div></div>
+        <div class="row"><div class="label">Reference GUR scaled to current 4.0 g/L target<span class="sub">q<sub>CO₂</sub> × X</span></div><div class="meta"><div class="val" id="r-refGUR4g">–</div></div></div>
+        <div class="row"><div class="label">Current CarbonONE CO₂ utilization basis<span class="sub">Existing design input — unchanged</span></div><div class="meta"><div class="val" id="r-refCurrentCO2Util">–</div></div></div>
+        <div class="row"><div class="label">Reference-to-current comparison<span class="sub">Reference scaled GUR ÷ current utilization basis</span></div><div class="meta"><div class="val" id="r-refCO2Ratio">–</div></div></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card compact-card">
+        <h3>Growth Kinetics Reference</h3>
+        <div class="row"><div class="label">Maximum specific growth rate μ<sub>max</sub></div><div class="meta"><div class="val">~0.20 h⁻¹</div></div></div>
+        <div class="row"><div class="label">Half-saturation constant K<sub>s</sub></div><div class="meta"><div class="val">~8–12 mg/L</div></div></div>
+        <div class="row"><div class="label">Reference model</div><div class="meta"><div class="val">Monod: μ = μ<sub>max</sub>S/(K<sub>s</sub>+S)</div></div></div>
+        <p class="footnote">The report describes substrate-dependent growth under non-limiting light. These parameters remain reference values until validated for the actual CarbonONE operating condition.</p>
+      </div>
+      <div class="card compact-card">
+        <h3>Light Attenuation Reference</h3>
+        <div class="row"><div class="label">Extinction coefficient α</div><div class="meta"><div class="val">~0.28–0.32 m²/g</div></div></div>
+        <div class="row"><div class="label">Recommended maximum optical path<span class="sub">Report design implication</span></div><div class="meta"><div class="val">≤ 5–8 cm</div></div></div>
+        <div class="row"><div class="label">Current CarbonONE tube ID<span class="sub">Existing geometry — unchanged</span></div><div class="meta"><div class="val" id="r-refTubeID">–</div></div></div>
+        <div class="row"><div class="label">Reference optical-path check<span class="sub">Tube ID compared with report's 5–8 cm recommendation</span></div><div class="meta"><div class="val" id="r-refOpticalCheck">–</div></div></div>
+        <p class="footnote">This is a design-review flag only. The existing 104 mm tube basis is not changed by this reference section.</p>
+      </div>
+    </div>
+    <div class="card compact-card">
+      <h3>8-Day Biomass &amp; Lipid Kinetic Reference</h3>
+      <table><thead><tr><th>Time</th><th>Biomass</th><th>Lipid</th><th>Lipid content</th><th>Reference phase</th></tr></thead><tbody>
+        <tr><td>0 h</td><td>0.20 g/L</td><td>0.02 g/L</td><td>10%</td><td>Growth</td></tr>
+        <tr><td>72 h</td><td>2.00 g/L</td><td>0.35 g/L</td><td>17%</td><td>Growth → transition</td></tr>
+        <tr><td>96 h</td><td>2.80 g/L</td><td>0.70 g/L</td><td>25%</td><td>Transition</td></tr>
+        <tr><td>120 h</td><td>3.40 g/L</td><td>1.10 g/L</td><td>32%</td><td>Transition</td></tr>
+        <tr><td>144 h</td><td>3.70 g/L</td><td>1.40 g/L</td><td>38%</td><td>Storage</td></tr>
+        <tr><td>168 h</td><td>3.90 g/L</td><td>1.60 g/L</td><td>41%</td><td>Storage</td></tr>
+        <tr><td>192 h</td><td>4.00 g/L</td><td>1.72 g/L</td><td>43%</td><td>Storage / end of study</td></tr>
+      </tbody></table>
+      <p class="footnote"><b>Lipid-kinetics reference:</b> the report uses the Luedeking–Piret form dL/dt = α(dX/dt) + βX and reports interval-specific q<sub>L</sub> values of approximately 0.005 g/g/h in the transition phase and 0.0017 g/g/h in the later storage phase. No fitted α/β pair is inserted into the live model because the report does not provide a validated fitted pair.</p>
+    </div>
+    <div class="callout warning"><b>Engineering use rule:</b> Reference values from this report are kept separate from the existing CarbonONE locked design inputs. kLa, GUR, μ<sub>max</sub>, K<sub>s</sub>, optical extinction and lipid-kinetic values can be used for comparison, sensitivity studies and future validation, but they do not silently replace the current design basis.</div>
+  </div>
+
   <p class="footnote">All percentages above are entered and displayed as %, not as decimal fractions — the model converts internally (e.g. 13% → 0.13) so a typo can't silently create a 99% CO₂ stream. Data basis: CarbonONE MRPL model-basis workbook ("Live Model Inputs" / "Final Design" sheets), overridden where noted by the current locked design basis (batch, 8-day, 90% working volume, 35°C target, 13% CO₂, 0.25 g/L/h utilization, 85% capture, Re≈5000, 12 loops).</p>
 </section>
 
@@ -793,6 +857,22 @@ canvas.interactive-chart{cursor:crosshair;}
     <div class="row"><div class="label">Reconciled geometric volume<span class="sub">V<sub>actual</sub> = N<sub>tubes</sub>V<sub>tube</sub> + N<sub>U-bends</sub>V<sub>U</sub></span></div><div class="meta"><button class="formula-btn" data-f="volumeReconcile">View Formula</button><div class="val" id="r-volumeAchieved">–</div></div></div>
     <div class="row"><div class="label">Volume deviation from target<span class="sub">ΔV = V<sub>actual</sub> − V<sub>geom</sub>; positive means capacity is at or above target</span></div><div class="meta"><div class="val" id="r-volumeError">–</div></div></div>
     <div class="row"><div class="label">Average tubes per loop<span class="sub">N<sub>tubes</sub>/N<sub>loops</sub> — actual loop split may differ by ±1 tube</span></div><div class="meta"><div class="val" id="r-tubesPerLoop">–</div></div></div>
+  </div>
+
+  <div class="card arrangement-study-card">
+    <h2>12-Loop Tube Arrangement</h2>
+    <p class="footnote"><b>Locked loop basis:</b> Number of internal circulation loops remains fixed at <b>12</b>. The automatically calculated straight-tube count is distributed across these 12 loops as evenly as mathematically possible. No loop-count change is made by this arrangement study.</p>
+    <div class="grid3">
+      <div class="mini-stat"><span>Total straight tubes</span><strong id="r-arrTotalTubes">–</strong><small>tubes</small></div>
+      <div class="mini-stat"><span>Number of loops</span><strong id="r-arrLoops">12</strong><small>locked</small></div>
+      <div class="mini-stat"><span>Loop distribution</span><strong id="r-arrDistribution">–</strong><small>tubes / loop</small></div>
+    </div>
+    <div class="row"><div class="label">Equal distribution calculation<span class="sub">N<sub>base</sub> = floor(N<sub>tubes</sub>/12); N<sub>extra</sub> = N<sub>tubes</sub> − 12N<sub>base</sub></span></div><div class="meta"><div class="val" id="r-arrMath">–</div></div></div>
+    <div class="row"><div class="label">Loops with 54 tubes</div><div class="meta"><span class="badge calc-badge">CALC</span><div class="val" id="r-arr54Loops">–</div></div></div>
+    <div class="row"><div class="label">Loops with 53 tubes</div><div class="meta"><span class="badge calc-badge">CALC</span><div class="val" id="r-arr53Loops">–</div></div></div>
+    <div class="row"><div class="label">Primary tube matrix<span class="sub">54 tubes = 6 rows × 9 columns</span></div><div class="meta"><div class="val" id="r-arr54Matrix">–</div></div></div>
+    <div class="row"><div class="label">Reduced loop matrix<span class="sub">53 tubes uses the same 6 × 9 grid with 1 unused position</span></div><div class="meta"><div class="val" id="r-arr53Matrix">–</div></div></div>
+    <div class="arrangement-note" id="equalArrangementNote">–</div>
   </div>
 
   <div class="card">
@@ -1487,6 +1567,17 @@ function fmt(x, d){
 /* ============================================================
    3. COMPUTE ENGINE — pure function of state
    ============================================================ */
+function calculateLoopArrangement(numTubes, numLoops){
+  const loops=Math.max(1,Math.round(Number(numLoops)||1));
+  const tubes=Math.max(0,Math.round(Number(numTubes)||0));
+  const base=Math.floor(tubes/loops);
+  const extra=tubes-(base*loops);
+  const high=base+(extra>0?1:0);
+  const matrixRows=6;
+  const matrixCols=Math.ceil(high/matrixRows);
+  return {loops,tubes,base,extra,high,matrixRows,matrixCols,unusedHigh:(matrixRows*matrixCols)-high};
+}
+
 function compute(s){
   const r = {};
   // ---- geometry ----
@@ -1514,6 +1605,20 @@ function compute(s){
   r.volumeError=r.volumeAchieved-s.geomVol;
   r.volumeErrorPct=s.geomVol?(r.volumeError/s.geomVol)*100:NaN;
   r.tubesPerLoop=loops>0?r.numStraightCalc/loops:NaN;
+
+  // Fixed 12-loop arrangement: distribute calculated tubes as evenly as mathematically possible.
+  r.loopArrangement=calculateLoopArrangement(r.numStraightCalc, loops);
+  r.baseTubesPerLoop=r.loopArrangement.base;
+  r.extraTubeLoops=r.loopArrangement.extra;
+  r.loopCols=4;
+  r.loopRows=Math.ceil(loops/r.loopCols);
+  r.loopUnused=r.loopRows*r.loopCols-loops;
+  r.tubes54Loops=r.loopArrangement.extra;
+  r.tubes53Loops=loops-r.loopArrangement.extra;
+  r.loop54Rows=6; r.loop54Cols=9;
+  r.loop53Rows=6; r.loop53Cols=9;
+  r.loop53Unused=1;
+  r.currentLoopMatrixSide=null;
   r.floorTubeCount=nFloor; r.floorVolume=volForN(nFloor); r.floorError=errForN(nFloor);
   r.ceilTubeCount=nCeil; r.ceilVolume=volForN(nCeil); r.ceilError=errForN(nCeil);
 
@@ -2307,6 +2412,18 @@ function renderAll(){
   set('r-volumeAchieved', fmt(r.volumeAchieved,4)+' <span class="unit">m³</span>');
   set('r-volumeError', (r.volumeError>=0?'+':'')+fmt(r.volumeError,4)+' <span class="unit">m³ ('+fmt(r.volumeErrorPct,3)+'%)</span>');
   set('r-tubesPerLoop', fmt(r.tubesPerLoop,2)+' <span class="unit">tubes/loop</span>');
+  const a=r.loopArrangement;
+  if(a){
+    set('r-arrTotalTubes',fmt(a.tubes,0));
+    set('r-arrLoops',fmt(a.loops,0));
+    set('r-arrDistribution',`${fmt(a.extra,0)} loops × ${fmt(a.high,0)} + ${fmt(a.loops-a.extra,0)} loops × ${fmt(a.base,0)}`);
+    set('r-arrMath',`${fmt(a.tubes,0)} ÷ ${fmt(a.loops,0)} = ${fmt(a.base,0)} remainder ${fmt(a.extra,0)}`);
+    set('r-arr54Loops',fmt(a.extra,0));
+    set('r-arr53Loops',fmt(a.loops-a.extra,0));
+    set('r-arr54Matrix','6 × 9 = 54 tubes');
+    set('r-arr53Matrix','6 × 9 grid − 1 position = 53 tubes');
+    set('equalArrangementNote',`<b>LOCKED ARRANGEMENT:</b> ${a.extra} loops → ${a.high} straight tubes each; ${a.loops-a.extra} loop → ${a.base} straight tubes. Total = ${a.tubes} tubes across ${a.loops} loops. Loop count remains fixed at 12.`);
+  }
   const tubeInp=document.getElementById('in-numStraight'); if(tubeInp) tubeInp.value=r.numStraightCalc;
   const bendInp=document.getElementById('in-numUbends'); if(bendInp) bendInp.value=r.numUbendsCalc;
   set('r-lStraight', fmt(r.lStraight,2)+' <span class="unit">m</span>');
@@ -2375,6 +2492,15 @@ function renderAll(){
   const horizon = getTimeHorizon();
   const tSel = Math.min(Math.max(parseFloat(document.getElementById('in-tSelect').value) || 0, 0), horizon);
   set('r-tSelectOut', fmt(r.tempAt(tSel),2)+' <span class="unit">°C at '+fmt(tSel,1)+' h</span>');
+
+  // experimental biological / kinetic reference data (reference only; never overwrites live design basis)
+  const refGUR4 = 30.8 * (Number(state.biomassFinal) || 4);
+  const refRatio = Number(state.co2Util)>0 ? (refGUR4/1000)/Number(state.co2Util) : NaN;
+  set('r-refGUR4g', fmt(refGUR4,1)+' mg/L/h');
+  set('r-refCurrentCO2Util', fmt(state.co2Util,3)+' g/L/h');
+  set('r-refCO2Ratio', Number.isFinite(refRatio)?fmt(refRatio,2)+'× reference/current':'TBD');
+  set('r-refTubeID', fmt(state.tubeID,0)+' mm = '+fmt(state.tubeID/10,1)+' cm');
+  set('r-refOpticalCheck', state.tubeID/10<=8 ? 'Within ≤8 cm reference limit' : 'REVIEW — exceeds 8 cm reference limit');
 
   // complete design-development outputs
   set('r-biomassProd', !state.designCompletionEnabled ? 'NOT ENABLED' : (Number.isFinite(r.biomassProductivity)?fmt(r.biomassProductivity,3)+' g/L/day':'TBD — biomass basis'));
@@ -2667,34 +2793,27 @@ function drawCircTubeChart(r){
    9. REACTOR SCHEMATIC (SVG)
    ============================================================ */
 function renderSchematic(){
-  const el = document.getElementById('schematicSvg');
-  const loops = Math.max(1, Math.round(state.numLoops));
-  const cols = 4, rows = Math.ceil(loops/cols);
-  const w = 640, hpad=30, rowH = 46;
-  const h = rowH*rows + hpad*2 + 30;
-  let svg = `<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:640px; display:block; margin:0 auto;">`;
-  svg += `<rect x="1" y="1" width="${w-2}" height="${h-2}" fill="none" stroke="#2b3743" stroke-dasharray="4 3"/>`;
-  // headers
-  svg += `<line x1="40" y1="${hpad-10}" x2="40" y2="${h-hpad+10}" stroke="#5b8def" stroke-width="3"/>`;
-  svg += `<text x="40" y="${hpad-16}" fill="#5b8def" font-size="10" font-family="ui-monospace" text-anchor="middle">IN</text>`;
-  svg += `<line x1="${w-40}" y1="${hpad-10}" x2="${w-40}" y2="${h-hpad+10}" stroke="#c97b4a" stroke-width="3"/>`;
-  svg += `<text x="${w-40}" y="${hpad-16}" fill="#c97b4a" font-size="10" font-family="ui-monospace" text-anchor="middle">OUT</text>`;
+  const el=document.getElementById('schematicSvg'); if(!el) return;
+  const loops=Math.max(1,Math.round(Number(state.numLoops)||1)); const r=compute(state);
+  const cols=r.loopCols||Math.ceil(Math.sqrt(loops)), rows=r.loopRows||Math.ceil(loops/cols);
+  const w=760,hpad=42,cellW=150,cellH=72,h=hpad*2+rows*cellH+55,gridW=cols*cellW,x0=(w-gridW)/2;
+  let svg=`<svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:760px;display:block;margin:0 auto;">`;
+  svg+=`<rect x="1" y="1" width="${w-2}" height="${h-2}" fill="none" stroke="#2b3743" stroke-dasharray="4 3"/>`;
+  svg+=`<text x="${w/2}" y="18" fill="#93a3b3" font-size="11" font-family="ui-monospace" text-anchor="middle">AUTO LOOP GRID · ${rows} ROWS × ${cols} COLUMNS</text>`;
   let n=0;
-  for(let row=0; row<rows; row++){
-    for(let c=0;c<cols && n<loops; c++, n++){
-      const y = hpad + row*rowH + rowH/2;
-      const x1 = 55, x2 = w-55;
-      const dir = (n%2===0) ? 1 : -1;
-      svg += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#6fb7c9" stroke-width="3.5" stroke-linecap="round"/>`;
-      // U-bend hint at loop ends
-      const bendX = dir>0? x2 : x1;
-      svg += `<path d="M ${bendX-10*dir} ${y-8} Q ${bendX+14*dir} ${y} ${bendX-10*dir} ${y+8}" fill="none" stroke="#c9a45b" stroke-width="2.5"/>`;
-      svg += `<text x="${(x1+x2)/2}" y="${y-8}" fill="#5f7080" font-size="9.5" font-family="ui-monospace" text-anchor="middle">L${n+1}</text>`;
+  for(let row=0;row<rows;row++) for(let col=0;col<cols;col++){
+    const cx=x0+col*cellW+cellW/2,cy=hpad+row*cellH+cellH/2,active=n<loops;
+    if(active){ const tubes=n<(r.extraTubeLoops||0)?r.baseTubesPerLoop+1:r.baseTubesPerLoop;
+      svg+=`<rect x="${x0+col*cellW+10}" y="${cy-25}" width="${cellW-20}" height="50" rx="8" fill="rgba(111,183,201,.08)" stroke="#6fb7c9" stroke-width="2"/>`;
+      svg+=`<text x="${cx}" y="${cy-5}" fill="#d8e3eb" font-size="12" font-family="ui-monospace" text-anchor="middle">LOOP ${n+1}</text>`;
+      svg+=`<text x="${cx}" y="${cy+13}" fill="#93a3b3" font-size="10" font-family="ui-monospace" text-anchor="middle">${tubes} straight tubes</text>`; n++;
+    } else {
+      svg+=`<rect x="${x0+col*cellW+10}" y="${cy-25}" width="${cellW-20}" height="50" rx="8" fill="none" stroke="#394653" stroke-dasharray="3 3"/>`;
+      svg+=`<text x="${cx}" y="${cy+4}" fill="#596978" font-size="10" font-family="ui-monospace" text-anchor="middle">UNUSED</text>`;
     }
   }
-  svg += `<text x="${w/2}" y="${h-8}" fill="#93a3b3" font-size="10.5" font-family="ui-monospace" text-anchor="middle">${loops} internal circulation loops · tube ID ${state.tubeID} mm / OD ${state.tubeOD} mm</text>`;
-  svg += `</svg>`;
-  el.innerHTML = svg;
+  svg+=`<text x="${w/2}" y="${h-18}" fill="#93a3b3" font-size="10.5" font-family="ui-monospace" text-anchor="middle">${loops} active loops · ${r.numStraightCalc} straight tubes · ${r.loopUnused||0} unused grid position(s) · SCHEMATIC ONLY</text></svg>`;
+  el.innerHTML=svg;
 }
 
 /* ============================================================
@@ -2932,7 +3051,8 @@ document.getElementById('traceToggleBtn').addEventListener('click', function(){
     ['10','CASE COMPARISON'],
     ['11','ENGINEERING NOTES'],
     ['12','MODEL VERIFICATION & VALIDATION'],
-    ['13','COMPLETE DESIGN REQUIREMENTS']
+    ['13','COMPLETE DESIGN REQUIREMENTS'],
+    ['14','EXPERIMENTAL BIOLOGICAL & KINETIC REFERENCE DATA']
   ];
 
   const overlay = document.createElement('div');
@@ -3111,6 +3231,34 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     return out;
   };
 
+  const kineticReferenceRows = () => {
+    const refGUR4 = 30.8 * (Number(state.biomassFinal) || 4);
+    const current = Number(state.co2Util);
+    const ratio = current > 0 ? refGUR4 / current / 1000 : NaN;
+    return [
+      row('Source document', 'LIPID KINETICS REPORT — CarbonONE System (8-Day Study), Caliche Integrated Labs, Rev. 01, 08.04.2026', '', 'REFERENCE ONLY'),
+      row('Study duration', '192', 'h', 'REFERENCE'),
+      row('Final dry biomass', '4.0', 'g/L', 'REFERENCE'),
+      row('Lipid content — without CO₂ stress', '43–45', '% DCW', 'REFERENCE'),
+      row('Lipid content — with CO₂ stress', '50–52', '% DCW', 'REFERENCE'),
+      row('kLa — low flow', '18', '1/h', 'REFERENCE · Ug=0.005 m/s · bubble column'),
+      row('kLa — baseline', '30', '1/h', 'REFERENCE · Ug=0.010 m/s · bubble column'),
+      row('kLa — pilot target', '50', '1/h', 'REFERENCE · Ug=0.015 m/s · bubble column'),
+      row('Measured GUR', '108', 'mg/L/h', 'REFERENCE · X=3.5 g/L'),
+      row('Specific CO₂ uptake qCO₂', '30.8', 'mg/g/h', 'REFERENCE'),
+      row('Reference GUR scaled to current biomass target', fmt(refGUR4,1), 'mg/L/h', 'REFERENCE SCALING · qCO₂×X'),
+      row('Current CarbonONE CO₂ utilization basis', fmt(current,3), 'g/L/h', 'EXISTING DESIGN INPUT — UNCHANGED'),
+      row('μmax', '~0.20', '1/h', 'REFERENCE'),
+      row('Ks', '~8–12', 'mg/L', 'REFERENCE'),
+      row('Optical extinction coefficient α', '~0.28–0.32', 'm²/g', 'REFERENCE'),
+      row('Recommended maximum optical path', '≤5–8', 'cm', 'REFERENCE DESIGN IMPLICATION'),
+      row('Lipid formation model', 'dL/dt = α(dX/dt) + βX', '', 'REFERENCE · Luedeking–Piret'),
+      row('Transition-phase qL', '~0.005', 'g/g/h', 'REFERENCE · 96–120 h example'),
+      row('Storage-phase qL', '~0.0017', 'g/g/h', 'REFERENCE · 144–192 h example'),
+      row('Applicability note', 'Report kLa data are from a bubble-column experiment and are not validated for the CarbonONE tubular recirculation reactor.', '', 'DO NOT SUBSTITUTE'),
+    ];
+  };
+
   const designBasisRows = [
     row('Reactor operating mode', state.reactorMode==='continuous'?'Continuous Reactor':'Batch Reactor', '', 'SELECTED MODE'),
     ...Object.keys(DEFAULTS).filter(k=>k!=='reactorMode' && k!=='designCompletionEnabled' && (state.designCompletionEnabled || !isDesignCompletionKey(k))).map(k => {
@@ -3263,7 +3411,8 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     ['10 — CASE COMPARISON', compareRows],
     ['11 — ENGINEERING NOTES', notesRows],
     ['12 — MODEL VERIFICATION & VALIDATION', domValidationRows()],
-    ['13 — COMPLETE DESIGN REQUIREMENTS', domRequirementsRows()]
+    ['13 — COMPLETE DESIGN REQUIREMENTS', domRequirementsRows()],
+    ['14 — EXPERIMENTAL BIOLOGICAL & KINETIC REFERENCE DATA', kineticReferenceRows()]
   ];
 
   /* Apply the section choices made in the export dialog. */
