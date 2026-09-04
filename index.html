@@ -499,6 +499,25 @@ canvas.interactive-chart{cursor:crosshair;}
 .heating-link{margin-top:14px;padding:12px 14px;border-left:3px solid var(--brand);background:#edf6fc;border-radius:4px;font-size:13px;color:var(--text-dim);line-height:1.55}
 .heating-check{margin-top:14px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
 .heating-check table{margin:0}
+
+.co2-real-inline-grid{margin-top:18px}
+.co2-real-inline-card{height:100%}
+.co2-real-inline-card .real-co2-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:700px){.co2-real-inline-card .real-co2-summary{grid-template-columns:1fr}}
+.co2-heating-compare-grid{margin-top:14px}
+.co2-real-card{height:100%}
+.real-co2-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.real-co2-item{border:1px solid var(--border);background:#f7fbfe;border-radius:5px;padding:11px 12px}
+.real-co2-item span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#71869a;font-weight:700;margin-bottom:5px}
+.real-co2-item b{font-size:19px;color:#17344f}
+.real-co2-trace{margin-top:12px;padding:12px 14px;border-left:3px solid var(--brand);background:#edf6fc;border-radius:4px;color:var(--text-dim);font-size:12px;line-height:1.65}
+.real-co2-trace .trace-title{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:#587089;margin-bottom:4px}
+.governing-box{margin-top:12px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.governing-row{display:flex;justify-content:space-between;gap:18px;padding:14px 15px;border-bottom:1px solid var(--border);font-size:13px}
+.governing-row b{color:#17344f}
+.governing-row.total{background:#edf6fc;border-bottom:0;font-weight:700}
+.governing-row.total b{font-size:20px}
+
 @media(max-width:700px){.heating-summary{grid-template-columns:1fr}}
 
   .formula-trace .row{display:grid;grid-template-columns:minmax(260px,0.9fr) minmax(360px,1.1fr);gap:18px;align-items:center;padding:14px 0;border-bottom:1px solid #dbe5ee;}
@@ -946,6 +965,38 @@ canvas.interactive-chart{cursor:crosshair;}
     <div class="row"><div class="label">Actual flue-gas flow at inlet T</div><div class="meta"><button class="formula-btn" data-f="actLmin">View Formula</button><div class="val" id="r-actLmin">–</div></div></div>
   </div>
 
+  <div class="grid2 co2-real-inline-grid">
+    <div class="card co2-real-inline-card">
+      <h2>Real Flue-Gas Requirement — CO₂ Basis</h2>
+      <p class="inline-note">Live flue-gas requirement calculated from the current CO₂ demand and the selected CO₂ concentration in the flue gas. Change the CO₂ vol% above and this panel updates automatically.</p>
+      <div class="real-co2-summary">
+        <div class="real-co2-item"><span>CO₂ in flue gas</span><b id="r-sideRealCo2Frac">–</b></div>
+        <div class="real-co2-item"><span>CO₂ required at inlet</span><b id="r-sideRealCo2Req">–</b></div>
+        <div class="real-co2-item"><span>Real flue gas required</span><b id="r-sideRealGasKgH">–</b></div>
+        <div class="real-co2-item"><span>Standard flue gas</span><b id="r-sideRealGasNm3h">–</b></div>
+        <div class="real-co2-item"><span>Actual flow at flue-gas T</span><b id="r-sideRealGasActM3h">–</b></div>
+        <div class="real-co2-item"><span>Actual flow</span><b id="r-sideRealGasActLmin">–</b></div>
+      </div>
+      <div class="real-co2-trace">
+        <div class="trace-title">Live calculation</div>
+        <div><b>CO₂ utilization:</b> <span id="trace-sideRealUtil">–</span></div>
+        <div><b>CO₂ inlet required:</b> <span id="trace-sideRealReq">–</span></div>
+        <div><b>CO₂ molar flow:</b> <span id="trace-sideRealMolar">–</span></div>
+        <div><b>Total gas molar flow:</b> <span id="trace-sideRealTotalMolar">–</span></div>
+        <div><b>Real flue-gas flow:</b> <span id="trace-sideRealFlow">–</span></div>
+      </div>
+    </div>
+    <div class="card co2-real-inline-card">
+      <h2>CO₂ Concentration Effect on Gas Requirement</h2>
+      <div class="governing-box">
+        <div class="governing-row"><span>Higher CO₂ %</span><b>Less flue gas required</b></div>
+        <div class="governing-row"><span>Lower CO₂ %</span><b>More flue gas required</b></div>
+        <div class="governing-row total"><span>Design basis</span><b id="r-sideRealBasis">–</b></div>
+      </div>
+      <div class="footnote">The calculation treats CO₂ concentration as vol% / mole fraction. The required flue-gas quantity is obtained from the CO₂ inlet duty divided by the CO₂ fraction, then converted to standard and actual flow using the selected flue-gas temperature and absolute pressure.</div>
+    </div>
+  </div>
+
   <div class="grid2">
     <div class="card chart-card">
       <h3>Flue-Gas Flow vs CO₂ Concentration</h3>
@@ -1004,6 +1055,36 @@ canvas.interactive-chart{cursor:crosshair;}
       <b>Linked CO₂ concentration:</b> <span id="r-heatCO2Frac">–</span>.
       At this heating-gas flow, the corresponding CO₂ mass supplied (calculated from vol%/mole fraction) is <b id="r-heatCO2MassFlow">–</b>.
       Total CO₂ contained in the gas required for the heating duty is <b id="r-heatCO2MassTotal">–</b>.
+    </div>
+  </div>
+
+  <div class="grid2 co2-heating-compare-grid">
+    <div class="card co2-real-card">
+      <h2>Real Flue-Gas Requirement for CO₂ Supply</h2>
+      <p class="inline-note">This is the flue-gas quantity required specifically to supply the live CO₂ cultivation duty at the selected CO₂ concentration. It is independent of the heating-duty calculation above.</p>
+      <div class="real-co2-summary">
+        <div class="real-co2-item"><span>CO₂ concentration</span><b id="r-realCo2Frac">–</b></div>
+        <div class="real-co2-item"><span>CO₂ required at inlet</span><b id="r-realCo2Req">–</b></div>
+        <div class="real-co2-item"><span>Required flue gas</span><b id="r-realGasKgH">–</b></div>
+        <div class="real-co2-item"><span>Required flue gas</span><b id="r-realGasNm3h">–</b></div>
+        <div class="real-co2-item"><span>Actual gas flow at inlet T</span><b id="r-realGasActM3h">–</b></div>
+      </div>
+      <div class="real-co2-trace">
+        <div class="trace-title">Live calculation</div>
+        <div><b>CO₂ utilization:</b> <span id="trace-realCo2Util">–</span></div>
+        <div><b>CO₂ inlet required:</b> <span id="trace-realCo2Req">–</span></div>
+        <div><b>CO₂ molar flow:</b> <span id="trace-realCo2Molar">–</span></div>
+        <div><b>Flue-gas flow:</b> <span id="trace-realGasFlow">–</span></div>
+      </div>
+    </div>
+    <div class="card co2-real-card governing-card">
+      <h2>What Gas Flow Should Actually Be Supplied?</h2>
+      <div class="governing-box">
+        <div class="governing-row"><span>Heating-duty requirement</span><b id="r-realHeatingFlow">–</b></div>
+        <div class="governing-row"><span>CO₂-duty requirement</span><b id="r-realCO2Flow">–</b></div>
+        <div class="governing-row total"><span>Required if the same gas stream serves both</span><b id="r-realCombinedFlow">–</b></div>
+      </div>
+      <div class="footnote"><b id="r-realGovernText">–</b> The CO₂-duty value is calculated from the actual live reactor CO₂ requirement, CO₂ capture efficiency and selected CO₂ vol%. Do not use the heating-duty gas quantity as the CO₂ requirement unless heating is intentionally performed with the same direct-contact flue-gas stream.</div>
     </div>
   </div>
 
@@ -2593,6 +2674,32 @@ function renderAll(){
   set('trace-actualFlow', Number.isFinite(r.heatGasFlowActM3h)?`(${fmt(r.heatGasFlowNm3h,1)} Nm³/h ÷ 22.414 Nm³/kmol) × [22.414 × (273.15 + ${fmt(state.heatingGasTin,1)}) ÷ 273.15 ÷ ${fmt(state.pressure,3)}] m³/kmol = ${fmt(r.heatGasFlowActM3h,1)} m³/h`: 'TBD');
   set('trace-actualFlowL', Number.isFinite(r.heatGasFlowActLmin)?`${fmt(r.heatGasFlowActM3h,1)} m³/h × 1000 ÷ 60 = ${fmt(r.heatGasFlowActLmin,1)} L/min`: 'TBD');
   set('trace-heatCO2', Number.isFinite(r.heatCO2MassFlowKgH)?`(${fmt(r.heatGasFlowNm3h,1)} Nm³/h ÷ 22.414 Nm³/kmol) × ${fmt(r.heatCO2Frac*100,1)}% × ${fmt(state.co2MW,1)} kg/kmol = ${fmt(r.heatCO2MassFlowKgH,2)} kg/h CO₂`: 'TBD');
+  set('r-realCo2Frac', Number.isFinite(r.heatCO2Frac)?fmt(r.heatCO2Frac*100,2)+' vol%':'TBD');
+  set('r-realCo2Req', Number.isFinite(r.co2InletH)?fmt(r.co2InletH,2)+' kg/h':'TBD');
+  set('r-realGasKgH', Number.isFinite(r.co2DesignGasFlowKgH)?fmt(r.co2DesignGasFlowKgH,2)+' kg/h':'TBD');
+  set('r-realGasNm3h', Number.isFinite(r.stdNm3h)?fmt(r.stdNm3h,2)+' Nm³/h':'TBD');
+  set('r-realGasActM3h', Number.isFinite(r.actM3h)?fmt(r.actM3h,2)+' m³/h':'TBD');
+  set('trace-realCo2Util', Number.isFinite(r.co2UtilH)?`${fmt(r.workVolL,2)} L × ${fmt(state.co2Util,3)} g/L/h ÷ 1000 = ${fmt(r.co2UtilH,3)} kg/h CO₂ utilized`: 'TBD');
+  set('trace-realCo2Req', Number.isFinite(r.co2InletH)?`${fmt(r.co2UtilH,3)} kg/h ÷ (${fmt(state.captureEff,1)}% ÷ 100) = ${fmt(r.co2InletH,3)} kg/h CO₂ at inlet`: 'TBD');
+  set('trace-realCo2Molar', Number.isFinite(r.co2MolarH)?`${fmt(r.co2InletH,3)} kg/h ÷ ${fmt(state.co2MW,1)} kg/kmol = ${fmt(r.co2MolarH,5)} kmol/h`: 'TBD');
+  set('trace-realGasFlow', Number.isFinite(r.stdNm3h)?`(${fmt(r.co2MolarH,5)} kmol/h ÷ ${fmt(state.co2Frac,2)}%) × 100% × 22.414 Nm³/kmol = ${fmt(r.stdNm3h,2)} Nm³/h; × ${fmt(state.normDensity,2)} kg/Nm³ = ${fmt(r.co2DesignGasFlowKgH,2)} kg/h`: 'TBD');
+  set('r-realHeatingFlow', Number.isFinite(r.heatGasFlowKgH)?fmt(r.heatGasFlowKgH,2)+' kg/h':'TBD');
+  set('r-realCO2Flow', Number.isFinite(r.co2DesignGasFlowKgH)?fmt(r.co2DesignGasFlowKgH,2)+' kg/h':'TBD');
+  set('r-realCombinedFlow', Number.isFinite(r.combinedRequiredGasKgH)?fmt(r.combinedRequiredGasKgH,2)+' kg/h':'TBD');
+  // Section 03 inline real-flue-gas requirement — driven by the same live CO₂ basis.
+  set('r-sideRealCo2Frac', Number.isFinite(r.heatCO2Frac)?fmt(r.heatCO2Frac*100,2)+' vol%':'TBD');
+  set('r-sideRealCo2Req', Number.isFinite(r.co2InletH)?fmt(r.co2InletH,2)+' kg/h':'TBD');
+  set('r-sideRealGasKgH', Number.isFinite(r.co2DesignGasFlowKgH)?fmt(r.co2DesignGasFlowKgH,2)+' kg/h':'TBD');
+  set('r-sideRealGasNm3h', Number.isFinite(r.stdNm3h)?fmt(r.stdNm3h,2)+' Nm³/h':'TBD');
+  set('r-sideRealGasActM3h', Number.isFinite(r.actM3h)?fmt(r.actM3h,2)+' m³/h':'TBD');
+  set('r-sideRealGasActLmin', Number.isFinite(r.actLmin)?fmt(r.actLmin,1)+' L/min':'TBD');
+  set('trace-sideRealUtil', Number.isFinite(r.co2UtilH)?`${fmt(r.co2UtilH,3)} kg/h CO₂ utilized`: 'TBD');
+  set('trace-sideRealReq', Number.isFinite(r.co2InletH)?`${fmt(r.co2InletH,3)} kg/h CO₂ at inlet`: 'TBD');
+  set('trace-sideRealMolar', Number.isFinite(r.co2MolarH)?`${fmt(r.co2MolarH,5)} kmol/h CO₂`: 'TBD');
+  set('trace-sideRealTotalMolar', Number.isFinite(r.totalMolarH)?`${fmt(r.totalMolarH,5)} kmol/h total flue gas`: 'TBD');
+  set('trace-sideRealFlow', Number.isFinite(r.actM3h)?`${fmt(r.actM3h,2)} m³/h at ${fmt(state.flueTempIn,1)}°C, ${fmt(state.pressure,3)} atm abs`: 'TBD');
+  set('r-sideRealBasis', Number.isFinite(r.co2DesignGasFlowKgH)?`${fmt(r.co2DesignGasFlowKgH,2)} kg/h real-gas basis`:'TBD');
+  set('r-realGovernText', r.combinedDuty==='HEATING DUTY GOVERNS'?'HEATING DUTY GOVERNS.':(r.combinedDuty==='CO₂ DUTY GOVERNS'?'CO₂ DUTY GOVERNS.':'GOVERNING DUTY: TBD.'));
   set('r-heatCompareKgH', Number.isFinite(r.heatGasFlowKgH)?fmt(r.heatGasFlowKgH,2)+' kg/h':'TBD');
   set('r-heatCompareBasis', Number.isFinite(r.heatGasFlowKgH)?fmt(r.heatGasFlowNm3h,2)+' Nm³/h':'TBD');
   set('r-co2CompareKgH', Number.isFinite(r.co2DesignGasFlowKgH)?fmt(r.co2DesignGasFlowKgH,2)+' kg/h':'TBD');
@@ -3562,7 +3669,12 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     row('CO₂ contained in heating gas', fmt(r.heatCO2MassFlowKgH,2), 'kg/h', 'CALCULATED — concentration × gas mass flow'),
     row('Total CO₂ contained in heating-duty gas', fmt(r.heatCO2MassTotalKg,1), 'kg', 'CALCULATED'),
     row('CO₂ cultivation duty gas flow', fmt(r.co2DesignGasFlowKgH,2), 'kg/h', 'CURRENT LIVE CO₂ BASIS'),
-    row('Combined required gas flow', fmt(r.combinedRequiredGasKgH,2), 'kg/h', r.combinedDuty)
+    row('Combined required gas flow', fmt(r.combinedRequiredGasKgH,2), 'kg/h', r.combinedDuty),
+    row('Real flue-gas requirement for CO₂ duty', fmt(r.co2DesignGasFlowKgH,2), 'kg/h', 'CURRENT LIVE CO₂ BASIS'),
+    row('Real flue-gas requirement for CO₂ duty', fmt(r.stdNm3h,2), 'Nm³/h', 'CURRENT LIVE CO₂ BASIS'),
+    row('Actual real flue-gas flow at inlet temperature', fmt(r.actM3h,2), 'm³/h', `T=${state.flueTempIn}°C, P=${state.pressure} atm abs`),
+    row('CO₂ concentration used for real gas requirement', fmt(state.co2Frac,2), 'vol%', 'LINKED TO MAIN CO₂ INPUT'),
+    row('Combined heating + CO₂ gas requirement', fmt(r.combinedRequiredGasKgH,2), 'kg/h', r.combinedDuty),
   ];
 
   const hydraulicRows = [
