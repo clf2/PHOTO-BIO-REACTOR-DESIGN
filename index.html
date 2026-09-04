@@ -1026,6 +1026,14 @@ canvas.interactive-chart{cursor:crosshair;}
     <div class="footnote">Units used: V in L, ρ in kg/L, C<sub>p</sub> in kJ/kg·°C, temperatures in °C (temperature differences in °C), Q in kJ, gas mass in kg, gas flow in kg/h and Nm³/h. For CO₂, 22.414 Nm³/kmol is used at 0°C and 1 atm. CO₂ concentration is a vol% / mole fraction, not a mass fraction.</div>
   </div>
 
+  <div class="card chart-card">
+    <h2>Required Flue-Gas Flow vs Heating Period</h2>
+    <p class="inline-note">The total flue-gas mass required for the selected heating duty is fixed by the temperature-duty calculation. This graph shows how the required mass flow rate changes when the heating period changes.</p>
+    <canvas id="chartHeatingFlow" class="interactive-chart" height="250"></canvas>
+    <div class="chart-readout" id="readoutHeatingFlow" aria-live="polite"></div>
+    <div class="chart-hint">Click a point to see the exact heating period and required flue-gas flow.</div>
+  </div>
+
   <div class="card">
     <h2>CO₂ Duty vs Heating Duty</h2>
     <p class="inline-note">If the same flue-gas stream is used simultaneously for heating and CO₂ supply, the governing required flow is the larger of the two independent requirements.</p>
@@ -2749,6 +2757,7 @@ function renderAll(){
   set('r-cycCut', Number.isFinite(r.cycCutSize_um)?fmt(r.cycCutSize_um,1)+' <span class="unit">µm</span>':'TBD — particle density');
 
   renderValidation(r);
+  drawHeatingFlowChart(r);
   drawCO2ConcChart(r);
   drawCO2VolChart(r);
   drawCircTubeChart(r);
@@ -2985,6 +2994,23 @@ function drawCircTubeChart(r){
   });
   drawLineChart(document.getElementById('chartCircTube'), xs, ys, {color:'#5b8def', readoutId:'readoutCircTube', xLabel:'Tube ID', yLabel:'Total circulation flow', xFormat:v=>fmt(v,0)+' mm', yFormat:v=>fmt(v,2)+' m³/h'});
 }
+function drawHeatingFlowChart(r){
+  const currentH = Number(state.heatingTimeH);
+  const xs = [];
+  for(let h=12; h<=120; h+=12) xs.push(h);
+  if(Number.isFinite(currentH) && currentH>0 && currentH<=240 && !xs.some(h=>Math.abs(h-currentH)<1e-9)) xs.push(currentH);
+  xs.sort((a,b)=>a-b);
+  const ys = xs.map(h => Number.isFinite(r.heatGasMassTotalKg) ? r.heatGasMassTotalKg/h : NaN);
+  drawLineChart(document.getElementById('chartHeatingFlow'), xs, ys, {
+    color:'#0b5ea8',
+    readoutId:'readoutHeatingFlow',
+    xLabel:'Heating period',
+    yLabel:'Flue-gas mass flow',
+    xFormat:v=>fmt(v,1)+' h',
+    yFormat:v=>fmt(v,2)+' kg/h',
+    formula:'ṁ_g = M_g / t_heating'
+  });
+}
 
 /* ============================================================
    9. REACTOR SCHEMATIC (SVG)
@@ -3153,6 +3179,14 @@ document.querySelectorAll('.navitem').forEach(item=>{
     document.getElementById('sec-'+item.getAttribute('data-sec')).classList.add('active');
     window.scrollTo(0,0);
     renderAll();
+    requestAnimationFrame(() => {
+      const rr = compute(state);
+      drawTempChart(rr);
+      drawHeatingFlowChart(rr);
+      drawCO2ConcChart(rr);
+      drawCO2VolChart(rr);
+      drawCircTubeChart(rr);
+    });
   });
 });
 
@@ -3876,10 +3910,11 @@ if (heatingSummary) {
 bindInputs();
 renderAll();
 renderCompare();
-requestAnimationFrame(() => { const rr = compute(state); drawTempChart(rr); drawCO2ConcChart(rr); drawCO2VolChart(rr); drawCircTubeChart(rr); });
+requestAnimationFrame(() => { const rr = compute(state); drawTempChart(rr); drawHeatingFlowChart(rr); drawCO2ConcChart(rr); drawCO2VolChart(rr); drawCircTubeChart(rr); });
 window.addEventListener('resize', () => {
   const r = compute(state);
   drawTempChart(r);
+  drawHeatingFlowChart(r);
   drawCO2ConcChart(r);
   drawCO2VolChart(r);
   drawCircTubeChart(r);
