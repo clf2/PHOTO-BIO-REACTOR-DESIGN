@@ -2800,16 +2800,11 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const r = compute(state);
 
   /*
-   * Excel export: SheetJS is used for genuine .xlsx output when the CDN is available; fallback remains Excel-compatible HTML .xls. It contains separate sheets/sections for:
-   * 1) Design Basis
-   * 2) Reactor Geometry
-   * 3) CO2 & Flue Gas
-   * 4) Hydraulics
-   * 5) Mass Balance / 6) Energy
-   * 6) Cyclone
-   * 7) Impact / Change Log
-   * 8) Case Comparison
-   * 9) Engineering Notes
+   * Excel export — SINGLE WORKSHEET
+   * --------------------------------
+   * The live model is exported as one professionally structured worksheet.
+   * Every model block is stacked vertically on the same sheet so there are
+   * no separate Excel tabs and no overlapping/truncated report sections.
    */
   const esc = (v) => String(v ?? '')
     .replace(/&/g,'&amp;')
@@ -2820,16 +2815,111 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   const row = (label, value, unit='', status='') =>
     `<tr><td>${esc(label)}</td><td>${esc(value)}</td><td>${esc(unit)}</td><td>${esc(status)}</td></tr>`;
 
-  const section = (title, rows) => `
-    <table class="sheet">
-      <tr class="sheet-title"><th colspan="4">${esc(title)}</th></tr>
-      <tr class="head"><th>Parameter</th><th>Value</th><th>Unit</th><th>Status / Notes</th></tr>
-      ${rows.join('')}
-    </table>`;
+  const htmlText = (html) => {
+    const el = document.createElement('div');
+    el.innerHTML = html || '';
+    return (el.textContent || '').replace(/\s+/g,' ').trim();
+  };
 
-  const designBasisRows = [row('Reactor operating mode', state.reactorMode==='continuous'?'Continuous Reactor':'Batch Reactor', '', 'SELECTED MODE'), ...Object.keys(DEFAULTS).filter(k=>k!=='reactorMode').map(k =>
-    row(LABELS[k] || k, state[k], UNITS[k] || '', k === 'cycVel' ? 'PRELIM' : 'LIVE INPUT')
-  )];
+  const rowArray = (htmlRow) => {
+    /* A <tr> cannot be parsed reliably when injected directly into a <div>.
+       Wrap it in a table so every exported row is read correctly. */
+    const el = document.createElement('table');
+    el.innerHTML = `<tbody>${htmlRow}</tbody>`;
+    const cells = [...el.querySelectorAll('tbody tr:first-child td')];
+    return cells.map(c => htmlText(c.innerHTML));
+  };
+
+  const domMassBalanceRows = () => {
+    const out = [];
+    document.querySelectorAll('#sec-massbalance .card').forEach(card => {
+      const heading = card.querySelector('h2');
+      if(heading) out.push(row('SUBSECTION', htmlText(heading.innerHTML), '', ''));
+      card.querySelectorAll('.row').forEach(el => {
+        if(getComputedStyle(el).display === 'none') return;
+        const labelEl = el.querySelector('.label');
+        const valueEl = el.querySelector('.val');
+        if(!labelEl || !valueEl) return;
+        const labelClone = labelEl.cloneNode(true);
+        labelClone.querySelectorAll('.sub').forEach(x=>x.remove());
+        const label = htmlText(labelClone.innerHTML);
+        const formula = htmlText(labelEl.querySelector('.sub')?.innerHTML || '');
+        const value = htmlText(valueEl.innerHTML);
+        if(label || value) out.push(row(label, value, '', formula ? `Formula: ${formula}` : 'CALCULATED'));
+      });
+      card.querySelectorAll('.thermal-impact .ti').forEach(el=>{
+        const n = htmlText(el.querySelector('.n')?.innerHTML || '');
+        const v = htmlText(el.querySelector('.v')?.innerHTML || '');
+        if(n) out.push(row(n, v, '', 'THERMAL IMPACT'));
+      });
+    });
+    return out;
+  };
+
+  const domCleaningRows = () => {
+    const out = [];
+    const sec = document.getElementById('sec-cleaning');
+    if(!sec) return out;
+    sec.querySelectorAll('.card').forEach(card=>{
+      const heading = card.querySelector('h2');
+      if(heading) out.push(row('SUBSECTION', htmlText(heading.innerHTML), '', ''));
+      card.querySelectorAll('.row').forEach(el=>{
+        if(getComputedStyle(el).display === 'none') return;
+        const labelEl=el.querySelector('.label');
+        const valueEl=el.querySelector('.val');
+        if(labelEl && valueEl) out.push(row(htmlText(labelEl.innerHTML),htmlText(valueEl.innerHTML),'','LIVE / CONDITIONAL'));
+      });
+      card.querySelectorAll('li').forEach(li=>{
+        const txt=htmlText(li.innerHTML);
+        if(txt) out.push(row('Cleaning-stage note',txt,'','CONDITIONAL'));
+      });
+    });
+    return out;
+  };
+
+  const domValidationRows = () => {
+    const out=[];
+    const sec=document.getElementById('sec-validation');
+    if(!sec) return out;
+    sec.querySelectorAll('.field').forEach(f=>{
+      const labelEl=f.querySelector('label');
+      const input=f.querySelector('input,select,textarea');
+      const unit=f.querySelector('.unit-suffix');
+      if(labelEl && input){
+        const labelClone=labelEl.cloneNode(true);
+        labelClone.querySelectorAll('.badge').forEach(x=>x.remove());
+        out.push(row(htmlText(labelClone.innerHTML), input.value || 'Not entered', htmlText(unit?.innerHTML||''), htmlText(labelEl.querySelector('.badge')?.innerHTML||'OPTIONAL')));
+      }
+    });
+    sec.querySelectorAll('table tbody tr').forEach(tr=>{
+      const cells=[...tr.querySelectorAll('td')].map(td=>htmlText(td.innerHTML));
+      if(cells.length) out.push(row(cells[0]||'—',cells.slice(1).join(' | '),'','VERIFICATION / VALIDATION'));
+    });
+    sec.querySelectorAll('.thermal-impact .ti').forEach(el=>{
+      out.push(row(htmlText(el.querySelector('.n')?.innerHTML||''),htmlText(el.querySelector('.v')?.innerHTML||''),'','PHYSICAL VALIDATION'));
+    });
+    return out;
+  };
+
+  const domRequirementsRows = () => {
+    const out=[];
+    const sec=document.getElementById('sec-requirements');
+    if(!sec) return out;
+    sec.querySelectorAll('table').forEach(table=>{
+      table.querySelectorAll('tbody tr').forEach(tr=>{
+        const cells=[...tr.querySelectorAll('td')].map(td=>htmlText(td.innerHTML));
+        if(cells.length) out.push(row(cells[0]||'—',cells.slice(1).join(' | '),'','DESIGN REQUIREMENT'));
+      });
+    });
+    return out;
+  };
+
+  const designBasisRows = [
+    row('Reactor operating mode', state.reactorMode==='continuous'?'Continuous Reactor':'Batch Reactor', '', 'SELECTED MODE'),
+    ...Object.keys(DEFAULTS).filter(k=>k!=='reactorMode').map(k =>
+      row(LABELS[k] || k, state[k], UNITS[k] || '', k === 'cycVel' ? 'PRELIM' : 'LIVE INPUT')
+    )
+  ];
 
   const geometryRows = [
     row('Geometric reactor volume', fmt(state.geomVol,4), 'm³', 'INPUT BASIS'),
@@ -2867,7 +2957,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     row('Velocity for target Reynolds number', fmt(r.velocity,4), 'm/s', `Re target=${state.targetRe}`),
     row('Flow per loop', fmt(r.qLoop_m3h,3), 'm³/h', 'CALCULATED'),
     row('Total internal circulation', fmt(r.qTotal_m3h,2), 'm³/h', `${state.numLoops} loops`),
-    row('Reynolds number check', fmt(r.reCheck,0), '—', 'CALCULATED') ,
+    row('Reynolds number check', fmt(r.reCheck,0), '—', 'CALCULATED'),
     row('Main-header cross-sectional area', fmt(r.headerArea,6), 'm²', 'CALCULATED'),
     row('Main-header velocity', fmt(r.headerVelocity,3), 'm/s', 'SCREENING — actual header length/fittings required for pressure drop'),
     row('Main-header Reynolds number', fmt(r.headerRe,0), '—', 'SCREENING'),
@@ -2938,12 +3028,8 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
       change = `${d >= 0 ? '+' : ''}${fmt(d,3)} ${f.unit}${isFinite(pct) ? ` (${pct >= 0 ? '+' : ''}${fmt(pct,1)}%)` : ''}`;
       impact = Math.abs(pct) > 5 ? 'Significant change' : 'Minor change';
     }
-    return row(
-      f.label,
-      caseA ? fmt(a,3) : '—',
-      f.unit,
-      `Case B: ${caseB ? fmt(b,3) : '—'} ${f.unit} | Change: ${change} | ${impact}`
-    );
+    return row(f.label, caseA ? fmt(a,3) : '—', f.unit,
+      `Case B: ${caseB ? fmt(b,3) : '—'} ${f.unit} | Change: ${change} | ${impact}`);
   });
 
   const notesRows = [
@@ -2956,51 +3042,100 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     row('Validation', 'Plant flue-gas analysis and vendor/equipment data required', '', 'BEFORE FABRICATION')
   ];
 
-  const workbook = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>
-  body{font-family:Arial,sans-serif;font-size:11pt;}
-  .sheet{border-collapse:collapse;width:100%;margin:0 0 28px 0;}
-  .sheet th,.sheet td{border:1px solid #b7b7b7;padding:6px 8px;}
-  .sheet-title th{background:#1f4e78;color:white;font-size:14pt;text-align:left;}
-  .head th{background:#d9eaf7;font-weight:bold;}
-  .sheet td:nth-child(2){mso-number-format:"0.0000";}
-</style>
-</head>
-<body>
-${section('CARBONONE MRPL — DESIGN BASIS', designBasisRows)}
-${section('REACTOR GEOMETRY', geometryRows)}
-${section('CO₂ & FLUE GAS MASS BALANCE', gasRows)}
-${section('INTERNAL RECIRCULATION HYDRAULICS', hydraulicRows)}
-${section('ENERGY — IDEAL SCREENING MODEL', energyRows)}
-${section('CYCLONE — PRELIMINARY SCREENING', cycloneRows)}
-${section('IMPACT ANALYSIS / CHANGE LOG', impactRows)}
-${section('CASE COMPARISON', compareRows)}
-${section('ENGINEERING NOTES', notesRows)}
-</body>
-</html>`;
+  const sections = [
+    ['01 — DESIGN BASIS', designBasisRows],
+    ['02 — REACTOR GEOMETRY', geometryRows],
+    ['03 — CO₂ & FLUE GAS', gasRows],
+    ['04 — INTERNAL RECIRCULATION HYDRAULICS', hydraulicRows],
+    ['05 — PROCESS MASS BALANCE', domMassBalanceRows()],
+    ['06 — ENERGY / THERMAL IMPACT', energyRows],
+    ['07 — FLUE GAS CLEANING', domCleaningRows()],
+    ['08 — CYCLONE', cycloneRows],
+    ['09 — IMPACT ANALYSIS / CHANGE LOG', impactRows],
+    ['10 — CASE COMPARISON', compareRows],
+    ['11 — ENGINEERING NOTES', notesRows],
+    ['12 — MODEL VERIFICATION & VALIDATION', domValidationRows()],
+    ['13 — COMPLETE DESIGN REQUIREMENTS', domRequirementsRows()]
+  ];
 
+  /* ---------- SINGLE-SHEET XLSX ---------- */
   if(window.XLSX){
-    const wb = XLSX.utils.book_new();
-    const makeSheet = (title, rows) => XLSX.utils.aoa_to_sheet([
-      ['CARBONONE MRPL — '+title],
-      ['Parameter','Value','Unit','Status / Notes'],
-      ...rows.map(x=>{
-        const m = x.match(/<td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td>/);
-        return m ? [m[1].replace(/<[^>]+>/g,''),m[2].replace(/<[^>]+>/g,''),m[3].replace(/<[^>]+>/g,''),m[4].replace(/<[^>]+>/g,'')] : [x,'','',''];
-      })
-    ]);
-    const sheets = [
-      ['Design Basis',designBasisRows],['Reactor Geometry',geometryRows],['CO2 & Flue Gas',gasRows],
-      ['Hydraulics',hydraulicRows],['Energy',energyRows],['Cyclone',cycloneRows],
-      ['Impact Log',impactRows],['Case Comparison',compareRows],['Engineering Notes',notesRows]
+    const data = [
+      ['CARBONONE MRPL — LIVE REACTOR DESIGN & CALCULATION REPORT','','','',''],
+      ['Generated from current live model state','','','',''],
+      ['Section','Parameter','Value','Unit','Status / Notes']
     ];
-    sheets.forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb, makeSheet(name,rows), name.slice(0,31)));
-    XLSX.writeFile(wb,'CarbonONE_MRPL_Calculation_Report.xlsx');
+    const sectionRows=[];
+
+    sections.forEach(([title, rows])=>{
+      const sectionRow = data.length;
+      data.push([title,'','','','']);
+      sectionRows.push(sectionRow);
+      rows.forEach(x=>{
+        const a=rowArray(x);
+        if(a.length===4) data.push([title,a[0],a[1],a[2],a[3]]);
+        else if(a.length>0) data.push([title,a[0]||'',a.slice(1).join(' | '),'','']);
+      });
+      data.push(['','','','','']);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [
+      {wch:34},
+      {wch:48},
+      {wch:24},
+      {wch:16},
+      {wch:64}
+    ];
+    ws['!rows'] = [
+      {hpt:28},
+      {hpt:20},
+      {hpt:22}
+    ];
+    ws['!freeze'] = {xSplit:0, ySplit:3};
+    ws['!autofilter'] = {ref:`A3:E${data.length}`};
+    ws['!merges'] = [
+      {s:{r:0,c:0},e:{r:0,c:4}},
+      {s:{r:1,c:0},e:{r:1,c:4}},
+      ...sectionRows.map(r=>({s:{r,c:0},e:{r,c:4}}))
+    ];
+
+    /* Basic cell formatting where supported by the loaded SheetJS build. */
+    const setStyle = (addr, style) => { if(ws[addr]) ws[addr].s = style; };
+    const titleStyle = {font:{bold:true,sz:16,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'0B5EA8'}},alignment:{vertical:'center'}};
+    const subStyle = {font:{italic:true,color:{rgb:'55718A'}},alignment:{vertical:'center'}};
+    const headStyle = {font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'1769AA'}},alignment:{vertical:'center'}};
+    const sectionStyle = {font:{bold:true,sz:12,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'0B5EA8'}},alignment:{vertical:'center'}};
+    setStyle('A1',titleStyle);
+    setStyle('A2',subStyle);
+    ['A3','B3','C3','D3','E3'].forEach(a=>setStyle(a,headStyle));
+    sectionRows.forEach(r=>setStyle(`A${r+1}`,sectionStyle));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Calculation Report');
+    XLSX.writeFile(wb,'CarbonONE_MRPL_Calculation_Report.xlsx', {cellStyles:true});
     return;
   }
+
+  /* ---------- FALLBACK: SINGLE-SHEET EXCEL-COMPATIBLE HTML ---------- */
+  const sectionHtml = sections.map(([title,rows])=>{
+    const body = rows.join('');
+    return `<table class="sheet"><tr class="section-title"><th colspan="5">${esc(title)}</th></tr><tr class="head"><th>Section</th><th>Parameter</th><th>Value</th><th>Unit</th><th>Status / Notes</th></tr>${body.replace(/<tr><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><td>(.*?)<\/td><\/tr>/g,(_,a,b,c,d)=>`<tr><td>${esc(title)}</td><td>${a}</td><td>${b}</td><td>${c}</td><td>${d}</td></tr>`)}</table>`;
+  }).join('');
+
+  const workbook = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><style>
+body{font-family:Arial,sans-serif;font-size:10.5pt;color:#17324d;}
+table.sheet{border-collapse:collapse;width:100%;margin:0 0 18px 0;table-layout:fixed;}
+.sheet th,.sheet td{border:1px solid #c9d8e6;padding:6px 8px;vertical-align:top;word-wrap:break-word;}
+.sheet .section-title th{background:#0b5ea8;color:#fff;font-size:13pt;text-align:left;padding:9px;}
+.sheet .head th{background:#dcecf9;color:#12304a;font-weight:bold;}
+.sheet td:nth-child(1){width:20%;}.sheet td:nth-child(2){width:25%;}.sheet td:nth-child(3){width:15%;}.sheet td:nth-child(4){width:10%;}.sheet td:nth-child(5){width:30%;}
+</style></head><body>
+<h1>CARBONONE MRPL — LIVE REACTOR DESIGN &amp; CALCULATION REPORT</h1>
+<p>Generated from current live model state</p>
+${sectionHtml}
+</body></html>`;
   const blob = new Blob([workbook], {type:'application/vnd.ms-excel'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
