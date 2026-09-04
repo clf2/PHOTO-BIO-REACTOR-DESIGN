@@ -479,6 +479,35 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
 .chart-readout strong{font-family:Georgia,serif;}
 .chart-hint{font-size:12px;color:#6a7d8d;margin-top:4px;}
 canvas.interactive-chart{cursor:crosshair;}
+
+/* ---------- Dedicated flue-gas heating requirement ---------- */
+.heating-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:14px}
+.heating-summary .hs{border:1px solid var(--border);padding:12px;border-radius:6px;background:#f7fbfe}
+.heating-summary .hs .n{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em}
+.heating-summary .hs .v{font-size:19px;font-weight:700;margin-top:5px;color:var(--text)}
+  .heating-summary .hs{cursor:pointer;position:relative;transition:box-shadow .15s,transform .15s;background:#f7fbfe;}
+  .heating-summary .hs:hover{box-shadow:0 4px 12px rgba(23,52,79,.10);transform:translateY(-1px)}
+  .heating-summary .hs:focus{outline:2px solid #0b5ea8;outline-offset:2px}
+  .heating-summary .hs::after{content:'Click to view formula';display:block;margin-top:8px;font-size:10px;color:#0b5ea8;font-weight:600;}
+  .heating-summary .hs.open{box-shadow:0 0 0 2px #0b5ea8;background:#eef7ff;}
+  .heating-summary .hs.open::after{content:'Click to hide formula';}
+  .hs-detail{display:none;margin-top:10px;padding:10px 11px;border-top:1px dashed #9bb8cf;background:#fff;border-radius:4px;text-align:left;}
+  .hs.open .hs-detail{display:block;}
+  .hs-detail .hd-formula{font-family:Georgia,serif;font-size:15px;font-weight:700;color:#17344f;margin-bottom:6px;}
+  .hs-detail .hd-trace{font-size:12px;line-height:1.45;color:#587089;}
+  .hs-detail .hd-label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#7a8da0;margin-bottom:3px;font-weight:700;}
+.heating-link{margin-top:14px;padding:12px 14px;border-left:3px solid var(--brand);background:#edf6fc;border-radius:4px;font-size:13px;color:var(--text-dim);line-height:1.55}
+.heating-check{margin-top:14px;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.heating-check table{margin:0}
+@media(max-width:700px){.heating-summary{grid-template-columns:1fr}}
+
+  .formula-trace .row{display:grid;grid-template-columns:minmax(260px,0.9fr) minmax(360px,1.1fr);gap:18px;align-items:center;padding:14px 0;border-bottom:1px solid #dbe5ee;}
+  .formula-trace .row:last-child{border-bottom:0;}
+  .formula-trace .label{font-weight:700;}
+  .formula-trace .meta{display:block;}
+  .formula-line{font-family:Georgia,serif;font-size:1.05rem;font-weight:700;color:#17344f;margin-bottom:5px;}
+  .trace-line{font-size:.92rem;color:#587089;line-height:1.45;}
+  @media(max-width:800px){.formula-trace .row{grid-template-columns:1fr;gap:7px;}}
 </style>
 
 <style id="rockwell-font-override">
@@ -558,16 +587,17 @@ canvas.interactive-chart{cursor:crosshair;}
   <div class="navitem active" data-sec="basis"><span class="num">01</span>Design Basis</div>
   <div class="navitem" data-sec="geometry"><span class="num">02</span>Reactor Geometry</div>
   <div class="navitem" data-sec="fluegas"><span class="num">03</span>CO₂ &amp; Flue Gas</div>
-  <div class="navitem" data-sec="hydraulics"><span class="num">04</span>Hydraulics</div>
-  <div class="navitem" data-sec="massbalance"><span class="num">05</span>Mass Balance</div>
-  <div class="navitem" data-sec="energy"><span class="num">06</span>Energy Balance</div>
-  <div class="navitem" data-sec="cleaning"><span class="num">07</span>Flue Gas Cleaning</div>
-  <div class="navitem" data-sec="cyclone"><span class="num">08</span>Cyclone</div>
-  <div class="navitem" data-sec="impact"><span class="num">09</span>Impact Analysis</div>
-  <div class="navitem" data-sec="compare"><span class="num">10</span>Case Comparison</div>
-  <div class="navitem" data-sec="notes"><span class="num">11</span>Engineering Notes</div>
-  <div class="navitem" data-sec="validation"><span class="num">12</span>Model Verification &amp; Validation</div>
-  <div class="navitem" data-sec="requirements"><span class="num">13</span>Complete Design Requirements</div>
+  <div class="navitem" data-sec="heating"><span class="num">04</span>Flue-Gas Heating Requirement</div>
+  <div class="navitem" data-sec="hydraulics"><span class="num">05</span>Hydraulics</div>
+  <div class="navitem" data-sec="massbalance"><span class="num">06</span>Mass Balance</div>
+  <div class="navitem" data-sec="energy"><span class="num">07</span>Energy Balance</div>
+  <div class="navitem" data-sec="cleaning"><span class="num">08</span>Flue Gas Cleaning</div>
+  <div class="navitem" data-sec="cyclone"><span class="num">09</span>Cyclone</div>
+  <div class="navitem" data-sec="impact"><span class="num">10</span>Impact Analysis</div>
+  <div class="navitem" data-sec="compare"><span class="num">11</span>Case Comparison</div>
+  <div class="navitem" data-sec="notes"><span class="num">12</span>Engineering Notes</div>
+  <div class="navitem" data-sec="validation"><span class="num">13</span>Model Verification &amp; Validation</div>
+  <div class="navitem" data-sec="requirements"><span class="num">14</span>Complete Design Requirements</div>
 </nav>
 
 <main class="main" id="content">
@@ -678,9 +708,9 @@ canvas.interactive-chart{cursor:crosshair;}
       <div class="field"><label>Target Reynolds number <span class="badge prelim">PRELIM</span></label>
         <div class="inputwrap"><input type="number" step="10" id="in-targetRe" data-key="targetRe"><span class="unit-suffix">–</span></div></div>
       <div class="field"><label>Liquid heat capacity <button type="button" class="help-btn" data-help="liquidCp">What is this?</button> <span class="badge prelim">PRELIM</span></label>
-        <div class="inputwrap"><input type="number" step="0.1" id="in-liquidCp" data-key="liquidCp"><span class="unit-suffix">kJ/kg·K</span></div></div>
+        <div class="inputwrap"><input type="number" step="0.1" id="in-liquidCp" data-key="liquidCp"><span class="unit-suffix">kJ/kg·°C</span></div></div>
       <div class="field"><label>Flue-gas heat capacity <button type="button" class="help-btn" data-help="gasCp">What is this?</button> <span class="badge prelim">PRELIM</span></label>
-        <div class="inputwrap"><input type="number" step="0.1" id="in-gasCp" data-key="gasCp"><span class="unit-suffix">kJ/kg·K</span></div></div>
+        <div class="inputwrap"><input type="number" step="0.1" id="in-gasCp" data-key="gasCp"><span class="unit-suffix">kJ/kg·°C</span></div></div>
       <div class="field"><label>PM reference particle size <span class="badge prelim">PRELIM</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-pmSize" data-key="pmSize"><span class="unit-suffix">µm</span></div></div>
       <div class="field"><label>U-bend loss coefficient K <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-uBendK" data-key="uBendK"><span class="unit-suffix">– / bend</span></div></div>
@@ -928,7 +958,93 @@ canvas.interactive-chart{cursor:crosshair;}
   </div>
 </section>
 
-<!-- ============ 04 HYDRAULICS ============ -->
+<!-- ============ 04 FLUE-GAS HEATING REQUIREMENT ============ -->
+<section class="section" id="sec-heating">
+  <div class="section-page-brand"><div class="page-logo-wrap"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGoAAABgCAYAAAD1uufxAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAABsBSURBVHhe7Z13WBTHG8c/u8dRpAjSm4i9xBZBxV6xxK7RWBJLihpLTKJJbDG2RI091tgSoyZqTGKLXey9ooiiBBEEQXqH425/f3B7HgiKyhnIj8/z7APszO7svt95Z96dmV0EbCpJ6CPk+ku7Q3qS8FS6FkEAScr5mQvt6QtM16IrJk95+unP2pFvemGv+xnpec+jQ74v+e8C8hWUXkB2XUKe6xKwqpBbqFKKJWLeHaUUT0qFKiGUClVCKBWqhFAqVAmhVKgSQqlQJYRSoUoIpUKVEEqFKiGUClVCKBWqhFAqVAmhVKgSQokRShCEXNv/G8VSqLyC5CeMflp+6f81is3EoWxwScp9OZIkYWdbDjMz01z7k5NTSUhMRBTFXMfkPd5QtEAAAAASUVORK5CYII=" alt="CarbonONE logo"></div><div class="page-brand-text">CarbonONE MRPL · Live Reactor Design &amp; Calculation Model</div></div>
+  <div class="section-header">
+    <div class="tag">04 / FLUE-GAS HEATING REQUIREMENT</div>
+    <h1>Flue-Gas Heating Requirement</h1>
+    <p class="lead">Dedicated heat-balance calculator for determining the quantity and flow rate of hot flue gas required to raise a defined water/culture volume to a specified temperature.</p>
+  </div>
+
+  <div class="qualif">This section is a separate heating-duty calculation. It does not replace the reactor transient thermal model. Enter the required heating duty, flue-gas inlet/outlet temperatures, gas heat capacity and heat-transfer effectiveness. The main CO₂ concentration input is linked automatically.</div>
+
+  <div class="card">
+    <h2>Heating Inputs</h2>
+    <div class="fieldgrid">
+      <div class="field"><label>Water / culture volume</label><div class="inputwrap"><input type="number" step="1" min="0" data-key="heatingWaterVolumeL"><span class="unit-suffix">L</span></div></div>
+      <div class="field"><label>Water density</label><div class="inputwrap"><input type="number" step="0.001" min="0" data-key="heatingWaterDensity"><span class="unit-suffix">kg/L</span></div></div>
+      <div class="field"><label>Water / culture Cp</label><div class="inputwrap"><input type="number" step="0.01" min="0" data-key="heatingWaterCp"><span class="unit-suffix">kJ/kg·°C</span></div></div>
+      <div class="field"><label>Initial water / culture temperature</label><div class="inputwrap"><input type="number" step="0.1" data-key="heatingWaterTin"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Final water / culture temperature</label><div class="inputwrap"><input type="number" step="0.1" data-key="heatingWaterTout"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Flue-gas inlet temperature</label><div class="inputwrap"><input type="number" step="0.1" data-key="heatingGasTin"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Flue-gas outlet temperature</label><div class="inputwrap"><input type="number" step="0.1" data-key="heatingGasTout"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Flue-gas Cp</label><div class="inputwrap"><input type="number" step="0.01" min="0" data-key="heatingGasCp"><span class="unit-suffix">kJ/kg·°C</span></div></div>
+      <div class="field"><label>Heat-transfer effectiveness</label><div class="inputwrap"><input type="number" step="0.01" min="0.01" max="1" data-key="heatingEffectiveness"><span class="unit-suffix">fraction</span></div></div>
+      <div class="field"><label>Heating period</label><div class="inputwrap"><input type="number" step="0.1" min="0.001" data-key="heatingTimeH"><span class="unit-suffix">h</span></div></div>
+      <div class="field"><label>Flue-gas normal density</label><div class="inputwrap"><input type="number" step="0.01" min="0" data-key="heatingGasDensity"><span class="unit-suffix">kg/Nm³</span></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Calculated Heating Duty</h2>
+    <p class="inline-note">Click any calculated value below to open its formula and the live substitution used to obtain that result.</p>
+    <div class="heating-summary">
+      <div class="hs" tabindex="0" data-trace="trace-heatMass"><div class="n">Water / culture mass</div><div class="v" id="r-heatWaterMass">–</div><div class="hs-detail"><div class="hd-label">Formula</div><div class="hd-formula">M<sub>w</sub> = V<sub>w</sub> × ρ<sub>w</sub></div><div class="hd-label">Calculation</div><div class="hd-trace" id="card-trace-heatMass">–</div></div></div>
+      <div class="hs" tabindex="0" data-trace="trace-heatDeltaT"><div class="n">Water temperature rise</div><div class="v" id="r-heatWaterDeltaT">–</div><div class="hs-detail"><div class="hd-label">Formula</div><div class="hd-formula">ΔT<sub>w</sub> = T<sub>w,out</sub> − T<sub>w,in</sub></div><div class="hd-label">Calculation</div><div class="hd-trace" id="card-trace-heatDeltaT">–</div></div></div>
+      <div class="hs" tabindex="0" data-trace="trace-heatQ"><div class="n">Heat required</div><div class="v" id="r-heatQ">–</div><div class="hs-detail"><div class="hd-label">Formula</div><div class="hd-formula">Q<sub>required</sub> = M<sub>w</sub> × C<sub>p,w</sub> × ΔT<sub>w</sub></div><div class="hd-label">Calculation</div><div class="hd-trace" id="card-trace-heatQ">–</div></div></div>
+      <div class="hs" tabindex="0" data-trace="trace-gasMass"><div class="n">Required flue-gas mass</div><div class="v" id="r-heatGasMass">–</div><div class="hs-detail"><div class="hd-label">Formula</div><div class="hd-formula">M<sub>g</sub> = Q<sub>gas</sub> / (C<sub>p,g</sub> × ΔT<sub>g</sub>)</div><div class="hd-label">Calculation</div><div class="hd-trace" id="card-trace-gasMass">–</div></div></div>
+      <div class="hs" tabindex="0" data-trace="trace-gasFlow"><div class="n">Required flue-gas flow</div><div class="v" id="r-heatGasFlowKgH">–</div><div class="hs-detail"><div class="hd-label">Formula</div><div class="hd-formula">ṁ<sub>g</sub> = M<sub>g</sub> / t<sub>heating</sub></div><div class="hd-label">Calculation</div><div class="hd-trace" id="card-trace-gasFlow">–</div></div></div>
+      <div class="hs" tabindex="0" data-trace="trace-normalFlow"><div class="n">Required gas flow</div><div class="v" id="r-heatGasFlowNm3h">–</div><div class="hs-detail"><div class="hd-label">Formula</div><div class="hd-formula">Q<sub>N</sub> = ṁ<sub>g</sub> / ρ<sub>N</sub></div><div class="hd-label">Calculation</div><div class="hd-trace" id="card-trace-normalFlow">–</div></div></div>
+      <div class="hs" tabindex="0" data-trace="trace-normalFlow"><div class="n">Required gas flow</div><div class="v" id="r-heatGasFlowNLmin">–</div><div class="hs-detail"><div class="hd-label">Formula</div><div class="hd-formula">Q<sub>NL/min</sub> = Q<sub>N</sub> × 1000 / 60</div><div class="hd-label">Calculation</div><div class="hd-trace" id="card-trace-normalFlowNL">–</div></div></div>
+      <div class="hs" tabindex="0" data-trace="trace-actualFlow"><div class="n">Gas flow at inlet T</div><div class="v" id="r-heatGasFlowActM3h">–</div><div class="hs-detail"><div class="hd-label">Formula</div><div class="hd-formula">Q<sub>actual</sub> = ṅ<sub>g</sub> × V<sub>m</sub>(T)</div><div class="hd-label">Calculation</div><div class="hd-trace" id="card-trace-actualFlow">–</div></div></div>
+      <div class="hs" tabindex="0" data-trace="trace-actualFlow"><div class="n">Gas flow at inlet T</div><div class="v" id="r-heatGasFlowActLmin">–</div><div class="hs-detail"><div class="hd-label">Formula</div><div class="hd-formula">Q<sub>L/min</sub> = Q<sub>actual</sub> × 1000 / 60</div><div class="hd-label">Calculation</div><div class="hd-trace" id="card-trace-actualFlowL">–</div></div></div>
+    </div>
+    <div class="heating-link">
+      <b>Linked CO₂ concentration:</b> <span id="r-heatCO2Frac">–</span>.
+      At this heating-gas flow, the corresponding CO₂ mass supplied (calculated from vol%/mole fraction) is <b id="r-heatCO2MassFlow">–</b>.
+      Total CO₂ contained in the gas required for the heating duty is <b id="r-heatCO2MassTotal">–</b>.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Heating Calculation Formula &amp; Trace</h2>
+    <div class="formula-trace">
+      <div class="row"><div class="label">1. Water / culture mass<span class="sub">M<sub>w</sub> = V<sub>w</sub> × ρ<sub>w</sub></span></div><div class="meta"><div class="formula-line">M<sub>w</sub> = V<sub>w</sub> × ρ<sub>w</sub></div><div class="trace-line" id="trace-heatMass">–</div></div></div>
+      <div class="row"><div class="label">2. Water temperature rise<span class="sub">ΔT<sub>w</sub> = T<sub>w,out</sub> − T<sub>w,in</sub></span></div><div class="meta"><div class="formula-line">ΔT<sub>w</sub> = T<sub>w,out</sub> − T<sub>w,in</sub></div><div class="trace-line" id="trace-heatDeltaT">–</div></div></div>
+      <div class="row"><div class="label">3. Heat required<span class="sub">Q = M<sub>w</sub> × C<sub>p,w</sub> × ΔT<sub>w</sub></span></div><div class="meta"><div class="formula-line">Q<sub>required</sub> = M<sub>w</sub> × C<sub>p,w</sub> × ΔT<sub>w</sub></div><div class="trace-line" id="trace-heatQ">–</div></div></div>
+      <div class="row"><div class="label">4. Corrected heat duty for effectiveness<span class="sub">Q<sub>gas</sub> = Q<sub>required</sub> / ε</span></div><div class="meta"><div class="formula-line">Q<sub>gas</sub> = Q<sub>required</sub> / ε</div><div class="trace-line" id="trace-heatEff">–</div></div></div>
+      <div class="row"><div class="label">5. Flue-gas temperature drop<span class="sub">ΔT<sub>g</sub> = T<sub>g,in</sub> − T<sub>g,out</sub></span></div><div class="meta"><div class="formula-line">ΔT<sub>g</sub> = T<sub>g,in</sub> − T<sub>g,out</sub></div><div class="trace-line" id="trace-gasDeltaT">–</div></div></div>
+      <div class="row"><div class="label">6. Required flue-gas mass<span class="sub">M<sub>g</sub> = Q<sub>gas</sub> / (C<sub>p,g</sub> × ΔT<sub>g</sub>)</span></div><div class="meta"><div class="formula-line">M<sub>g</sub> = Q<sub>gas</sub> / (C<sub>p,g</sub> × ΔT<sub>g</sub>)</div><div class="trace-line" id="trace-gasMass">–</div></div></div>
+      <div class="row"><div class="label">7. Required flue-gas mass flow<span class="sub">ṁ<sub>g</sub> = M<sub>g</sub> / t</span></div><div class="meta"><div class="formula-line">ṁ<sub>g</sub> = M<sub>g</sub> / t<sub>heating</sub></div><div class="trace-line" id="trace-gasFlow">–</div></div></div>
+      <div class="row"><div class="label">8. Normal volumetric gas flow<span class="sub">Q<sub>N</sub> = ṁ<sub>g</sub> / ρ<sub>N</sub></span></div><div class="meta"><div class="formula-line">Q<sub>N</sub> = ṁ<sub>g</sub> / ρ<sub>N</sub></div><div class="trace-line" id="trace-normalFlow">–</div></div></div>
+      <div class="row"><div class="label">9. Normal flow conversion to NL/min<span class="sub">Q<sub>NL/min</sub> = Q<sub>N</sub> × 1000 / 60</span></div><div class="meta"><div class="formula-line">Q<sub>NL/min</sub> = Q<sub>N</sub> × 1000 / 60</div><div class="trace-line" id="trace-normalFlowNL">–</div></div></div>
+      <div class="row"><div class="label">10. Actual gas flow at inlet temperature<span class="sub">Q<sub>actual</sub> = ṅ<sub>g</sub> × V<sub>m</sub>(T)</span></div><div class="meta"><div class="formula-line">V<sub>m</sub>(T) = 22.414 × (273.15 + T) / 273.15 / P</div><div class="trace-line" id="trace-actualFlow">–</div></div></div>
+      <div class="row"><div class="label">11. Actual flow conversion to L/min<span class="sub">Q<sub>L/min</sub> = Q<sub>actual</sub> × 1000 / 60</span></div><div class="meta"><div class="formula-line">Q<sub>L/min</sub> = Q<sub>actual</sub> × 1000 / 60</div><div class="trace-line" id="trace-actualFlowL">–</div></div></div>
+      <div class="row"><div class="label">12. CO₂ supplied in heating gas<span class="sub">ṁ<sub>CO₂</sub> = (Q<sub>N</sub>/22.414) × y<sub>CO₂</sub> × MW<sub>CO₂</sub></span></div><div class="meta"><div class="formula-line">ṁ<sub>CO₂</sub> = (Q<sub>N</sub> / 22.414) × y<sub>CO₂</sub> × MW<sub>CO₂</sub></div><div class="trace-line" id="trace-heatCO2">–</div></div></div>
+    </div>
+    <div class="footnote">Units used: V in L, ρ in kg/L, C<sub>p</sub> in kJ/kg·°C, temperatures in °C (temperature differences in °C), Q in kJ, gas mass in kg, gas flow in kg/h and Nm³/h. For CO₂, 22.414 Nm³/kmol is used at 0°C and 1 atm. CO₂ concentration is a vol% / mole fraction, not a mass fraction.</div>
+  </div>
+
+  <div class="card">
+    <h2>CO₂ Duty vs Heating Duty</h2>
+    <p class="inline-note">If the same flue-gas stream is used simultaneously for heating and CO₂ supply, the governing required flow is the larger of the two independent requirements.</p>
+    <div class="heating-check">
+      <table>
+        <thead><tr><th>Duty</th><th>Required flue gas</th><th>Flow basis</th><th>Governing duty</th></tr></thead>
+        <tbody>
+          <tr><td class="label-cell">Heating duty</td><td id="r-heatCompareKgH">–</td><td id="r-heatCompareBasis">–</td><td id="r-heatGovern">–</td></tr>
+          <tr><td class="label-cell">CO₂ cultivation duty</td><td id="r-co2CompareKgH">–</td><td>Current CO₂ design basis</td><td id="r-co2Govern">–</td></tr>
+          <tr><td class="label-cell"><b>Combined design requirement</b></td><td id="r-combinedGasKgH">–</td><td>Maximum of heating and CO₂ duties</td><td id="r-combinedGovern">–</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="footnote">The CO₂ concentration used here is automatically taken from the main CO₂ &amp; Flue Gas input. Changing the main CO₂ vol% therefore updates this section immediately. Heating gas mass/flow is independent of CO₂ utilization; the combined value is a screening maximum, not a heat-exchanger or gas-distribution design guarantee.</div>
+  </div>
+</section>
+
+<!-- ============ 05 HYDRAULICS ============ -->
+
 <section class="section" id="sec-hydraulics">
   <div class="section-page-brand"><div class="page-logo-wrap"><img src="data:image/png;base64,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" alt="CarbonONE logo"></div><div class="page-brand-text">CarbonONE MRPL · Live Reactor Design &amp; Calculation Model</div></div>
 <div class="section-header">
@@ -1372,8 +1488,8 @@ canvas.interactive-chart{cursor:crosshair;}
 
 const BEGINNER_HELP = {
   flueTempIn:{title:'Flue-gas inlet temperature',unit:'°C',meaning:'Temperature of the refinery flue gas when it reaches the PBR / gas-to-liquid heat-transfer point.',why:'Hot flue gas can transfer sensible heat to the liquid. This value strongly affects the predicted reactor temperature.',input:'Use a measured plant/stack temperature at the actual connection point. If you only have a stack value from another location, mark it as preliminary and account for cooling between locations.',effect:'Higher temperature generally increases heating duty and can raise reactor temperature. Lower temperature reduces the available heating duty.',formula:'Q̇_gas = ε × ṁ_gas × Cp_gas × (T_gas − T_liquid)'},
-  liquidCp:{title:'Liquid heat capacity',unit:'kJ/kg·K',meaning:'How much heat is required to raise 1 kg of reactor liquid by 1°C.',why:'It tells the model how difficult it is to heat or cool the reactor contents.',input:'Use a measured or literature value for the actual culture medium / broth at the operating temperature. For final design, use validated property data.',effect:'Higher Cp means the same heat input causes a smaller temperature change.',formula:'C_liquid = m_liquid × Cp_liquid'},
-  gasCp:{title:'Flue-gas heat capacity',unit:'kJ/kg·K',meaning:'How much heat the flue gas can carry per kg for each 1°C temperature change.',why:'The model uses it to calculate how much sensible heat the flue gas can transfer to the liquid.',input:'Prefer a composition-based property calculation from the actual MRPL flue-gas analysis. A single preliminary value is acceptable for screening only.',effect:'Higher Cp increases the calculated gas-side heating capacity.',formula:'Q̇_gas = ε × ṁ_gas × Cp_gas × ΔT'},
+  liquidCp:{title:'Liquid heat capacity',unit:'kJ/kg·°C',meaning:'How much heat is required to raise 1 kg of reactor liquid by 1°C.',why:'It tells the model how difficult it is to heat or cool the reactor contents.',input:'Use a measured or literature value for the actual culture medium / broth at the operating temperature. For final design, use validated property data.',effect:'Higher Cp means the same heat input causes a smaller temperature change.',formula:'C_liquid = m_liquid × Cp_liquid'},
+  gasCp:{title:'Flue-gas heat capacity',unit:'kJ/kg·°C',meaning:'How much heat the flue gas can carry per kg for each 1°C temperature change.',why:'The model uses it to calculate how much sensible heat the flue gas can transfer to the liquid.',input:'Prefer a composition-based property calculation from the actual MRPL flue-gas analysis. A single preliminary value is acceptable for screening only.',effect:'Higher Cp increases the calculated gas-side heating capacity.',formula:'Q̇_gas = ε × ṁ_gas × Cp_gas × ΔT'},
   pumpEfficiency:{title:'Pump efficiency',unit:'fraction',meaning:'The fraction of pump shaft power that becomes useful hydraulic power.',why:'It converts hydraulic duty into the electrical/shaft power the pump must actually consume.',input:'Enter the pump/vendor efficiency at the selected operating point. Example: 70% is entered as 0.70.',effect:'Higher efficiency reduces required shaft power for the same hydraulic duty. It does not directly change the ideal hydraulic pressure drop.',formula:'P_shaft = P_hydraulic / η_pump'},
   heatEffectiveness:{title:'Heat-transfer effectiveness ε',unit:'fraction',meaning:'A factor from 0 to 1 describing how effectively the available flue-gas sensible heat is transferred to the liquid.',why:'Not all available gas heat reaches the broth. Mixing, contact area, residence time and heat-transfer resistance limit transfer.',input:'Use validated gas-liquid heat-transfer data or an exchanger/contacting calculation. ε = 1.0 is an ideal upper-bound screening assumption, not a guaranteed plant value.',effect:'Higher ε increases predicted heat transfer and generally increases reactor temperature.',formula:'H = ε × ṁ_gas × Cp_gas;  Q̇_gas→liquid = H(T_gas − T)'},
   ambientTemp:{title:'Ambient temperature',unit:'°C',meaning:'Temperature of the surroundings around the reactor.',why:'The reactor can lose heat to cooler surroundings or gain heat from warmer surroundings.',input:'Use the representative outdoor/indoor ambient temperature for the installation. For design, consider the relevant minimum/maximum conditions rather than only one average.',effect:'Higher ambient temperature reduces heat loss to the surroundings and can increase reactor temperature.',formula:'Q̇_ambient = UA × (T − T_ambient)'},
@@ -1438,6 +1554,18 @@ const DEFAULTS = {
   targetRe: 5000,
   liquidCp: 4.0,               // kJ/kgK
   gasCp: 1.0,                  // kJ/kgK
+  // ---- dedicated flue-gas heating requirement calculator ----
+  heatingWaterVolumeL: 8000,       // L
+  heatingWaterDensity: 1.0,        // kg/L
+  heatingWaterCp: 4.18,            // kJ/kgK
+  heatingWaterTin: 30,              // °C
+  heatingWaterTout: 50,             // °C
+  heatingGasTin: 140,               // °C
+  heatingGasTout: 50,               // °C; minimum outlet assumption for theoretical upper-bound recovery
+  heatingGasCp: 1.05,               // kJ/kgK
+  heatingEffectiveness: 1.0,        // fraction
+  heatingTimeH: 1.0,                // h; converts total required gas mass to required flow rate
+  heatingGasDensity: 1.29,          // kg/Nm3
   pmSize: 50,                  // um
   cycVel: 15,                  // m/s preliminary cyclone inlet velocity
   uBendK: 0.8,                 // preliminary loss coefficient per 180-degree U-bend
@@ -1640,6 +1768,41 @@ function compute(s){
   r.actM3h     = r.totalMolarH * r.actMolVol;               // m3/h
   r.actLmin    = r.actM3h * 1000 / 60;                      // L/min
   r.actCO2M3h  = r.co2MolarH * r.actMolVol;                 // m3/h
+
+  // ---- dedicated flue-gas heating requirement calculator ----
+  // This is a separate heat-balance study and does not replace the live reactor energy balance.
+  r.heatWaterMassKg = Math.max(0,Number(s.heatingWaterVolumeL)||0) * Math.max(0,Number(s.heatingWaterDensity)||0);
+  r.heatWaterDeltaT = Number(s.heatingWaterTout) - Number(s.heatingWaterTin);
+  r.heatGasDeltaT = Number(s.heatingGasTin) - Number(s.heatingGasTout);
+  r.heatQRequired_kJ = r.heatWaterMassKg * Number(s.heatingWaterCp) * r.heatWaterDeltaT;
+  r.heatEffectiveness = Math.max(0,Math.min(1,Number(s.heatingEffectiveness)||0));
+  r.heatQGasRequired_kJ = r.heatQRequired_kJ / Math.max(1e-12,r.heatEffectiveness);
+  r.heatGasMassTotalKg = (r.heatGasDeltaT>0 && Number(s.heatingGasCp)>0) ?
+    r.heatQGasRequired_kJ/(Number(s.heatingGasCp)*r.heatGasDeltaT) : NaN;
+  r.heatGasFlowKgH = (Number(s.heatingTimeH)>0 && Number.isFinite(r.heatGasMassTotalKg)) ?
+    r.heatGasMassTotalKg/Number(s.heatingTimeH) : NaN;
+  r.heatGasFlowNm3h = Number.isFinite(r.heatGasFlowKgH) && Number(s.heatingGasDensity)>0 ?
+    r.heatGasFlowKgH/Number(s.heatingGasDensity) : NaN;
+  r.heatGasFlowNLmin = Number.isFinite(r.heatGasFlowNm3h) ? r.heatGasFlowNm3h*1000/60 : NaN;
+  // Heating-gas CO2 content is linked directly to the main CO2 concentration input.
+  r.heatCO2Frac = Number(s.co2Frac)/100;
+  // CO₂ is a volume/mole fraction, not a mass fraction. Convert the heating-gas
+  // volumetric flow to total molar flow, then apply yCO₂ and MWCO₂.
+  r.heatGasMolarFlow = Number.isFinite(r.heatGasFlowNm3h) ? r.heatGasFlowNm3h/NTP_MOLVOL : NaN;
+  r.heatCO2MassFlowKgH = Number.isFinite(r.heatGasMolarFlow) ?
+    r.heatGasMolarFlow*r.heatCO2Frac*Number(s.co2MW) : NaN;
+  r.heatCO2MassTotalKg = Number.isFinite(r.heatCO2MassFlowKgH) && Number(s.heatingTimeH)>0 ?
+    r.heatCO2MassFlowKgH*Number(s.heatingTimeH) : NaN;
+  r.heatGasActualMolVol = NTP_MOLVOL*(273.15+Number(s.heatingGasTin))/273.15/Number(s.pressure);
+  r.heatGasFlowActM3h = Number.isFinite(r.heatGasMolarFlow) && Number.isFinite(r.heatGasActualMolVol) ?
+    r.heatGasMolarFlow*r.heatGasActualMolVol : NaN;
+  r.heatGasFlowActLmin = Number.isFinite(r.heatGasFlowActM3h) ? r.heatGasFlowActM3h*1000/60 : NaN;
+  // Compare the two independent requirements if the same flue-gas stream is used for both duties.
+  r.co2DesignGasFlowKgH = r.stdNm3h * Number(s.normDensity);
+  r.combinedRequiredGasKgH = [r.heatGasFlowKgH,r.co2DesignGasFlowKgH].every(Number.isFinite) ?
+    Math.max(r.heatGasFlowKgH,r.co2DesignGasFlowKgH) : NaN;
+  r.combinedDuty = Number.isFinite(r.heatGasFlowKgH) && Number.isFinite(r.co2DesignGasFlowKgH) ?
+    (r.heatGasFlowKgH>=r.co2DesignGasFlowKgH ? 'HEATING DUTY GOVERNS' : 'CO₂ DUTY GOVERNS') : 'TBD';
 
   // ---- hydraulics ----
   // Closed-loop liquid circulation. Flow is derived from the selected target Reynolds number.
@@ -2149,15 +2312,15 @@ const FORMULAS = {
   qDot0: (s,r)=>({
     title:'Initial Heat-Transfer Rate (ideal complete transfer)', sub:'Energy',
     formula:'Q̇₀ = ṁ_gas × Cp_gas × (T_gas − T₀)',
-    vars:'<code>ṁ_gas</code> flue-gas mass flow (kg/h) · <code>Cp_gas</code> flue-gas heat capacity (kJ/kg·K) · <code>T_gas, T₀</code> inlet gas / initial liquid temperature (°C)',
+    vars:'<code>ṁ_gas</code> flue-gas mass flow (kg/h) · <code>Cp_gas</code> flue-gas heat capacity (kJ/kg·°C) · <code>T_gas, T₀</code> inlet gas / initial liquid temperature (°C)',
     subs:`Q̇₀ = ${fmt(r.mDotGas,2)} × ${fmt(s.gasCp,2)} × (${fmt(s.flueTempIn,1)} − ${fmt(s.tempInit,1)})`,
     result:`Q̇₀ = ${fmt(r.qDot0,0)} kJ/h`
   }),
-  cLiquid: (s,r)=>({title:'Liquid Thermal Capacitance', sub:'Energy', formula:'C_liquid = m_liquid × Cp_liquid', vars:'<code>m_liquid</code> liquid mass (kg) · <code>Cp_liquid</code> liquid heat capacity (kJ/kg·K)', subs:`C_liquid = ${fmt(r.mLiquid,1)} × ${fmt(s.liquidCp,2)}`, result:`C_liquid = ${fmt(r.cLiquid,0)} kJ/K`}),
+  cLiquid: (s,r)=>({title:'Liquid Thermal Capacitance', sub:'Energy', formula:'C_liquid = m_liquid × Cp_liquid', vars:'<code>m_liquid</code> liquid mass (kg) · <code>Cp_liquid</code> liquid heat capacity (kJ/kg·°C)', subs:`C_liquid = ${fmt(r.mLiquid,1)} × ${fmt(s.liquidCp,2)}`, result:`C_liquid = ${fmt(r.cLiquid,0)} kJ/K`}),
   kCoeff: (s,r)=>({
     title:'Heating Coefficient k', sub:'Energy',
     formula:'k = (εṁ_gasCp_gas + UA_amb) / (m_liquidCp_liquid)',
-    vars:'all terms as defined above; Cp_liquid = liquid heat capacity (kJ/kg·K)',
+    vars:'all terms as defined above; Cp_liquid = liquid heat capacity (kJ/kg·°C)',
     subs:`k = (${fmt(s.heatEffectiveness,2)}×${fmt(r.mDotGas,2)}×${fmt(s.gasCp,2)} + ${fmt(s.ambientUA,0)}) / (${fmt(r.mLiquid,1)}×${fmt(s.liquidCp,2)})`,
     result:`k = ${fmt(r.kCoeff,6)} 1/h`
   }),
@@ -2277,7 +2440,7 @@ const UNITS = {
   geomVol:'m³', workFrac:'%', batchDays:'days', tempTarget:'°C', tempInit:'°C', pressure:'atm',
   tubeID:'mm', tubeOD:'mm', straightLen:'m', ubendCC:'mm', headerID:'mm', headerLength:'m', returnHeaderLength:'m', branchLength:'m', branchID:'mm', supplyFittingK:'', returnFittingK:'', branchFittingK:'', fittingK:'', staticHead:'m', numLoops:'',
   co2Frac:'%', co2Util:'g/L/h', captureEff:'%', co2MW:'kg/kmol', flueTempIn:'°C', normDensity:'kg/Nm³',
-  brothDensity:'kg/m³', viscosity:'mPa·s', targetRe:'', liquidCp:'kJ/kg·K', gasCp:'kJ/kg·K', pmSize:'µm', cycVel:'m/s', solarIrradiance:'W/m²', solarArea:'m²', solarAbsorptance:'', radiationArea:'m²', emissivity:'', evapRate:'kg/h', latentHeat:'kJ/kg', pumpHeatFraction:'', ledHeatFraction:'', biologicalHeatKW:'kW', measuredFinalTemp:'°C', measuredGasFlow:'m³/h', measuredPressureDrop:'kPa', validationTolerance:'%'
+  brothDensity:'kg/m³', viscosity:'mPa·s', targetRe:'', liquidCp:'kJ/kg·°C', gasCp:'kJ/kg·°C', pmSize:'µm', cycVel:'m/s', solarIrradiance:'W/m²', solarArea:'m²', solarAbsorptance:'', radiationArea:'m²', emissivity:'', evapRate:'kg/h', latentHeat:'kJ/kg', pumpHeatFraction:'', ledHeatFraction:'', biologicalHeatKW:'kW', measuredFinalTemp:'°C', measuredGasFlow:'m³/h', measuredPressureDrop:'kPa', validationTolerance:'%'
 };
 
 function logChange(key, oldV, newV){
@@ -2396,6 +2559,40 @@ function renderAll(){
   updateDesignCompletionUI();
   updateOperatingModeUI();
   const r = compute(state);
+
+  // dedicated flue-gas heating requirement
+  set('r-heatWaterMass', Number.isFinite(r.heatWaterMassKg)?fmt(r.heatWaterMassKg,1)+' kg':'TBD');
+  set('r-heatWaterDeltaT', Number.isFinite(r.heatWaterDeltaT)?fmt(r.heatWaterDeltaT,1)+' °C':'TBD');
+  set('r-heatQ', Number.isFinite(r.heatQRequired_kJ)?fmt(r.heatQRequired_kJ,0)+' kJ':'TBD');
+  set('r-heatGasMass', Number.isFinite(r.heatGasMassTotalKg)?fmt(r.heatGasMassTotalKg,1)+' kg':'TBD');
+  set('r-heatGasFlowKgH', Number.isFinite(r.heatGasFlowKgH)?fmt(r.heatGasFlowKgH,1)+' kg/h':'TBD');
+  set('r-heatGasFlowNm3h', Number.isFinite(r.heatGasFlowNm3h)?fmt(r.heatGasFlowNm3h,1)+' Nm³/h':'TBD');
+  set('r-heatGasFlowNLmin', Number.isFinite(r.heatGasFlowNLmin)?fmt(r.heatGasFlowNLmin,1)+' NL/min':'TBD');
+  set('r-heatGasFlowActM3h', Number.isFinite(r.heatGasFlowActM3h)?fmt(r.heatGasFlowActM3h,1)+' m³/h':'TBD');
+  set('r-heatGasFlowActLmin', Number.isFinite(r.heatGasFlowActLmin)?fmt(r.heatGasFlowActLmin,1)+' L/min':'TBD');
+  set('r-heatCO2Frac', Number.isFinite(r.heatCO2Frac)?fmt(r.heatCO2Frac*100,2)+' vol%':'TBD');
+  set('r-heatCO2MassFlow', Number.isFinite(r.heatCO2MassFlowKgH)?fmt(r.heatCO2MassFlowKgH,2)+' kg/h':'TBD');
+  set('r-heatCO2MassTotal', Number.isFinite(r.heatCO2MassTotalKg)?fmt(r.heatCO2MassTotalKg,1)+' kg':'TBD');
+  set('trace-heatMass', Number.isFinite(r.heatWaterMassKg)?`${fmt(state.heatingWaterVolumeL,1)} L × ${fmt(state.heatingWaterDensity,3)} kg/L = ${fmt(r.heatWaterMassKg,1)} kg`: 'TBD');
+  set('trace-heatDeltaT', `${fmt(state.heatingWaterTout,1)} °C − ${fmt(state.heatingWaterTin,1)} °C = ${fmt(r.heatWaterDeltaT,1)} °C`);
+  set('trace-heatQ', Number.isFinite(r.heatQRequired_kJ)?`${fmt(r.heatWaterMassKg,1)} kg × ${fmt(state.heatingWaterCp,2)} kJ/kg·°C × ${fmt(r.heatWaterDeltaT,1)} °C = ${fmt(r.heatQRequired_kJ,1)} kJ`: 'TBD');
+  set('trace-heatEff', Number.isFinite(r.heatQGasRequired_kJ)?`${fmt(r.heatQRequired_kJ,1)} kJ ÷ ${fmt(r.heatEffectiveness,2)} = ${fmt(r.heatQGasRequired_kJ,1)} kJ`: 'TBD');
+  set('trace-gasDeltaT', `${fmt(state.heatingGasTin,1)} °C − ${fmt(state.heatingGasTout,1)} °C = ${fmt(r.heatGasDeltaT,1)} °C`);
+  set('trace-gasMass', Number.isFinite(r.heatGasMassTotalKg)?`${fmt(r.heatQGasRequired_kJ,1)} kJ ÷ (${fmt(state.heatingGasCp,2)} kJ/kg·°C × ${fmt(r.heatGasDeltaT,1)} °C) = ${fmt(r.heatGasMassTotalKg,1)} kg`: 'TBD');
+  set('trace-gasFlow', Number.isFinite(r.heatGasFlowKgH)?`${fmt(r.heatGasMassTotalKg,1)} kg ÷ ${fmt(state.heatingTimeH,2)} h = ${fmt(r.heatGasFlowKgH,1)} kg/h`: 'TBD');
+  set('trace-normalFlow', Number.isFinite(r.heatGasFlowNm3h)?`${fmt(r.heatGasFlowKgH,1)} kg/h ÷ ${fmt(state.heatingGasDensity,2)} kg/Nm³ = ${fmt(r.heatGasFlowNm3h,1)} Nm³/h`: 'TBD');
+  set('trace-normalFlowNL', Number.isFinite(r.heatGasFlowNLmin)?`${fmt(r.heatGasFlowNm3h,1)} Nm³/h × 1000 ÷ 60 = ${fmt(r.heatGasFlowNLmin,1)} NL/min`: 'TBD');
+  set('trace-actualFlow', Number.isFinite(r.heatGasFlowActM3h)?`(${fmt(r.heatGasFlowNm3h,1)} Nm³/h ÷ 22.414 Nm³/kmol) × [22.414 × (273.15 + ${fmt(state.heatingGasTin,1)}) ÷ 273.15 ÷ ${fmt(state.pressure,3)}] m³/kmol = ${fmt(r.heatGasFlowActM3h,1)} m³/h`: 'TBD');
+  set('trace-actualFlowL', Number.isFinite(r.heatGasFlowActLmin)?`${fmt(r.heatGasFlowActM3h,1)} m³/h × 1000 ÷ 60 = ${fmt(r.heatGasFlowActLmin,1)} L/min`: 'TBD');
+  set('trace-heatCO2', Number.isFinite(r.heatCO2MassFlowKgH)?`(${fmt(r.heatGasFlowNm3h,1)} Nm³/h ÷ 22.414 Nm³/kmol) × ${fmt(r.heatCO2Frac*100,1)}% × ${fmt(state.co2MW,1)} kg/kmol = ${fmt(r.heatCO2MassFlowKgH,2)} kg/h CO₂`: 'TBD');
+  set('r-heatCompareKgH', Number.isFinite(r.heatGasFlowKgH)?fmt(r.heatGasFlowKgH,2)+' kg/h':'TBD');
+  set('r-heatCompareBasis', Number.isFinite(r.heatGasFlowKgH)?fmt(r.heatGasFlowNm3h,2)+' Nm³/h':'TBD');
+  set('r-co2CompareKgH', Number.isFinite(r.co2DesignGasFlowKgH)?fmt(r.co2DesignGasFlowKgH,2)+' kg/h':'TBD');
+  set('r-heatGovern', r.combinedDuty==='HEATING DUTY GOVERNS'?'GOVERNS':'—');
+  set('r-co2Govern', r.combinedDuty==='CO₂ DUTY GOVERNS'?'GOVERNS':'—');
+  set('r-combinedGasKgH', Number.isFinite(r.combinedRequiredGasKgH)?fmt(r.combinedRequiredGasKgH,2)+' kg/h':'TBD');
+  if (typeof window.syncHeatingCardTraces === 'function') window.syncHeatingCardTraces();
+  set('r-combinedGovern', r.combinedDuty);
 
   // geometry
   set('r-geomVol', fmt(state.geomVol,4)+' <span class="unit">m³</span>');
@@ -3042,17 +3239,18 @@ document.getElementById('traceToggleBtn').addEventListener('click', function(){
     ['01','DESIGN BASIS'],
     ['02','REACTOR GEOMETRY'],
     ['03','CO₂ & FLUE GAS'],
-    ['04','INTERNAL RECIRCULATION HYDRAULICS'],
-    ['05','PROCESS MASS BALANCE'],
-    ['06','ENERGY / THERMAL IMPACT'],
-    ['07','FLUE GAS CLEANING'],
-    ['08','CYCLONE'],
-    ['09','IMPACT ANALYSIS / CHANGE LOG'],
-    ['10','CASE COMPARISON'],
-    ['11','ENGINEERING NOTES'],
-    ['12','MODEL VERIFICATION & VALIDATION'],
-    ['13','COMPLETE DESIGN REQUIREMENTS'],
-    ['14','EXPERIMENTAL BIOLOGICAL & KINETIC REFERENCE DATA']
+    ['04','FLUE-GAS HEATING REQUIREMENT'],
+    ['05','INTERNAL RECIRCULATION HYDRAULICS'],
+    ['06','PROCESS MASS BALANCE'],
+    ['07','ENERGY / THERMAL IMPACT'],
+    ['08','FLUE GAS CLEANING'],
+    ['09','CYCLONE'],
+    ['10','IMPACT ANALYSIS / CHANGE LOG'],
+    ['11','CASE COMPARISON'],
+    ['12','ENGINEERING NOTES'],
+    ['13','MODEL VERIFICATION & VALIDATION'],
+    ['14','COMPLETE DESIGN REQUIREMENTS'],
+    ['15','EXPERIMENTAL BIOLOGICAL & KINETIC REFERENCE DATA']
   ];
 
   const overlay = document.createElement('div');
@@ -3308,6 +3506,31 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     row('Actual flue-gas flow at inlet temperature', fmt(r.actLmin,1), 'L/min', `T=${state.flueTempIn}°C, P=${state.pressure} atm abs`)
   ];
 
+  const heatingRows = [
+    row('Water / culture volume', fmt(state.heatingWaterVolumeL,1), 'L', 'INPUT'),
+    row('Water / culture mass', fmt(r.heatWaterMassKg,1), 'kg', 'CALCULATED'),
+    row('Initial water / culture temperature', fmt(state.heatingWaterTin,1), '°C', 'INPUT'),
+    row('Final water / culture temperature', fmt(state.heatingWaterTout,1), '°C', 'INPUT'),
+    row('Water temperature rise', fmt(r.heatWaterDeltaT,1), '°C', 'CALCULATED'),
+    row('Flue-gas inlet temperature', fmt(state.heatingGasTin,1), '°C', 'INPUT'),
+    row('Flue-gas outlet temperature', fmt(state.heatingGasTout,1), '°C', 'INPUT / ASSUMED'),
+    row('Flue-gas temperature drop', fmt(r.heatGasDeltaT,1), '°C', 'CALCULATED'),
+    row('Heat required by water / culture', fmt(r.heatQRequired_kJ,0), 'kJ', 'CALCULATED'),
+    row('Heat-transfer effectiveness', fmt(state.heatingEffectiveness,2), 'fraction', 'INPUT / PRELIMINARY'),
+    row('Required flue-gas mass', fmt(r.heatGasMassTotalKg,1), 'kg', 'CALCULATED'),
+    row('Heating period', fmt(state.heatingTimeH,2), 'h', 'INPUT'),
+    row('Required flue-gas mass flow', fmt(r.heatGasFlowKgH,2), 'kg/h', 'CALCULATED'),
+    row('Required flue-gas flow at normal conditions', fmt(r.heatGasFlowNm3h,2), 'Nm³/h', 'CALCULATED'),
+    row('Required flue-gas flow at normal conditions', fmt(r.heatGasFlowNLmin,1), 'NL/min', 'CALCULATED'),
+    row('Required flue-gas flow at inlet temperature', fmt(r.heatGasFlowActM3h,2), 'm³/h', `T=${state.heatingGasTin}°C, P=${state.pressure} atm abs`),
+    row('Required flue-gas flow at inlet temperature', fmt(r.heatGasFlowActLmin,1), 'L/min', `T=${state.heatingGasTin}°C, P=${state.pressure} atm abs`),
+    row('Heating-gas CO₂ concentration', fmt(state.co2Frac,2), 'vol%', 'LINKED TO MAIN CO₂ INPUT'),
+    row('CO₂ contained in heating gas', fmt(r.heatCO2MassFlowKgH,2), 'kg/h', 'CALCULATED — concentration × gas mass flow'),
+    row('Total CO₂ contained in heating-duty gas', fmt(r.heatCO2MassTotalKg,1), 'kg', 'CALCULATED'),
+    row('CO₂ cultivation duty gas flow', fmt(r.co2DesignGasFlowKgH,2), 'kg/h', 'CURRENT LIVE CO₂ BASIS'),
+    row('Combined required gas flow', fmt(r.combinedRequiredGasKgH,2), 'kg/h', r.combinedDuty)
+  ];
+
   const hydraulicRows = [
     row('Tube cross-sectional area', fmt(r.tubeArea,6), 'm²', 'CALCULATED'),
     row('Velocity for target Reynolds number', fmt(r.velocity,4), 'm/s', `Re target=${state.targetRe}`),
@@ -3402,17 +3625,18 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     ['01 — DESIGN BASIS', designBasisRows],
     ['02 — REACTOR GEOMETRY', geometryRows],
     ['03 — CO₂ & FLUE GAS', gasRows],
-    ['04 — INTERNAL RECIRCULATION HYDRAULICS', hydraulicRows],
-    ['05 — PROCESS MASS BALANCE', domMassBalanceRows()],
-    ['06 — ENERGY / THERMAL IMPACT', energyRows],
-    ['07 — FLUE GAS CLEANING', domCleaningRows()],
-    ['08 — CYCLONE', cycloneRows],
-    ['09 — IMPACT ANALYSIS / CHANGE LOG', impactRows],
-    ['10 — CASE COMPARISON', compareRows],
-    ['11 — ENGINEERING NOTES', notesRows],
-    ['12 — MODEL VERIFICATION & VALIDATION', domValidationRows()],
-    ['13 — COMPLETE DESIGN REQUIREMENTS', domRequirementsRows()],
-    ['14 — EXPERIMENTAL BIOLOGICAL & KINETIC REFERENCE DATA', kineticReferenceRows()]
+    ['04 — FLUE-GAS HEATING REQUIREMENT', heatingRows],
+    ['05 — INTERNAL RECIRCULATION HYDRAULICS', hydraulicRows],
+    ['06 — PROCESS MASS BALANCE', domMassBalanceRows()],
+    ['07 — ENERGY / THERMAL IMPACT', energyRows],
+    ['08 — FLUE GAS CLEANING', domCleaningRows()],
+    ['09 — CYCLONE', cycloneRows],
+    ['10 — IMPACT ANALYSIS / CHANGE LOG', impactRows],
+    ['11 — CASE COMPARISON', compareRows],
+    ['12 — ENGINEERING NOTES', notesRows],
+    ['13 — MODEL VERIFICATION & VALIDATION', domValidationRows()],
+    ['14 — COMPLETE DESIGN REQUIREMENTS', domRequirementsRows()],
+    ['15 — EXPERIMENTAL BIOLOGICAL & KINETIC REFERENCE DATA', kineticReferenceRows()]
   ];
 
   /* Apply the section choices made in the export dialog. */
@@ -3608,6 +3832,43 @@ ${sectionHtml}
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 });
+
+/* ---------- Heating summary card formula popups ---------- */
+const heatingSummary = document.querySelector('.heating-summary');
+if (heatingSummary) {
+  const syncHeatingCardTraces = () => {
+    heatingSummary.querySelectorAll('.hs[data-trace]').forEach(card => {
+      const src = document.getElementById(card.dataset.trace);
+      const dst = card.querySelector('.hs-detail .hd-trace');
+      if (src && dst) dst.textContent = src.textContent;
+    });
+    const nl = document.getElementById('trace-normalFlowNL');
+    const nlDst = document.getElementById('card-trace-normalFlowNL');
+    if (nl && nlDst) nlDst.textContent = nl.textContent;
+    const af = document.getElementById('trace-actualFlow');
+    const afDst = document.getElementById('card-trace-actualFlow');
+    if (af && afDst) afDst.textContent = af.textContent;
+    const afl = document.getElementById('trace-actualFlowL');
+    const aflDst = document.getElementById('card-trace-actualFlowL');
+    if (afl && aflDst) aflDst.textContent = afl.textContent;
+  };
+  const toggleHeatingCard = (card) => {
+    const wasOpen = card.classList.contains('open');
+    heatingSummary.querySelectorAll('.hs.open').forEach(c => c.classList.remove('open'));
+    if (!wasOpen) { syncHeatingCardTraces(); card.classList.add('open'); }
+  };
+  heatingSummary.addEventListener('click', e => {
+    const card = e.target.closest('.hs');
+    if (card) toggleHeatingCard(card);
+  });
+  heatingSummary.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const card = e.target.closest('.hs');
+      if (card) { e.preventDefault(); toggleHeatingCard(card); }
+    }
+  });
+  window.syncHeatingCardTraces = syncHeatingCardTraces;
+}
 
 /* ============================================================
    15. INIT
