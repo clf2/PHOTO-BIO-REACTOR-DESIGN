@@ -478,6 +478,18 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
 .chart-readout strong{font-family:Georgia,serif;}
 .chart-hint{font-size:12px;color:#6a7d8d;margin-top:4px;}
 canvas.interactive-chart{cursor:crosshair;}
+
+/* Export selection dialog */
+.export-modal{position:fixed;inset:0;background:rgba(10,30,50,.42);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.export-modal.show{display:flex}
+.export-dialog{width:min(720px,96vw);max-height:88vh;overflow:auto;background:#fff;border:1px solid #b8cfe3;border-radius:14px;box-shadow:0 18px 55px rgba(0,0,0,.22);padding:24px}
+.export-dialog h2{margin:0 0 6px;color:#173b5f;font-size:22px}.export-dialog p{margin:0 0 18px;color:#56708b}
+.export-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin:16px 0}
+.export-option{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #d3e0eb;border-radius:9px;background:#f8fbfd;cursor:pointer}
+.export-option:hover{background:#eef6fb}.export-option input{width:18px;height:18px;accent-color:#1765a8}.export-option span{font-weight:600;color:#244d70}
+.export-all{display:flex;align-items:center;gap:10px;padding:12px;border-radius:9px;background:#eaf3fa;border:1px solid #bfd6e8;margin-bottom:12px;font-weight:700;color:#173b5f}.export-all input{width:19px;height:19px}
+.export-actions{display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #dbe5ed;padding-top:16px}.export-actions button{border:1px solid #aac2d6;background:#fff;color:#244d70;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}.export-actions .export-confirm{background:#1264a3;color:#fff;border-color:#1264a3}.export-actions button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:620px){.export-options{grid-template-columns:1fr}.export-dialog{padding:18px}}
 </style>
 
 <style id="rockwell-font-override">
@@ -2793,10 +2805,46 @@ document.getElementById('traceToggleBtn').addEventListener('click', function(){
   document.querySelector('.navitem[data-sec="notes"]').classList.add('active');
 });
 
+
+/* Export section selection */
+const exportModal = document.getElementById('exportModal');
+const exportAll = document.getElementById('exportAll');
+const exportOptionInputs = Array.from(document.querySelectorAll('#exportOptions input[type="checkbox"]'));
+const exportCancel = document.getElementById('exportCancel');
+const exportConfirm = document.getElementById('exportConfirm');
+let pendingExportSections = null;
+function syncExportAllState(){
+  const checked = exportOptionInputs.filter(x=>x.checked).length;
+  exportAll.checked = checked === exportOptionInputs.length;
+  exportAll.indeterminate = checked > 0 && checked < exportOptionInputs.length;
+  exportConfirm.disabled = checked === 0;
+}
+exportAll.addEventListener('change', ()=>{
+  exportOptionInputs.forEach(x=>x.checked=exportAll.checked);
+  syncExportAllState();
+});
+exportOptionInputs.forEach(x=>x.addEventListener('change', syncExportAllState));
+exportCancel.addEventListener('click', ()=>exportModal.classList.remove('show'));
+exportModal.addEventListener('click', e=>{ if(e.target===exportModal) exportModal.classList.remove('show'); });
+exportConfirm.addEventListener('click', ()=>{
+  pendingExportSections = new Set(exportOptionInputs.filter(x=>x.checked).map(x=>x.value));
+  exportModal.classList.remove('show');
+  window.__runSelectedExport = true;
+  document.getElementById('exportBtn').click();
+});
+syncExportAllState();
+
 /* ============================================================
    14. EXPORT REPORT
    ============================================================ */
 document.getElementById('exportBtn').addEventListener('click', ()=>{
+  if(!window.__runSelectedExport){
+    syncExportAllState();
+    exportModal.classList.add('show');
+    return;
+  }
+  window.__runSelectedExport = false;
+  const selected = pendingExportSections || new Set(['design','geometry','gas','hydraulics','mass','energy','cleaning','cyclone','impact','compare','notes','validation']);
   const r = compute(state);
 
   /*
@@ -2882,6 +2930,44 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     row('TDH', Number.isFinite(r.tdh_m)?fmt(r.tdh_m,2):'TBD', 'm', Number.isFinite(r.tdh_m)?'CALCULATED':'TBD — complete hydraulic path'),
     row('Hydraulic pump power', Number.isFinite(r.pumpHydraulic_W)?fmt(r.pumpHydraulic_W/1000,3):'TBD', 'kW', Number.isFinite(r.pumpHydraulic_W)?'CALCULATED':'TBD — complete hydraulic path'),
     row('Pump shaft power', Number.isFinite(r.pumpShaft_W)?fmt(r.pumpShaft_W/1000,3):'TBD', 'kW', Number.isFinite(r.pumpShaft_W)?'PRELIMINARY — efficiency input':'TBD — complete hydraulic path')
+  ];
+
+  const massRows = [
+    row('Working liquid inventory', fmt(r.mLiquid,1), 'kg', 'CALCULATED'),
+    row('Initial biomass inventory', fmt(r.biomassInitialKg,2), state.reactorMode==='continuous'?'kg inventory':'kg/batch', 'CALCULATED'),
+    row('Final biomass inventory', fmt(r.biomassFinalKg,2), state.reactorMode==='continuous'?'kg inventory':'kg/batch', 'CALCULATED'),
+    row(state.reactorMode==='continuous'?'Biomass production rate':'Net biomass formed per batch', state.reactorMode==='continuous'?fmt(r.biomassProductionRateKgH,3):fmt(r.biomassBatchKg,2), state.reactorMode==='continuous'?'kg/h':'kg/batch', 'CALCULATED'),
+    row(state.reactorMode==='continuous'?'Biomass production rate':'Biomass productivity', state.reactorMode==='continuous'?fmt(r.biomassProductionRateKgH,3):fmt(r.biomassProductivity,3), state.reactorMode==='continuous'?'kg/h':'g/L/day', 'CALCULATED'),
+    row('Final lipid concentration', fmt(r.lipidConc_gL,3), 'g/L', 'CALCULATED'),
+    row(state.reactorMode==='continuous'?'Lipid production rate':'Lipid product per batch', state.reactorMode==='continuous'?fmt(r.lipidProductionRateKgH,3):fmt(r.lipidBatchKg,2), state.reactorMode==='continuous'?'kg/h':'kg/batch', 'CALCULATED'),
+    row('Non-lipid biomass', fmt(r.nonLipidBatchKg,2), state.reactorMode==='continuous'?'kg inventory':'kg/batch', 'CALCULATED'),
+    row(state.reactorMode==='continuous'?'CO₂ inlet rate':'CO₂ inlet to reactor per batch', state.reactorMode==='continuous'?fmt(r.co2InletH,3):fmt(r.co2BatchInKg,2), state.reactorMode==='continuous'?'kg/h':'kg/batch', 'CALCULATED'),
+    row(state.reactorMode==='continuous'?'CO₂ utilized rate':'CO₂ utilized per batch', state.reactorMode==='continuous'?fmt(r.co2UtilH,3):fmt(r.co2BatchUtilKg,2), state.reactorMode==='continuous'?'kg/h':'kg/batch', 'CALCULATED'),
+    row(state.reactorMode==='continuous'?'CO₂ outlet rate':'CO₂ outlet per batch', state.reactorMode==='continuous'?fmt(r.co2OutH,3):fmt(r.co2BatchOutKg,2), state.reactorMode==='continuous'?'kg/h':'kg/batch', 'SCREENING'),
+    row('CO₂ utilization fraction', fmt(r.co2UtilizationFraction*100,1), '%', 'CALCULATED'),
+    row('Carbon in net biomass', state.reactorMode==='continuous'?fmt(r.biomassProductionRateKgH*state.carbonFractionBiomass,3):fmt(r.CRequirementKgBatch,2), state.reactorMode==='continuous'?'kg C/h':'kg C/batch', 'SCREENING'),
+    row('Nitrogen in net biomass', state.reactorMode==='continuous'?fmt(r.NRequirementKgH,3):fmt(r.NRequirementKgBatch,2), state.reactorMode==='continuous'?'kg N/h':'kg N/batch', 'SCREENING'),
+    row('Phosphorus in net biomass', state.reactorMode==='continuous'?fmt(r.PRequirementKgH,3):fmt(r.PRequirementKgBatch,2), state.reactorMode==='continuous'?'kg P/h':'kg P/batch', 'SCREENING'),
+    row('Carbon closure ratio', Number.isFinite(r.carbonClosureRatio)?fmt(r.carbonClosureRatio*100,1):'TBD', '%', 'NOT COMPLETE WITHOUT VALIDATED STOICHIOMETRY / OUTLET DATA')
+  ];
+
+  const cleaningRows = [
+    row('Fine filter / fabric filter', document.getElementById('chk-filter').checked?'Selected':'Not selected', '', 'CONDITIONAL — confirm PM analysis'),
+    row('Gas cooler / heat exchanger', document.getElementById('chk-cooler').checked?'Selected':'Not selected', '', 'CONDITIONAL — confirm inlet temperature requirement'),
+    row('Packed-bed alkaline scrubber', document.getElementById('chk-scrubber').checked?'Selected':'Not selected', '', 'CONDITIONAL — confirm SOx/HCl/NOx data'),
+    row('Dedicated NOx treatment', document.getElementById('chk-nox').checked?'Selected':'Not selected', '', 'CONDITIONAL — confirm NOx data'),
+    row('Cleaning design basis', 'Plant flue-gas composition, PM/PSD and contaminant analysis required', '', 'TBD BEFORE FINAL DESIGN')
+  ];
+
+  const validationRows = [
+    row('Formula/unit verification register', document.getElementById('validationBody')?.innerText || 'See model verification section', '', 'LIVE'),
+    row('Temperature physical validation', document.getElementById('r-valTempStatus')?.innerText || 'VERIFIED — PHYSICAL VALIDATION PENDING', '', 'LIVE'),
+    row('Flue-gas flow physical validation', document.getElementById('r-valGasStatus')?.innerText || 'VERIFIED — PHYSICAL VALIDATION PENDING', '', 'LIVE'),
+    row('Hydraulic pressure-drop validation', document.getElementById('r-valDpStatus')?.innerText || 'VERIFIED — PHYSICAL VALIDATION PENDING', '', 'LIVE'),
+    row('Validation tolerance', fmt(state.validationTolerance,1), '%', 'INPUT'),
+    row('Measured final reactor temperature', Number.isFinite(state.measuredFinalTemp)?fmt(state.measuredFinalTemp,2):'Not entered', '°C', 'OPTIONAL MEASURED DATA'),
+    row('Measured flue-gas flow at inlet', Number.isFinite(state.measuredGasFlow)?fmt(state.measuredGasFlow,2):'Not entered', 'm³/h', 'OPTIONAL MEASURED DATA'),
+    row('Measured reactor pressure drop', Number.isFinite(state.measuredPressureDrop)?fmt(state.measuredPressureDrop,2):'Not entered', 'kPa', 'OPTIONAL MEASURED DATA')
   ];
 
   const energyRows = [
@@ -2970,15 +3056,18 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
 </style>
 </head>
 <body>
-${section('CARBONONE MRPL — DESIGN BASIS', designBasisRows)}
-${section('REACTOR GEOMETRY', geometryRows)}
-${section('CO₂ & FLUE GAS MASS BALANCE', gasRows)}
-${section('INTERNAL RECIRCULATION HYDRAULICS', hydraulicRows)}
-${section('ENERGY — IDEAL SCREENING MODEL', energyRows)}
-${section('CYCLONE — PRELIMINARY SCREENING', cycloneRows)}
-${section('IMPACT ANALYSIS / CHANGE LOG', impactRows)}
-${section('CASE COMPARISON', compareRows)}
-${section('ENGINEERING NOTES', notesRows)}
+${selected.has('design')?section('CARBONONE MRPL — DESIGN BASIS', designBasisRows):''}
+${selected.has('geometry')?section('REACTOR GEOMETRY', geometryRows):''}
+${selected.has('gas')?section('CO₂ & FLUE GAS MASS BALANCE', gasRows):''}
+${selected.has('hydraulics')?section('INTERNAL RECIRCULATION HYDRAULICS', hydraulicRows):''}
+${selected.has('mass')?section('MASS BALANCE', massRows):''}
+${selected.has('energy')?section('ENERGY — THERMAL IMPACT MODEL', energyRows):''}
+${selected.has('cleaning')?section('FLUE GAS CLEANING & CONDITIONING', cleaningRows):''}
+${selected.has('cyclone')?section('CYCLONE — PRELIMINARY SCREENING', cycloneRows):''}
+${selected.has('impact')?section('IMPACT ANALYSIS / CHANGE LOG', impactRows):''}
+${selected.has('compare')?section('CASE COMPARISON', compareRows):''}
+${selected.has('notes')?section('ENGINEERING NOTES', notesRows):''}
+${selected.has('validation')?section('MODEL VERIFICATION & VALIDATION', validationRows):''}
 </body>
 </html>`;
 
@@ -2992,20 +3081,22 @@ ${section('ENGINEERING NOTES', notesRows)}
         return m ? [m[1].replace(/<[^>]+>/g,''),m[2].replace(/<[^>]+>/g,''),m[3].replace(/<[^>]+>/g,''),m[4].replace(/<[^>]+>/g,'')] : [x,'','',''];
       })
     ]);
-    const sheets = [
-      ['Design Basis',designBasisRows],['Reactor Geometry',geometryRows],['CO2 & Flue Gas',gasRows],
-      ['Hydraulics',hydraulicRows],['Energy',energyRows],['Cyclone',cycloneRows],
-      ['Impact Log',impactRows],['Case Comparison',compareRows],['Engineering Notes',notesRows]
+    const allSheets = [
+      ['design','Design Basis',designBasisRows],['geometry','Reactor Geometry',geometryRows],['gas','CO2 & Flue Gas',gasRows],
+      ['hydraulics','Hydraulics',hydraulicRows],['mass','Mass Balance',massRows],['energy','Energy',energyRows],
+      ['cleaning','Flue Gas Cleaning',cleaningRows],['cyclone','Cyclone',cycloneRows],['impact','Impact Log',impactRows],
+      ['compare','Case Comparison',compareRows],['notes','Engineering Notes',notesRows],['validation','Model V&V',validationRows]
     ];
-    sheets.forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb, makeSheet(name,rows), name.slice(0,31)));
-    XLSX.writeFile(wb,'CarbonONE_MRPL_Calculation_Report.xlsx');
+    const sheets = allSheets.filter(x=>selected.has(x[0]));
+    sheets.forEach(([key,name,rows])=>XLSX.utils.book_append_sheet(wb, makeSheet(name,rows), name.slice(0,31)));
+    XLSX.writeFile(wb,'CarbonONE_MRPL_Calculation_Report_Selected.xlsx');
     return;
   }
   const blob = new Blob([workbook], {type:'application/vnd.ms-excel'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'CarbonONE_MRPL_Calculation_Report.xls';
+  a.download = 'CarbonONE_MRPL_Calculation_Report_Selected.xls';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -3029,5 +3120,31 @@ window.addEventListener('resize', () => {
 
 })();
 </script>
+
+<div class="export-modal" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportDialogTitle">
+  <div class="export-dialog">
+    <h2 id="exportDialogTitle">Export Calculation Report</h2>
+    <p>Select exactly what you want in the exported Excel report. Choose <b>All Sections</b> or any combination of individual sections.</p>
+    <label class="export-all"><input type="checkbox" id="exportAll" checked> <span>All Sections</span></label>
+    <div class="export-options" id="exportOptions">
+      <label class="export-option"><input type="checkbox" value="design" checked><span>01 · Design Basis</span></label>
+      <label class="export-option"><input type="checkbox" value="geometry" checked><span>02 · Reactor Geometry</span></label>
+      <label class="export-option"><input type="checkbox" value="gas" checked><span>03 · CO₂ &amp; Flue Gas</span></label>
+      <label class="export-option"><input type="checkbox" value="hydraulics" checked><span>04 · Hydraulics</span></label>
+      <label class="export-option"><input type="checkbox" value="mass" checked><span>05 · Mass Balance</span></label>
+      <label class="export-option"><input type="checkbox" value="energy" checked><span>06 · Energy Balance</span></label>
+      <label class="export-option"><input type="checkbox" value="cleaning" checked><span>07 · Flue Gas Cleaning</span></label>
+      <label class="export-option"><input type="checkbox" value="cyclone" checked><span>08 · Cyclone</span></label>
+      <label class="export-option"><input type="checkbox" value="impact" checked><span>09 · Impact Analysis</span></label>
+      <label class="export-option"><input type="checkbox" value="compare" checked><span>10 · Case Comparison</span></label>
+      <label class="export-option"><input type="checkbox" value="notes" checked><span>11 · Engineering Notes</span></label>
+      <label class="export-option"><input type="checkbox" value="validation" checked><span>12 · Model Verification &amp; Validation</span></label>
+    </div>
+    <div class="export-actions">
+      <button type="button" id="exportCancel">Cancel</button>
+      <button type="button" class="export-confirm" id="exportConfirm">Export Selected</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
