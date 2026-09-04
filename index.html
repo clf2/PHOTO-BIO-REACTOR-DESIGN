@@ -974,6 +974,8 @@ canvas.interactive-chart{cursor:crosshair;}
         <div class="real-co2-item"><span>CO₂ required at inlet</span><b id="r-sideRealCo2Req">–</b></div>
         <div class="real-co2-item"><span>Real flue gas required</span><b id="r-sideRealGasKgH">–</b></div>
         <div class="real-co2-item"><span>Standard flue gas</span><b id="r-sideRealGasNm3h">–</b></div>
+        <div class="real-co2-item"><span>Daily flue gas required</span><b id="r-sideRealGasNm3day">–</b></div>
+        <div class="real-co2-item"><span>Daily flue gas — actual at T</span><b id="r-sideRealGasActM3day">–</b></div>
         <div class="real-co2-item"><span>Actual flow at flue-gas T</span><b id="r-sideRealGasActM3h">–</b></div>
         <div class="real-co2-item"><span>Actual flow</span><b id="r-sideRealGasActLmin">–</b></div>
       </div>
@@ -984,6 +986,7 @@ canvas.interactive-chart{cursor:crosshair;}
         <div><b>CO₂ molar flow:</b> <span id="trace-sideRealMolar">–</span></div>
         <div><b>Total gas molar flow:</b> <span id="trace-sideRealTotalMolar">–</span></div>
         <div><b>Real flue-gas flow:</b> <span id="trace-sideRealFlow">–</span></div>
+        <div><b>Daily requirement:</b> <span id="trace-sideRealDaily">–</span></div>
       </div>
     </div>
     <div class="card co2-real-inline-card">
@@ -993,7 +996,7 @@ canvas.interactive-chart{cursor:crosshair;}
         <div class="governing-row"><span>Lower CO₂ %</span><b>More flue gas required</b></div>
         <div class="governing-row total"><span>Design basis</span><b id="r-sideRealBasis">–</b></div>
       </div>
-      <div class="footnote">The calculation treats CO₂ concentration as vol% / mole fraction. The required flue-gas quantity is obtained from the CO₂ inlet duty divided by the CO₂ fraction, then converted to standard and actual flow using the selected flue-gas temperature and absolute pressure.</div>
+      <div class="footnote">The calculation treats CO₂ concentration as vol% / mole fraction. The required flue-gas quantity is obtained from the CO₂ inlet duty divided by the CO₂ fraction, then converted to standard and actual flow using the selected flue-gas temperature and absolute pressure. <b>Daily flue-gas requirement = hourly CO₂-basis requirement × 24 h/day.</b> This is the CO₂-delivery requirement; heating duty is evaluated separately in Section 04.</div>
     </div>
   </div>
 
@@ -1857,6 +1860,11 @@ function compute(s){
   r.actM3h     = r.totalMolarH * r.actMolVol;               // m3/h
   r.actLmin    = r.actM3h * 1000 / 60;                      // L/min
   r.actCO2M3h  = r.co2MolarH * r.actMolVol;                 // m3/h
+  // Daily CO₂-basis flue-gas requirement for the reactor.
+  // This is the same live CO₂-derived gas requirement multiplied by 24 h/day.
+  r.stdNm3day  = r.stdNm3h * 24;                            // Nm3/day
+  r.actM3day   = r.actM3h * 24;                             // m3/day at inlet T
+  r.gasMassDay = r.co2DesignGasFlowKgH * 24;                // kg/day
 
   // ---- dedicated flue-gas heating requirement calculator ----
   // This is a separate heat-balance study and does not replace the live reactor energy balance.
@@ -2706,13 +2714,16 @@ function renderAll(){
   set('r-sideRealCo2Req', Number.isFinite(r.co2InletH)?fmt(r.co2InletH,2)+' kg/h':'TBD');
   set('r-sideRealGasKgH', Number.isFinite(r.co2DesignGasFlowKgH)?fmt(r.co2DesignGasFlowKgH,2)+' kg/h':'TBD');
   set('r-sideRealGasNm3h', Number.isFinite(r.stdNm3h)?fmt(r.stdNm3h,2)+' Nm³/h':'TBD');
+  set('r-sideRealGasNm3day', Number.isFinite(r.stdNm3day)?fmt(r.stdNm3day,1)+' Nm³/day':'TBD');
   set('r-sideRealGasActM3h', Number.isFinite(r.actM3h)?fmt(r.actM3h,2)+' m³/h':'TBD');
+  set('r-sideRealGasActM3day', Number.isFinite(r.actM3day)?fmt(r.actM3day,1)+' m³/day':'TBD');
   set('r-sideRealGasActLmin', Number.isFinite(r.actLmin)?fmt(r.actLmin,1)+' L/min':'TBD');
   set('trace-sideRealUtil', Number.isFinite(r.co2UtilH)?`${fmt(r.co2UtilH,3)} kg/h CO₂ utilized`: 'TBD');
   set('trace-sideRealReq', Number.isFinite(r.co2InletH)?`${fmt(r.co2InletH,3)} kg/h CO₂ at inlet`: 'TBD');
   set('trace-sideRealMolar', Number.isFinite(r.co2MolarH)?`${fmt(r.co2MolarH,5)} kmol/h CO₂`: 'TBD');
   set('trace-sideRealTotalMolar', Number.isFinite(r.totalMolarH)?`${fmt(r.totalMolarH,5)} kmol/h total flue gas`: 'TBD');
   set('trace-sideRealFlow', Number.isFinite(r.actM3h)?`${fmt(r.actM3h,2)} m³/h at ${fmt(state.flueTempIn,1)}°C, ${fmt(state.pressure,3)} atm abs`: 'TBD');
+  set('trace-sideRealDaily', Number.isFinite(r.stdNm3day)?`${fmt(r.stdNm3day,1)} Nm³/day standard; ${fmt(r.actM3day,1)} m³/day actual at ${fmt(state.flueTempIn,1)}°C`: 'TBD');
   set('r-sideRealBasis', Number.isFinite(r.co2DesignGasFlowKgH)?`${fmt(r.co2DesignGasFlowKgH,2)} kg/h real-gas basis`:'TBD');
   set('r-realGovernText', r.combinedDuty==='HEATING DUTY GOVERNS'?'HEATING DUTY GOVERNS.':(r.combinedDuty==='CO₂ DUTY GOVERNS'?'CO₂ DUTY GOVERNS.':'GOVERNING DUTY: TBD.'));
   set('r-heatCompareKgH', Number.isFinite(r.heatGasFlowKgH)?fmt(r.heatGasFlowKgH,2)+' kg/h':'TBD');
