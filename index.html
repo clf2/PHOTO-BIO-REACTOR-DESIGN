@@ -439,6 +439,45 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
 .badge.prelim{color:#9a6400;background:#fff5df;}
 .badge.tbd{color:#b43b35;background:#fff0ef;}
 
+
+  .vv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  .vv-status{font-weight:800;letter-spacing:.04em;padding:4px 8px;border-radius:3px;display:inline-block}
+  .vv-pass{border:1px solid #4fae7a;color:#4fae7a}.vv-review{border:1px solid #c9a45b;color:#c9a45b}.vv-fail{border:1px solid #d96b6b;color:#d96b6b}
+  .thermal-impact{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+  .thermal-impact .ti{border:1px solid var(--border);padding:10px;border-radius:4px;background:var(--panel)}
+  .thermal-impact .ti .n{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em}.thermal-impact .ti .v{font-size:18px;font-weight:700;margin-top:5px}
+  .vv-note{font-size:12px;color:var(--text-faint);line-height:1.5}
+
+/* ---------- Beginner input help ---------- */
+.help-btn{
+  display:inline-flex; align-items:center; margin-left:7px; padding:2px 7px;
+  border:1px solid var(--brand); border-radius:3px; background:rgba(31,96,153,.06);
+  color:var(--brand2); font-family:var(--sans); font-size:10.5px; font-weight:650;
+  cursor:pointer; vertical-align:middle; white-space:nowrap;
+}
+.help-btn:hover{background:rgba(31,96,153,.13);}
+.help-overlay{position:fixed;inset:0;background:rgba(8,18,30,.62);display:none;align-items:center;justify-content:center;z-index:120;backdrop-filter:blur(2px);padding:20px;}
+.help-overlay.open{display:flex;}
+.help-modal{width:min(720px,94vw);max-height:86vh;overflow:auto;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;box-shadow:0 18px 60px rgba(0,0,0,.28);padding:22px;position:relative;}
+.help-close{position:absolute;right:14px;top:10px;border:0;background:none;color:var(--text-faint);font-size:28px;line-height:1;cursor:pointer;}
+.help-title{font-size:19px;font-weight:700;color:var(--text);padding-right:30px;margin-bottom:3px;}
+.help-tag{font-family:var(--mono);font-size:10px;color:var(--brand2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;}
+.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+.help-block{border:1px solid var(--border-soft);background:var(--bg-panel-2);border-radius:5px;padding:12px;}
+.help-block h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);}
+.help-block p{margin:0;color:var(--text-dim);font-size:13px;line-height:1.48;}
+.help-formula{margin-top:14px;padding:12px;border-left:3px solid var(--brand);background:var(--bg-panel-2);font-family:var(--mono);font-size:12px;color:var(--text);overflow:auto;}
+.help-warning{margin-top:14px;padding:11px 12px;border:1px solid rgba(217,164,65,.4);background:var(--prelim-bg);color:var(--text-dim);font-size:12px;line-height:1.45;border-radius:4px;}
+@media(max-width:700px){.help-grid{grid-template-columns:1fr}.help-btn{display:block;margin:6px 0 4px 0}}
+
+
+/* Interactive chart point readout */
+.chart-card{position:relative;}
+.chart-readout{margin:8px 0 0; padding:9px 12px; border:1px solid #cbd9e6; background:#f7fafc; color:#17324d; font:13px ui-monospace,monospace; border-radius:5px; min-height:18px; display:none;}
+.chart-readout.show{display:block;}
+.chart-readout strong{font-family:Georgia,serif;}
+.chart-hint{font-size:12px;color:#6a7d8d;margin-top:4px;}
+canvas.interactive-chart{cursor:crosshair;}
 </style>
 
 <style id="rockwell-font-override">
@@ -486,7 +525,8 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
   <div class="navitem" data-sec="impact"><span class="num">09</span>Impact Analysis</div>
   <div class="navitem" data-sec="compare"><span class="num">10</span>Case Comparison</div>
   <div class="navitem" data-sec="notes"><span class="num">11</span>Engineering Notes</div>
-  <div class="navitem" data-sec="requirements"><span class="num">12</span>Complete Design Requirements</div>
+  <div class="navitem" data-sec="validation"><span class="num">12</span>Model Verification &amp; Validation</div>
+  <div class="navitem" data-sec="requirements"><span class="num">13</span>Complete Design Requirements</div>
 </nav>
 
 <main class="main" id="content">
@@ -580,7 +620,7 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
         <div class="inputwrap"><input type="number" step="1" id="in-captureEff" data-key="captureEff"><span class="unit-suffix">%</span></div></div>
       <div class="field"><label>CO₂ molecular weight <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="0.1" id="in-co2MW" data-key="co2MW"><span class="unit-suffix">kg/kmol</span></div></div>
-      <div class="field"><label>Flue-gas inlet temperature <span class="badge input">INPUT</span></label>
+      <div class="field"><label>Flue-gas inlet temperature <button type="button" class="help-btn" data-help="flueTempIn">What is this?</button> <span class="badge input">INPUT</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-flueTempIn" data-key="flueTempIn"><span class="unit-suffix">°C</span></div></div>
       <div class="field"><label>Normal gas density (NTP) <span class="badge prelim">PRELIM</span></label>
         <div class="inputwrap"><input type="number" step="0.01" id="in-normDensity" data-key="normDensity"><span class="unit-suffix">kg/Nm³</span></div></div>
@@ -596,9 +636,9 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
         <div class="inputwrap"><input type="number" step="0.01" id="in-viscosity" data-key="viscosity"><span class="unit-suffix">mPa·s</span></div></div>
       <div class="field"><label>Target Reynolds number <span class="badge prelim">PRELIM</span></label>
         <div class="inputwrap"><input type="number" step="10" id="in-targetRe" data-key="targetRe"><span class="unit-suffix">–</span></div></div>
-      <div class="field"><label>Liquid heat capacity <span class="badge prelim">PRELIM</span></label>
+      <div class="field"><label>Liquid heat capacity <button type="button" class="help-btn" data-help="liquidCp">What is this?</button> <span class="badge prelim">PRELIM</span></label>
         <div class="inputwrap"><input type="number" step="0.1" id="in-liquidCp" data-key="liquidCp"><span class="unit-suffix">kJ/kg·K</span></div></div>
-      <div class="field"><label>Flue-gas heat capacity <span class="badge prelim">PRELIM</span></label>
+      <div class="field"><label>Flue-gas heat capacity <button type="button" class="help-btn" data-help="gasCp">What is this?</button> <span class="badge prelim">PRELIM</span></label>
         <div class="inputwrap"><input type="number" step="0.1" id="in-gasCp" data-key="gasCp"><span class="unit-suffix">kJ/kg·K</span></div></div>
       <div class="field"><label>PM reference particle size <span class="badge prelim">PRELIM</span></label>
         <div class="inputwrap"><input type="number" step="1" id="in-pmSize" data-key="pmSize"><span class="unit-suffix">µm</span></div></div>
@@ -612,10 +652,20 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
       <div class="field"><label>Branch K total <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-branchFittingK" data-key="branchFittingK"><span class="unit-suffix">–</span></div></div>
       <div class="field"><label>Loop / tube-side K total <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-fittingK" data-key="fittingK"><span class="unit-suffix">–</span></div></div>
       <div class="field"><label>Static head difference <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="0.1" id="in-staticHead" data-key="staticHead"><span class="unit-suffix">m</span></div></div>
-      <div class="field"><label>Pump efficiency <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.01" min="0.01" max="1" id="in-pumpEfficiency" data-key="pumpEfficiency"><span class="unit-suffix">fraction</span></div></div>
-      <div class="field"><label>Heat-transfer effectiveness ε <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.05" min="0" max="1" id="in-heatEffectiveness" data-key="heatEffectiveness"><span class="unit-suffix">fraction</span></div></div>
-      <div class="field"><label>Ambient temperature <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.5" id="in-ambientTemp" data-key="ambientTemp"><span class="unit-suffix">°C</span></div></div>
-      <div class="field"><label>Ambient UA <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-ambientUA" data-key="ambientUA"><span class="unit-suffix">kJ/h-K</span></div></div>
+      <div class="field"><label>Pump efficiency <button type="button" class="help-btn" data-help="pumpEfficiency">What is this?</button> <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.01" min="0.01" max="1" id="in-pumpEfficiency" data-key="pumpEfficiency"><span class="unit-suffix">fraction</span></div></div>
+      <div class="field"><label>Heat-transfer effectiveness ε <button type="button" class="help-btn" data-help="heatEffectiveness">What is this?</button> <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.05" min="0" max="1" id="in-heatEffectiveness" data-key="heatEffectiveness"><span class="unit-suffix">fraction</span></div></div>
+      <div class="field"><label>Ambient temperature <button type="button" class="help-btn" data-help="ambientTemp">What is this?</button> <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.5" id="in-ambientTemp" data-key="ambientTemp"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Ambient UA <button type="button" class="help-btn" data-help="ambientUA">What is this?</button> <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-ambientUA" data-key="ambientUA"><span class="unit-suffix">kJ/h-K</span></div></div>
+      <div class="field"><label>Solar irradiance <button type="button" class="help-btn" data-help="solarIrradiance">What is this?</button> <span class="badge tbd">OPTIONAL</span></label><div class="inputwrap"><input type="number" step="10" min="0" id="in-solarIrradiance" data-key="solarIrradiance"><span class="unit-suffix">W/m²</span></div></div>
+      <div class="field"><label>Solar exposed / illuminated area <button type="button" class="help-btn" data-help="solarArea">What is this?</button> <span class="badge tbd">OPTIONAL</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-solarArea" data-key="solarArea"><span class="unit-suffix">m²</span></div></div>
+      <div class="field"><label>Solar absorptance <button type="button" class="help-btn" data-help="solarAbsorptance">What is this?</button> <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.05" min="0" max="1" id="in-solarAbsorptance" data-key="solarAbsorptance"><span class="unit-suffix">fraction</span></div></div>
+      <div class="field"><label>Radiating area <button type="button" class="help-btn" data-help="radiationArea">What is this?</button> <span class="badge tbd">OPTIONAL</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-radiationArea" data-key="radiationArea"><span class="unit-suffix">m²</span></div></div>
+      <div class="field"><label>Surface emissivity <button type="button" class="help-btn" data-help="emissivity">What is this?</button> <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.05" min="0" max="1" id="in-emissivity" data-key="emissivity"><span class="unit-suffix">fraction</span></div></div>
+      <div class="field"><label>Evaporation rate <button type="button" class="help-btn" data-help="evapRate">What is this?</button> <span class="badge tbd">OPTIONAL</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-evapRate" data-key="evapRate"><span class="unit-suffix">kg/h</span></div></div>
+      <div class="field"><label>Latent heat of vaporization <button type="button" class="help-btn" data-help="latentHeat">What is this?</button> <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="1" min="0" id="in-latentHeat" data-key="latentHeat"><span class="unit-suffix">kJ/kg</span></div></div>
+      <div class="field"><label>Pump heat-to-liquid fraction <button type="button" class="help-btn" data-help="pumpHeatFraction">What is this?</button> <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.05" min="0" max="1" id="in-pumpHeatFraction" data-key="pumpHeatFraction"><span class="unit-suffix">fraction</span></div></div>
+      <div class="field"><label>LED heat-to-liquid fraction <button type="button" class="help-btn" data-help="ledHeatFraction">What is this?</button> <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.05" min="0" max="1" id="in-ledHeatFraction" data-key="ledHeatFraction"><span class="unit-suffix">fraction</span></div></div>
+      <div class="field"><label>Biological heat generation <button type="button" class="help-btn" data-help="biologicalHeatKW">What is this?</button> <span class="badge tbd">OPTIONAL</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" id="in-biologicalHeatKW" data-key="biologicalHeatKW"><span class="unit-suffix">kW</span></div></div>
       <div class="field"><label>Stairmand Euler number <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.1" min="0" id="in-cycloneEuler" data-key="cycloneEuler"><span class="unit-suffix">–</span></div></div>
       <div class="field"><label>Gas viscosity <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="0.001" min="0" id="in-gasViscosity" data-key="gasViscosity"><span class="unit-suffix">mPa·s</span></div></div>
       <div class="field"><label>Particle density <span class="badge tbd">TBD</span></label><div class="inputwrap"><input type="number" step="10" min="0" id="in-particleDensity" data-key="particleDensity"><span class="unit-suffix">kg/m³</span></div></div>
@@ -733,11 +783,11 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
   <div class="grid2">
     <div class="card chart-card">
       <h3>Flue-Gas Flow vs CO₂ Concentration</h3>
-      <canvas id="chartCO2Conc" height="220"></canvas>
+      <canvas id="chartCO2Conc" class="interactive-chart" height="220"></canvas><div class="chart-readout" id="readoutCO2Conc" aria-live="polite"></div><div class="chart-hint">Click any point to see the exact plotted values.</div>
     </div>
     <div class="card chart-card">
       <h3>CO₂ Requirement vs Working Volume</h3>
-      <canvas id="chartCO2Vol" height="220"></canvas>
+      <canvas id="chartCO2Vol" class="interactive-chart" height="220"></canvas><div class="chart-readout" id="readoutCO2Vol" aria-live="polite"></div><div class="chart-hint">Click any point to see the exact plotted values.</div>
     </div>
   </div>
 </section>
@@ -781,7 +831,7 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
 
   <div class="card chart-card">
     <h3>Total Circulation Flow vs Tube ID</h3>
-    <canvas id="chartCircTube" height="220"></canvas>
+    <canvas id="chartCircTube" class="interactive-chart" height="220"></canvas><div class="chart-readout" id="readoutCircTube" aria-live="polite"></div><div class="chart-hint">Click any point to see the calculated circulation flow.</div>
   </div>
 </section>
 
@@ -855,6 +905,24 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
     <div class="row"><div class="label">Heat-transfer effectiveness ε</div><div class="meta"><div class="val" id="r-heatEff">–</div></div></div>
     <div class="row"><div class="label">Initial actual gas heat-transfer rate</div><div class="meta"><button class="formula-btn" data-f="qDotActual">View Formula</button><div class="val" id="r-qDotActual">–</div></div></div>
     <div class="row"><div class="label">Ambient heat-loss coefficient UA</div><div class="meta"><div class="val" id="r-ambientUA">–</div></div></div>
+    <div class="row"><div class="label">Net solar heat input</div><div class="meta"><button class="formula-btn" data-f="qSolar">View Formula</button><div class="val" id="r-qSolar">–</div></div></div>
+    <div class="row"><div class="label">Radiative heat loss</div><div class="meta"><button class="formula-btn" data-f="qRadiation">View Formula</button><div class="val" id="r-qRadiation">–</div></div></div>
+    <div class="row"><div class="label">Evaporative heat loss</div><div class="meta"><button class="formula-btn" data-f="qEvaporation">View Formula</button><div class="val" id="r-qEvaporation">–</div></div></div>
+    <div class="row"><div class="label">Pump heat transferred to liquid</div><div class="meta"><button class="formula-btn" data-f="qPumpHeat">View Formula</button><div class="val" id="r-qPumpHeat">–</div></div></div>
+    <div class="row"><div class="label">LED heat transferred to liquid</div><div class="meta"><button class="formula-btn" data-f="qLedHeat">View Formula</button><div class="val" id="r-qLedHeat">–</div></div></div>
+    <div class="row"><div class="label">Biological heat generation</div><div class="meta"><div class="val" id="r-qBioHeat">–</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>Full Transient Thermal Balance — Input-Driven Impact</h2>
+    <p class="vv-note">All optional thermal mechanisms below are live inputs. The model numerically integrates the liquid energy balance, so radiation changes with reactor temperature rather than being treated as a fixed loss.</p>
+    <div class="thermal-impact">
+      <div class="ti"><div class="n">Net thermal load at t=0</div><div class="v" id="r-netHeat0">–</div></div>
+      <div class="ti"><div class="n">Final temperature</div><div class="v" id="r-fullTempFinal">–</div></div>
+      <div class="ti"><div class="n">Temperature change</div><div class="v" id="r-fullTempRise">–</div></div>
+      <div class="ti"><div class="n">Heat-loss / gain balance</div><div class="v" id="r-thermalBalanceStatus">–</div></div>
+    </div>
+    <table style="margin-top:12px"><thead><tr><th>Thermal term</th><th>Initial impact</th><th>Final impact</th><th>Direction</th></tr></thead><tbody id="thermalImpactBody"></tbody></table>
   </div>
 
   <div class="card">
@@ -1035,7 +1103,39 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
   </div>
 </section>
 
-<!-- ============ 11 COMPLETE DESIGN REQUIREMENTS ============ -->
+<!-- ============ 11 MODEL VERIFICATION & VALIDATION ============ -->
+<section class="section" id="sec-validation">
+  <div class="section-header">
+    <div class="tag">12 / MODEL VERIFICATION &amp; VALIDATION</div>
+    <h1>Formula Verification, Unit Checks &amp; Physical Validation</h1>
+    <p class="lead">Verification checks whether the implemented equations reproduce independently recalculated results. Validation compares model predictions with measured PBR/process data. A verified equation is not automatically a physically validated reactor model.</p>
+  </div>
+  <div class="card">
+    <h2>Physical Validation Inputs — Optional Measured Data</h2>
+    <div class="fieldgrid">
+      <div class="field"><label>Measured final reactor temperature <span class="badge tbd">OPTIONAL</span></label><div class="inputwrap"><input type="number" step="0.1" id="in-measuredFinalTemp" data-key="measuredFinalTemp"><span class="unit-suffix">°C</span></div></div>
+      <div class="field"><label>Measured flue-gas flow at inlet <span class="badge tbd">OPTIONAL</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" id="in-measuredGasFlow" data-key="measuredGasFlow"><span class="unit-suffix">m³/h</span></div></div>
+      <div class="field"><label>Measured reactor pressure drop <span class="badge tbd">OPTIONAL</span></label><div class="inputwrap"><input type="number" step="0.01" min="0" id="in-measuredPressureDrop" data-key="measuredPressureDrop"><span class="unit-suffix">kPa</span></div></div>
+      <div class="field"><label>Physical validation tolerance <span class="badge prelim">PRELIM</span></label><div class="inputwrap"><input type="number" step="1" min="0.1" max="100" id="in-validationTolerance" data-key="validationTolerance"><span class="unit-suffix">%</span></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Automatic Verification Register</h2>
+    <table><thead><tr><th>Model block</th><th>Independent check</th><th>Relative difference</th><th>Status</th></tr></thead><tbody id="validationBody"></tbody></table>
+    <p class="vv-note" style="margin-top:10px">PASS = equation/unit implementation independently reproduces the model result within numerical tolerance. REVIEW = calculation is verified but physical validation data are not available. FAIL = implementation mismatch or invalid input detected.</p>
+  </div>
+  <div class="card">
+    <h2>Physical Validation Status</h2>
+    <div class="thermal-impact">
+      <div class="ti"><div class="n">Temperature model</div><div class="v" id="r-valTempStatus">–</div></div>
+      <div class="ti"><div class="n">Gas-flow model</div><div class="v" id="r-valGasStatus">–</div></div>
+      <div class="ti"><div class="n">Hydraulic model</div><div class="v" id="r-valDpStatus">–</div></div>
+    </div>
+    <p class="vv-note" style="margin-top:12px">If a measured value is entered, the model calculates percentage error against that measurement. Without measured data the status remains <b>VERIFIED — PHYSICAL VALIDATION PENDING</b>, not “VALIDATED”.</p>
+  </div>
+</section>
+
+<!-- ============ 13 COMPLETE DESIGN REQUIREMENTS ============ -->
 <section class="section" id="sec-requirements">
   <div class="section-page-brand"><div class="page-logo-wrap"><img src="data:image/png;base64,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" alt="CarbonONE logo"></div><div class="page-brand-text">CarbonONE MRPL · Live Reactor Design &amp; Calculation Model</div></div>
 <div class="section-header"><div class="tag">12 / COMPLETE DESIGN REQUIREMENTS</div><h1>Complete Reactor Design Requirements &amp; Formula Register</h1><p class="lead">This section closes the gap between the process-calculation model and a complete engineering design package. Green items are calculated from the current basis; amber items require validated design data; red/TBD items require plant, laboratory, vendor or mechanical inputs before final sizing.</p></div>
@@ -1112,9 +1212,66 @@ input:focus,select:focus,textarea:focus{border-color:#0b5ea8;box-shadow:0 0 0 2p
   </div>
 </div>
 
+
+<div class="help-overlay" id="helpOverlay" aria-hidden="true">
+  <div class="help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <button class="help-close" id="helpClose" aria-label="Close explanation">&times;</button>
+    <div class="help-title" id="helpTitle">What is this?</div>
+    <div class="help-tag" id="helpTag">CarbonONE thermal input guide</div>
+    <div class="help-grid">
+      <div class="help-block"><h4>Simple meaning</h4><p id="helpMeaning"></p></div>
+      <div class="help-block"><h4>Why is it needed?</h4><p id="helpWhy"></p></div>
+      <div class="help-block"><h4>What should I enter?</h4><p id="helpInput"></p></div>
+      <div class="help-block"><h4>If I increase it...</h4><p id="helpEffect"></p></div>
+    </div>
+    <div class="help-formula"><strong>How the model uses it:</strong><div id="helpFormula" style="margin-top:6px;"></div></div>
+    <div class="help-warning" id="helpWarning"></div>
+  </div>
+</div>
+
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
 (function(){
+
+
+const BEGINNER_HELP = {
+  flueTempIn:{title:'Flue-gas inlet temperature',unit:'°C',meaning:'Temperature of the refinery flue gas when it reaches the PBR / gas-to-liquid heat-transfer point.',why:'Hot flue gas can transfer sensible heat to the liquid. This value strongly affects the predicted reactor temperature.',input:'Use a measured plant/stack temperature at the actual connection point. If you only have a stack value from another location, mark it as preliminary and account for cooling between locations.',effect:'Higher temperature generally increases heating duty and can raise reactor temperature. Lower temperature reduces the available heating duty.',formula:'Q̇_gas = ε × ṁ_gas × Cp_gas × (T_gas − T_liquid)'},
+  liquidCp:{title:'Liquid heat capacity',unit:'kJ/kg·K',meaning:'How much heat is required to raise 1 kg of reactor liquid by 1°C.',why:'It tells the model how difficult it is to heat or cool the reactor contents.',input:'Use a measured or literature value for the actual culture medium / broth at the operating temperature. For final design, use validated property data.',effect:'Higher Cp means the same heat input causes a smaller temperature change.',formula:'C_liquid = m_liquid × Cp_liquid'},
+  gasCp:{title:'Flue-gas heat capacity',unit:'kJ/kg·K',meaning:'How much heat the flue gas can carry per kg for each 1°C temperature change.',why:'The model uses it to calculate how much sensible heat the flue gas can transfer to the liquid.',input:'Prefer a composition-based property calculation from the actual MRPL flue-gas analysis. A single preliminary value is acceptable for screening only.',effect:'Higher Cp increases the calculated gas-side heating capacity.',formula:'Q̇_gas = ε × ṁ_gas × Cp_gas × ΔT'},
+  pumpEfficiency:{title:'Pump efficiency',unit:'fraction',meaning:'The fraction of pump shaft power that becomes useful hydraulic power.',why:'It converts hydraulic duty into the electrical/shaft power the pump must actually consume.',input:'Enter the pump/vendor efficiency at the selected operating point. Example: 70% is entered as 0.70.',effect:'Higher efficiency reduces required shaft power for the same hydraulic duty. It does not directly change the ideal hydraulic pressure drop.',formula:'P_shaft = P_hydraulic / η_pump'},
+  heatEffectiveness:{title:'Heat-transfer effectiveness ε',unit:'fraction',meaning:'A factor from 0 to 1 describing how effectively the available flue-gas sensible heat is transferred to the liquid.',why:'Not all available gas heat reaches the broth. Mixing, contact area, residence time and heat-transfer resistance limit transfer.',input:'Use validated gas-liquid heat-transfer data or an exchanger/contacting calculation. ε = 1.0 is an ideal upper-bound screening assumption, not a guaranteed plant value.',effect:'Higher ε increases predicted heat transfer and generally increases reactor temperature.',formula:'H = ε × ṁ_gas × Cp_gas;  Q̇_gas→liquid = H(T_gas − T)'},
+  ambientTemp:{title:'Ambient temperature',unit:'°C',meaning:'Temperature of the surroundings around the reactor.',why:'The reactor can lose heat to cooler surroundings or gain heat from warmer surroundings.',input:'Use the representative outdoor/indoor ambient temperature for the installation. For design, consider the relevant minimum/maximum conditions rather than only one average.',effect:'Higher ambient temperature reduces heat loss to the surroundings and can increase reactor temperature.',formula:'Q̇_ambient = UA × (T − T_ambient)'},
+  ambientUA:{title:'Ambient UA',unit:'kJ/h·K',meaning:'Overall heat-loss conductance between the reactor and its surroundings. U is heat-transfer coefficient and A is effective heat-transfer area.',why:'It represents heat lost through the reactor wall, insulation, supports and other paths to ambient in a simplified way.',input:'Derive from a heat-loss calculation, measured cooldown test, insulation design, or validated U×A estimate. Enter 0 only when intentionally doing an ideal/no-ambient-loss screening case.',effect:'Higher UA means more heat loss to ambient and usually a lower predicted reactor temperature.',formula:'Q̇_ambient = UA(T − T_ambient)'},
+  solarIrradiance:{title:'Solar irradiance',unit:'W/m²',meaning:'Solar power arriving on each square metre of the exposed reactor area.',why:'Sunlight can add heat to an outdoor PBR in addition to its biological/light effect.',input:'Use site-specific measured or design solar irradiance for the required operating case. Do not confuse this with LED electrical power.',effect:'Higher irradiance increases the calculated solar heat input.',formula:'Q̇_solar = I_solar × A_solar × α × 3.6  (kJ/h)'},
+  solarArea:{title:'Solar exposed / illuminated area',unit:'m²',meaning:'Area of reactor surface that actually receives the solar/illumination input being modelled.',why:'Solar heat is proportional to exposed area.',input:'Use the actual exposed surface area receiving the specified irradiance. Do not automatically use total plant floor area.',effect:'Larger exposed area increases solar heat input.',formula:'Q̇_solar ∝ A_solar'},
+  solarAbsorptance:{title:'Solar absorptance',unit:'fraction',meaning:'Fraction of incoming solar radiation absorbed as heat by the reactor surface.',why:'Some radiation is reflected or transmitted; only the absorbed part becomes a thermal load in this simplified model.',input:'Use a measured/material value for the actual tube, cover or surface. Enter 0.8 for 80%, not 80.',effect:'Higher absorptance increases solar heating.',formula:'Q̇_solar = I_solar × A_solar × α × 3.6'},
+  radiationArea:{title:'Radiating area',unit:'m²',meaning:'Effective surface area through which the reactor exchanges thermal radiation with its surroundings.',why:'A warm reactor can lose heat by infrared radiation even when there is little air movement.',input:'Use the actual exposed radiating surface area. For a detailed design, account for shielding/view factors where appropriate.',effect:'Larger radiating area increases radiative heat loss when the reactor is hotter than its surroundings.',formula:'Q̇_rad = εσA[(T+273.15)^4 − (T_amb+273.15)^4] × 3.6'},
+  emissivity:{title:'Surface emissivity',unit:'fraction',meaning:'How strongly the surface emits thermal infrared radiation compared with an ideal blackbody.',why:'It controls the magnitude of radiative heat exchange.',input:'Use the emissivity of the actual outer surface/cover material. It is normally between 0 and 1.',effect:'Higher emissivity generally increases radiative heat loss when the reactor is hotter than ambient.',formula:'Q̇_rad ∝ εσA(T⁴ − T_amb⁴)'},
+  evapRate:{title:'Evaporation rate',unit:'kg/h',meaning:'Mass of water or other liquid that leaves the reactor as vapour per hour.',why:'Evaporation consumes latent heat, so it can be a significant cooling mechanism in an open or gas-sparged PBR.',input:'Use a measured evaporation rate or a validated psychrometric/mass-transfer calculation for the actual gas flow, humidity and operating temperature.',effect:'Higher evaporation rate increases cooling duty and lowers predicted reactor temperature.',formula:'Q̇_evap = ṁ_evap × λ'},
+  latentHeat:{title:'Latent heat of vaporization',unit:'kJ/kg',meaning:'Heat required to convert 1 kg of liquid into vapour at the relevant temperature.',why:'The model needs this to convert evaporation mass flow into a heat loss.',input:'Use the latent heat at the actual evaporation temperature. The current 2430 kJ/kg is a preliminary screening value and should be replaced by temperature-appropriate data for final design.',effect:'Higher latent heat means more cooling for the same evaporation rate.',formula:'Q̇_evap = ṁ_evap × λ'},
+  pumpHeatFraction:{title:'Pump heat-to-liquid fraction',unit:'fraction',meaning:'Fraction of pump shaft power assumed to end up as heat in the reactor liquid.',why:'Most pump losses eventually appear as heat somewhere in the system, but not necessarily all in the liquid.',input:'Use a justified fraction based on pump arrangement, where the heat is dissipated, and whether the pump is inline with the reactor loop. Use 1.0 only when intentionally assuming all shaft power becomes liquid heat.',effect:'Higher fraction increases predicted liquid heating.',formula:'Q̇_pump,liquid = η_fraction × P_shaft × 3600'},
+  ledHeatFraction:{title:'LED heat-to-liquid fraction',unit:'fraction',meaning:'Fraction of LED electrical power that ultimately becomes heat in the reactor liquid.',why:'LEDs consume electrical power and produce heat, but not all heat necessarily enters the liquid.',input:'Use the actual LED electrical power and a justified heat-transfer fraction if artificial lighting is used. If no LEDs are installed, keep the corresponding power/input at zero.',effect:'Higher fraction increases reactor heating.',formula:'Q̇_LED,liquid = fraction × P_LED'},
+  biologicalHeatKW:{title:'Biological heat generation',unit:'kW',meaning:'Heat released by biological/metabolic activity in the culture.',why:'Growing organisms can generate heat, although its magnitude depends on metabolism and process conditions.',input:'Use experimentally measured heat generation or a defensible biochemical/respiration-based estimate. Keep it zero if no validated value is available.',effect:'Higher biological heat increases predicted reactor temperature.',formula:'Q̇_net = heating terms − cooling terms; biological heat is a positive term.'}
+};
+
+function openBeginnerHelp(key){
+  const d=BEGINNER_HELP[key]; if(!d) return;
+  document.getElementById('helpTitle').textContent=d.title;
+  document.getElementById('helpTag').textContent='Beginner guide • Unit: '+d.unit;
+  document.getElementById('helpMeaning').textContent=d.meaning;
+  document.getElementById('helpWhy').textContent=d.why;
+  document.getElementById('helpInput').textContent=d.input;
+  document.getElementById('helpEffect').textContent=d.effect;
+  document.getElementById('helpFormula').textContent=d.formula;
+  document.getElementById('helpWarning').textContent='Engineering note: this explanation tells you what the input means and how the model uses it. It does not make a preliminary value experimentally validated. For final design, replace preliminary/TBD values with plant measurements, vendor data, material-property data or validated experiments.';
+  document.getElementById('helpOverlay').classList.add('open');
+  document.getElementById('helpOverlay').setAttribute('aria-hidden','false');
+}
+const helpClose=()=>{document.getElementById('helpOverlay').classList.remove('open');document.getElementById('helpOverlay').setAttribute('aria-hidden','true');};
+document.getElementById('helpClose').addEventListener('click',helpClose);
+document.getElementById('helpOverlay').addEventListener('click',e=>{if(e.target.id==='helpOverlay')helpClose();});
+document.addEventListener('click',e=>{const b=e.target.closest('.help-btn');if(b){e.preventDefault();e.stopPropagation();openBeginnerHelp(b.dataset.help);}});
+
 
 /* ============================================================
    1. STATE — display-unit values, matching the locked basis
@@ -1161,6 +1318,20 @@ const DEFAULTS = {
   heatEffectiveness: 1.0,      // fraction; 1.0 = ideal upper-bound, replace with validated value
   ambientTemp: 30,              // C; preliminary ambient temperature
   ambientUA: 0,                 // kJ/h-K; 0 = TBD / omitted
+  solarIrradiance: 0,           // W/m²; optional direct solar heat input
+  solarArea: 0,                 // m²; optional exposed/illuminated area
+  solarAbsorptance: 0.8,        // fraction; preliminary
+  radiationArea: 0,             // m²; optional effective radiating area
+  emissivity: 0.9,              // fraction; preliminary surface emissivity
+  evapRate: 0,                  // kg/h; optional measured/estimated evaporation
+  latentHeat: 2430,             // kJ/kg; preliminary around 30–35°C water
+  pumpHeatFraction: 1.0,        // fraction of shaft power dissipated into liquid
+  ledHeatFraction: 1.0,         // fraction of LED electrical power converted to liquid heat
+  biologicalHeatKW: 0,          // kW; optional measured/estimated biological heat
+  measuredFinalTemp: 0,         // °C; 0 = not supplied
+  measuredGasFlow: 0,           // m³/h; 0 = not supplied
+  measuredPressureDrop: 0,      // kPa; 0 = not supplied
+  validationTolerance: 5,       // %; physical validation acceptance tolerance
   cycloneEuler: 7.0,            // dimensionless; preliminary Stairmand Euler number
   gasViscosity: 0.018,          // mPa.s; preliminary flue-gas viscosity
   particleDensity: 0,           // kg/m3; 0 = TBD
@@ -1372,24 +1543,67 @@ function compute(s){
   r.pumpHydraulic_W = Number.isFinite(r.tdh_m) ? rho*9.80665*r.qPump_m3s*r.tdh_m : NaN;
   r.pumpShaft_W = Number.isFinite(r.pumpHydraulic_W) && s.pumpEfficiency>0 ? r.pumpHydraulic_W/s.pumpEfficiency : NaN;
 
-  // ---- energy ----
+  // ---- energy: full input-driven transient liquid thermal balance ----
   r.mLiquid = r.workVolM3 * s.brothDensity;
   r.mDotGas = r.stdNm3h * s.normDensity;
-  r.qDot0   = r.mDotGas * s.gasCp * (s.flueTempIn - s.tempInit);
+  r.qDot0   = r.mDotGas * s.gasCp * (s.flueTempIn - s.tempInit); // kJ/h
   r.heatEffectiveness = s.heatEffectiveness;
   r.qDotActual0 = r.heatEffectiveness * r.qDot0;
-  r.cLiquid = r.mLiquid * s.liquidCp;
-  r.ambientUA = s.ambientUA;
-  // ODE: C dT/dt = H(Tg-T) - UA(T-Tamb), with H=epsilon*mDot*Cp.
-  const Hgas = r.heatEffectiveness*r.mDotGas*s.gasCp;
-  const UA = Math.max(0, Number(s.ambientUA)||0);
+  r.cLiquid = r.mLiquid * s.liquidCp; // kJ/K
+  r.ambientUA = Math.max(0, Number(s.ambientUA)||0); // kJ/h-K
+
+  const Hgas = r.heatEffectiveness*r.mDotGas*s.gasCp; // kJ/h-K
+  const UA = r.ambientUA;
+  const sigma = 5.670374419e-8; // W/m²-K⁴
+  const solarQ_kJh = Math.max(0,Number(s.solarIrradiance)||0)*Math.max(0,Number(s.solarArea)||0)*Math.max(0,Number(s.solarAbsorptance)||0)*3.6;
+  const evapQ_kJh = Math.max(0,Number(s.evapRate)||0)*Math.max(0,Number(s.latentHeat)||0);
+  const pumpHeat_kJh = (Number.isFinite(r.pumpShaft_W)?r.pumpShaft_W:0)*Math.max(0,Number(s.pumpHeatFraction)||0)*3.6;
+  const ledHeat_kJh = (Number.isFinite(r.lightDutyW)?r.lightDutyW:0)*Math.max(0,Number(s.ledHeatFraction)||0)*3.6;
+  const bioHeat_kJh = Math.max(0,Number(s.biologicalHeatKW)||0)*3600;
+  r.qSolar_kJh = solarQ_kJh;
+  r.qEvap_kJh = evapQ_kJh;
+  r.qPumpHeat_kJh = pumpHeat_kJh;
+  r.qLedHeat_kJh = ledHeat_kJh;
+  r.qBioHeat_kJh = bioHeat_kJh;
+  r.qRadiationAt = function(Tc){
+    const A=Math.max(0,Number(s.radiationArea)||0), e=Math.max(0,Math.min(1,Number(s.emissivity)||0));
+    const Tk=Tc+273.15, Ta=Number(s.ambientTemp)+273.15;
+    return Math.max(0,e*sigma*A*(Math.pow(Tk,4)-Math.pow(Ta,4))*3.6); // kJ/h
+  };
+  r.qRad0_kJh = r.qRadiationAt(s.tempInit);
   r.kOverall = (Hgas + UA) / r.cLiquid;
-  r.tSteady = r.kOverall>0 ? (Hgas*s.flueTempIn + UA*s.ambientTemp)/(Hgas+UA) : s.tempInit;
-  r.tempAt = function(t){ return r.tSteady + (s.tempInit-r.tSteady)*Math.exp(-r.kOverall*t); };
+  r.tSteady = r.kOverall>0 ? (Hgas*s.flueTempIn + UA*s.ambientTemp + solarQ_kJh + pumpHeat_kJh + ledHeat_kJh + bioHeat_kJh - evapQ_kJh - r.qRad0_kJh) / (Hgas+UA) : s.tempInit;
+  // Numerical RK4 integration because radiation is nonlinear in T.
+  const dTdt = function(T){
+    const qGas = Hgas*(s.flueTempIn-T);
+    const qAmbient = UA*(T-s.ambientTemp);
+    const qRad = r.qRadiationAt(T);
+    return (qGas - qAmbient + solarQ_kJh + pumpHeat_kJh + ledHeat_kJh + bioHeat_kJh - evapQ_kJh - qRad) / r.cLiquid;
+  };
+  r.dTdt = dTdt;
+  r.tempAt = function(t){
+    const horizon=Math.max(0,Number(t)||0);
+    if(!Number.isFinite(r.cLiquid)||r.cLiquid<=0) return s.tempInit;
+    let T=s.tempInit, tt=0, h=Math.min(0.25, Math.max(0.02,horizon/1000||0.25));
+    if(horizon===0) return T;
+    while(tt<horizon-1e-10){
+      const dt=Math.min(h,horizon-tt);
+      const k1=dTdt(T), k2=dTdt(T+0.5*dt*k1), k3=dTdt(T+0.5*dt*k2), k4=dTdt(T+dt*k3);
+      T += dt*(k1+2*k2+2*k3+k4)/6;
+      tt += dt;
+    }
+    return T;
+  };
   r.kCoeff = r.kOverall;
   r.tempHorizon = r.tempAt((Number(s.batchDays)>0?Number(s.batchDays):8)*24);
   r.tempTargetDelta = r.tempHorizon - s.tempTarget;
   r.targetReached = r.tempHorizon >= s.tempTarget;
+  r.netHeat0_kJh = Hgas*(s.flueTempIn-s.tempInit) - UA*(s.tempInit-s.ambientTemp) + solarQ_kJh + pumpHeat_kJh + ledHeat_kJh + bioHeat_kJh - evapQ_kJh - r.qRad0_kJh;
+  r.qGas0_kJh = Hgas*(s.flueTempIn-s.tempInit);
+  r.qAmbient0_kJh = UA*(s.tempInit-s.ambientTemp);
+  r.qGasFinal_kJh = Hgas*(s.flueTempIn-r.tempHorizon);
+  r.qAmbientFinal_kJh = UA*(r.tempHorizon-s.ambientTemp);
+  r.qRadFinal_kJh = r.qRadiationAt(r.tempHorizon);
 
   // ---- cyclone: Stairmand high-efficiency geometric screening basis ----
   const Qact_m3s = r.actM3h / 3600;
@@ -1498,6 +1712,10 @@ function computeWarnings(s, r){
   if(s.headerLength<=0 || s.returnHeaderLength<=0 || s.branchLength<=0 || s.branchID<=0) w.push({level:'notice', msg:'NOTICE: One or more hydraulic geometry inputs are zero/invalid; corresponding pressure-drop terms cannot be fully evaluated. Enter actual plant/mechanical geometry for final sizing.'});
   if(s.ambientUA<=0) w.push({level:'notice', msg:'TBD: Ambient UA is zero, so ambient heat loss is omitted; temperature prediction is therefore a screening result.'});
   if(s.heatEffectiveness>=1) w.push({level:'notice', msg:'PRELIM: Heat-transfer effectiveness ε=1.0 represents the ideal upper-bound case; replace with validated gas-liquid heat-transfer effectiveness.'});
+  if(s.solarIrradiance>0 && s.solarArea<=0) w.push({level:'notice', msg:'REVIEW: Solar irradiance is entered but solar area is zero, so solar heat input remains zero.'});
+  if(s.radiationArea>0 && s.emissivity<=0) w.push({level:'notice', msg:'REVIEW: Radiating area is entered but emissivity is zero, so radiation loss remains zero.'});
+  if(s.evapRate>0 && s.latentHeat<=0) w.push({level:'error', msg:'ERROR: Evaporation rate is positive but latent heat is not positive.'});
+  if(s.measuredFinalTemp!==0 || s.measuredGasFlow!==0 || s.measuredPressureDrop!==0) w.push({level:'notice', msg:'VALIDATION: Measured plant/test data entered; physical validation status is calculated automatically in Section 11.'});
   if(s.particleDensity<=0) w.push({level:'notice', msg:'TBD: Particle density required for cyclone cut-size screening.'});
   if(!['closest','atLeast','below'].includes(s.countCriterion)) w.push({level:'error', msg:'ERROR: Invalid tube-count selection criterion.'});
   if(Math.abs(r.volumeErrorPct)>0.25) w.push({level:'notice', msg:`NOTICE: Integer tube/bend selection gives ${fmt(r.volumeErrorPct,3)}% geometric-volume deviation from target. Review tube count selection before fabrication.`});
@@ -1644,7 +1862,12 @@ const FORMULAS = {
     result:`Q_act = ${fmt(r.actM3h,2)} m³/h  (${fmt(r.actLmin,1)} L/min)`
   }),
   actLmin: (s,r)=>({title:'Actual Flue-Gas Flow in L/min', sub:'CO₂ &amp; Flue Gas', formula:'Q_act,L/min = Q_act,m³/h × 1000 / 60', vars:'<code>Q_act,m³/h</code> actual flue-gas flow at inlet temperature (m³/h)', subs:`Q_act,L/min = ${fmt(r.actM3h,2)} × 1000 / 60`, result:`Q_act = ${fmt(r.actLmin,1)} L/min`}),
-  tubeArea: (s,r)=>({
+  qSolar: (s,r)=>({title:'Net Solar Heat Input',sub:'Energy balance',formula:'Q̇_solar = I_solar × A_solar × α × 3.6',vars:'I_solar (W/m²) · A_solar (m²) · α absorptance; 1 W = 3.6 kJ/h',subs:`Q̇_solar = ${fmt(s.solarIrradiance,2)} × ${fmt(s.solarArea,2)} × ${fmt(s.solarAbsorptance,3)} × 3.6`,result:`Q̇_solar = ${fmt(r.qSolar_kJh,1)} kJ/h = ${fmt(r.qSolar_kJh/1000,3)} kW`} ),
+  qRadiation: (s,r)=>({title:'Radiative Heat Loss',sub:'Energy balance',formula:'Q̇_rad = εσA[(T+273.15)^4 − (T_amb+273.15)^4] × 3.6',vars:'ε emissivity · σ Stefan-Boltzmann constant · A radiating area · T reactor temperature · T_amb ambient temperature',subs:`At T₀=${fmt(s.tempInit,2)} °C: ε=${fmt(s.emissivity,3)}, A=${fmt(s.radiationArea,2)} m²`,result:`Q̇_rad,0 = ${fmt(r.qRad0_kJh,1)} kJ/h = ${fmt(r.qRad0_kJh/1000,3)} kW`} ),
+  qEvaporation: (s,r)=>({title:'Evaporative Heat Loss',sub:'Energy balance',formula:'Q̇_evap = ṁ_evap × λ',vars:'ṁ_evap (kg/h) · λ latent heat (kJ/kg)',subs:`Q̇_evap = ${fmt(s.evapRate,3)} × ${fmt(s.latentHeat,1)}`,result:`Q̇_evap = ${fmt(r.qEvap_kJh,1)} kJ/h = ${fmt(r.qEvap_kJh/1000,3)} kW`} ),
+  qPumpHeat: (s,r)=>({title:'Pump Heat Transferred to Liquid',sub:'Energy balance',formula:'Q̇_pump,liq = P_shaft × f_heat × 3.6',vars:'P_shaft (W) · f_heat fraction converted to liquid heat',subs:`Q̇ = ${fmt(Number.isFinite(r.pumpShaft_W)?r.pumpShaft_W:0,1)} × ${fmt(s.pumpHeatFraction,3)} × 3.6`,result:`Q̇_pump,liq = ${fmt(r.qPumpHeat_kJh,1)} kJ/h = ${fmt(r.qPumpHeat_kJh/1000,3)} kW`} ),
+  qLedHeat: (s,r)=>({title:'LED Heat Transferred to Liquid',sub:'Energy balance',formula:'Q̇_LED,liq = P_LED × f_heat × 3.6',vars:'P_LED (W) · f_heat fraction',subs:`Q̇ = ${fmt(Number.isFinite(r.lightDutyW)?r.lightDutyW:0,1)} × ${fmt(s.ledHeatFraction,3)} × 3.6`,result:`Q̇_LED,liq = ${fmt(r.qLedHeat_kJh,1)} kJ/h = ${fmt(r.qLedHeat_kJh/1000,3)} kW`} ),
+    tubeArea: (s,r)=>({
     title:'Tube Cross-Sectional Area', sub:'Hydraulics',
     formula:'A = π D² / 4',
     vars:'<code>D</code> tube ID (m)',
@@ -1744,13 +1967,13 @@ const FORMULAS = {
     const tH = getTimeHorizon();
     return {
       title:'Temperature vs Time (integrated)', sub:'Energy',
-      formula:'T(t) = T_ss + (T₀ − T_ss)e^(−kt)',
-      vars:'<code>k</code> heating coefficient (1/h) · <code>t</code> elapsed time (h)',
-      subs:`T(${fmt(tH,1)}) = ${fmt(r.tSteady,2)} + (${fmt(s.tempInit,1)} − ${fmt(r.tSteady,2)}) × e^(−${fmt(r.kCoeff,6)}×${fmt(tH,1)})`,
+      formula:'C·dT/dt = H(T_gas−T) − UA(T−T_amb) + Q̇_solar + Q̇_pump + Q̇_LED + Q̇_bio − Q̇_evap − Q̇_rad(T); solved by RK4',
+      vars:'C liquid thermal capacitance · H=εṁ_gasCp_gas · UA ambient loss coefficient · all optional heat gains/losses as entered',
+      subs:`Numerical RK4 integration from T₀=${fmt(s.tempInit,1)} °C to t=${fmt(tH,1)} h; Q̇_rad varies with T⁴`,
       result:`T(${fmt(tH,1)} h) = ${fmt(r.tempAt(tH),2)} °C  (rise = ${fmt(r.tempAt(tH)-s.tempInit,2)} °C; T_ss = ${fmt(r.tSteady,2)} °C)`
     };
   },
-  tSelect: (s,r)=>({title:'Temperature at Selected Time', sub:'Energy', formula:'T(t) = T_ss + (T₀ − T_ss)e^(−kt)', vars:'<code>t</code> selected elapsed time (h) · <code>k</code> heating coefficient (1/h) · <code>T_gas</code> inlet gas temperature · <code>T₀</code> initial liquid temperature', subs:`T(t) = ${fmt(r.tSteady,2)} + (${fmt(s.tempInit,1)} − ${fmt(r.tSteady,2)}) × e^(−${fmt(r.kCoeff,6)}×${fmt(getSelectedTimeForFormula(),1)})`, result:`T(${fmt(getSelectedTimeForFormula(),1)} h) = ${fmt(r.tempAt(getSelectedTimeForFormula()),2)} °C`}),
+  tSelect: (s,r)=>({title:'Temperature at Selected Time', sub:'Energy', formula:'C·dT/dt = H(T_gas−T) − UA(T−T_amb) + Q̇_solar + Q̇_pump + Q̇_LED + Q̇_bio − Q̇_evap − Q̇_rad(T); solved by RK4', vars:'t selected elapsed time (h); nonlinear radiation is temperature-dependent', subs:`Numerical RK4 integration from T₀=${fmt(s.tempInit,1)} °C to t=${fmt(getSelectedTimeForFormula(),1)} h`, result:`T(${fmt(getSelectedTimeForFormula(),1)} h) = ${fmt(r.tempAt(getSelectedTimeForFormula()),2)} °C`}),
   cycA: (s,r)=>({
     title:'Cyclone Inlet Area', sub:'Cyclone (screening)',
     formula:'A_in = Q_act / v_inlet',
@@ -1828,6 +2051,17 @@ const IMPACT_MAP = {
   heatEffectiveness: ['Effective gas-to-liquid heat-transfer coefficient', 'Initial heat-transfer rate', 'Steady-state screening temperature', 'Temperature profile'],
   ambientTemp: ['Ambient heat-loss driving force', 'Steady-state screening temperature', 'Temperature profile'],
   ambientUA: ['Ambient heat loss', 'Overall thermal coefficient', 'Steady-state screening temperature', 'Temperature profile'],
+  solarIrradiance: ['Solar heat input', 'Net thermal load', 'Temperature profile'],
+  solarArea: ['Solar heat input', 'Net thermal load', 'Temperature profile'],
+  solarAbsorptance: ['Net absorbed solar heat', 'Temperature profile'],
+  radiationArea: ['Radiative heat loss', 'Net thermal load', 'Temperature profile'],
+  emissivity: ['Radiative heat loss', 'Net thermal load', 'Temperature profile'],
+  evapRate: ['Evaporative heat loss', 'Net thermal load', 'Temperature profile'],
+  latentHeat: ['Evaporative heat loss', 'Net thermal load', 'Temperature profile'],
+  pumpHeatFraction: ['Pump heat transferred to liquid', 'Net thermal load', 'Temperature profile'],
+  ledHeatFraction: ['LED heat transferred to liquid', 'Net thermal load', 'Temperature profile'],
+  biologicalHeatKW: ['Biological heat generation', 'Net thermal load', 'Temperature profile'],
+  measuredFinalTemp: ['Physical temperature validation error/status'], measuredGasFlow: ['Physical gas-flow validation error/status'], measuredPressureDrop: ['Physical hydraulic validation error/status'], validationTolerance: ['Physical validation PASS/FAIL threshold'],
   batchDays: ['Batch time horizon', 'Temperature at batch horizon', 'Temperature graph/table horizon'],
   pmSize: ['Cyclone screening reference (does not change sizing formula)'],
 };
@@ -1845,7 +2079,7 @@ const UNITS = {
   geomVol:'m³', workFrac:'%', batchDays:'days', tempTarget:'°C', tempInit:'°C', pressure:'atm',
   tubeID:'mm', tubeOD:'mm', straightLen:'m', ubendCC:'mm', headerID:'mm', headerLength:'m', returnHeaderLength:'m', branchLength:'m', branchID:'mm', supplyFittingK:'', returnFittingK:'', branchFittingK:'', fittingK:'', staticHead:'m', numLoops:'',
   co2Frac:'%', co2Util:'g/L/h', captureEff:'%', co2MW:'kg/kmol', flueTempIn:'°C', normDensity:'kg/Nm³',
-  brothDensity:'kg/m³', viscosity:'mPa·s', targetRe:'', liquidCp:'kJ/kg·K', gasCp:'kJ/kg·K', pmSize:'µm', cycVel:'m/s'
+  brothDensity:'kg/m³', viscosity:'mPa·s', targetRe:'', liquidCp:'kJ/kg·K', gasCp:'kJ/kg·K', pmSize:'µm', cycVel:'m/s', solarIrradiance:'W/m²', solarArea:'m²', solarAbsorptance:'', radiationArea:'m²', emissivity:'', evapRate:'kg/h', latentHeat:'kJ/kg', pumpHeatFraction:'', ledHeatFraction:'', biologicalHeatKW:'kW', measuredFinalTemp:'°C', measuredGasFlow:'m³/h', measuredPressureDrop:'kPa', validationTolerance:'%'
 };
 
 function logChange(key, oldV, newV){
@@ -2008,6 +2242,17 @@ function renderAll(){
   set('r-heatEff', fmt(r.heatEffectiveness,2));
   set('r-qDotActual', fmt(r.qDotActual0,0)+' <span class="unit">kJ/h</span>');
   set('r-ambientUA', fmt(r.ambientUA,0)+' <span class="unit">kJ/h-K</span>');
+  set('r-qSolar', fmt(r.qSolar_kJh/1000,3)+' <span class="unit">kW</span>');
+  set('r-qRadiation', fmt(r.qRad0_kJh/1000,3)+' <span class="unit">kW at T₀</span>');
+  set('r-qEvaporation', fmt(r.qEvap_kJh/1000,3)+' <span class="unit">kW</span>');
+  set('r-qPumpHeat', fmt(r.qPumpHeat_kJh/1000,3)+' <span class="unit">kW</span>');
+  set('r-qLedHeat', fmt(r.qLedHeat_kJh/1000,3)+' <span class="unit">kW</span>');
+  set('r-qBioHeat', fmt(r.qBioHeat_kJh/1000,3)+' <span class="unit">kW</span>');
+  set('r-netHeat0', fmt(r.netHeat0_kJh/1000,3)+' kW');
+  set('r-fullTempFinal', fmt(r.tempHorizon,2)+' °C');
+  set('r-fullTempRise', (r.tempHorizon-state.tempInit>=0?'+':'')+fmt(r.tempHorizon-state.tempInit,2)+' °C');
+  set('r-thermalBalanceStatus', r.netHeat0_kJh>=0?'NET HEATING':'NET COOLING');
+  renderThermalImpact(r);
   if(document.getElementById('r-tempHorizon')) set('r-tempHorizon', fmt(r.tempHorizon,2)+' <span class="unit">°C</span>');
   if(document.getElementById('r-tempTargetDelta')) set('r-tempTargetDelta', (r.tempTargetDelta>=0?'+':'')+fmt(r.tempTargetDelta,2)+' <span class="unit">°C</span>');
   renderTempTable(r);
@@ -2031,10 +2276,11 @@ function renderAll(){
   set('r-mbCo2Util', state.reactorMode==='continuous' ? (Number.isFinite(r.co2UtilH)?fmt(r.co2UtilH,3)+' kg/h':'TBD') : (Number.isFinite(r.co2BatchUtilKg)?fmt(r.co2BatchUtilKg,2)+' kg/batch':'TBD'));
   set('r-mbCo2Out', state.reactorMode==='continuous' ? (Number.isFinite(r.co2OutH)?fmt(r.co2OutH,3)+' kg/h':'TBD') : (Number.isFinite(r.co2BatchOutKg)?fmt(r.co2BatchOutKg,2)+' kg/batch':'TBD'));
   set('r-mbCo2Eff', Number.isFinite(r.co2UtilizationFraction)?fmt(r.co2UtilizationFraction*100,1)+' %':'TBD');
-  set('r-mbCarbon', state.reactorMode==='continuous' ? (Number.isFinite(r.biomassProductionRateKgH)?fmt(r.biomassProductionRateKgH*s.carbonFractionBiomass,3)+' kg C/h':'TBD') : (Number.isFinite(r.CRequirementKgBatch)?fmt(r.CRequirementKgBatch,2)+' kg C/batch':'TBD'));
+  set('r-mbCarbon', state.reactorMode==='continuous' ? (Number.isFinite(r.biomassProductionRateKgH)?fmt(r.biomassProductionRateKgH*state.carbonFractionBiomass,3)+' kg C/h':'TBD') : (Number.isFinite(r.CRequirementKgBatch)?fmt(r.CRequirementKgBatch,2)+' kg C/batch':'TBD'));
   set('r-mbNitrogen', state.reactorMode==='continuous' ? (Number.isFinite(r.NRequirementKgH)?fmt(r.NRequirementKgH,3)+' kg N/h':'TBD') : (Number.isFinite(r.NRequirementKgBatch)?fmt(r.NRequirementKgBatch,2)+' kg N/batch':'TBD'));
   set('r-mbPhosphorus', state.reactorMode==='continuous' ? (Number.isFinite(r.PRequirementKgH)?fmt(r.PRequirementKgH,3)+' kg P/h':'TBD') : (Number.isFinite(r.PRequirementKgBatch)?fmt(r.PRequirementKgBatch,2)+' kg P/batch':'TBD'));
   set('r-mbCarbonStatus', Number.isFinite(r.carbonClosureRatio)?fmt(r.carbonClosureRatio*100,1)+' % of CO₂-derived carbon in net biomass — closure not complete':'TBD — validated carbon uptake/stoichiometry required');
+  const mbSec=document.getElementById('sec-massbalance'); if(mbSec) mbSec.dataset.calculated='1';
   set('r-biomassBatch', state.reactorMode==='continuous' ? (Number.isFinite(r.biomassProductionRateKgH)?fmt(r.biomassProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.biomassBatchKg)?fmt(r.biomassBatchKg,2)+' kg/batch':'TBD'));
   set('r-lipidConc', Number.isFinite(r.lipidConc_gL)?fmt(r.lipidConc_gL,3)+' g/L':'TBD');
   set('r-lipidBatch', state.reactorMode==='continuous' ? (Number.isFinite(r.lipidProductionRateKgH)?fmt(r.lipidProductionRateKgH,3)+' kg/h':'TBD') : (Number.isFinite(r.lipidBatchKg)?fmt(r.lipidBatchKg,2)+' kg/batch':'TBD'));
@@ -2064,6 +2310,7 @@ function renderAll(){
   set('r-cycDp', fmt(r.cycDp_Pa/1000,2)+' <span class="unit">kPa</span>');
   set('r-cycCut', Number.isFinite(r.cycCutSize_um)?fmt(r.cycCutSize_um,1)+' <span class="unit">µm</span>':'TBD — particle density');
 
+  renderValidation(r);
   drawCO2ConcChart(r);
   drawCO2VolChart(r);
   drawCircTubeChart(r);
@@ -2126,19 +2373,84 @@ function renderTempTable(r){
   }).join('');
 }
 
+function renderThermalImpact(r){
+  const body=document.getElementById('thermalImpactBody'); if(!body) return;
+  const rows=[
+    ['Flue-gas heating',r.qGas0_kJh/1000,r.qGasFinal_kJh/1000,'GAIN'],
+    ['Ambient UA loss',-r.qAmbient0_kJh/1000,-r.qAmbientFinal_kJh/1000,'LOSS'],
+    ['Solar absorbed',r.qSolar_kJh/1000,r.qSolar_kJh/1000,'GAIN'],
+    ['Radiation loss',-r.qRad0_kJh/1000,-r.qRadFinal_kJh/1000,'LOSS'],
+    ['Evaporation loss',-r.qEvap_kJh/1000,-r.qEvap_kJh/1000,'LOSS'],
+    ['Pump heat',r.qPumpHeat_kJh/1000,r.qPumpHeat_kJh/1000,'GAIN'],
+    ['LED heat',r.qLedHeat_kJh/1000,r.qLedHeat_kJh/1000,'GAIN'],
+    ['Biological heat',r.qBioHeat_kJh/1000,r.qBioHeat_kJh/1000,'GAIN']
+  ];
+  body.innerHTML=rows.map(x=>`<tr><td>${x[0]}</td><td>${fmt(x[1],3)} kW</td><td>${fmt(x[2],3)} kW</td><td>${x[3]}</td></tr>`).join('');
+}
+function relErr(a,b){
+  if(!Number.isFinite(a)||!Number.isFinite(b)) return NaN;
+  const den=Math.max(1e-12,Math.abs(b)); return Math.abs(a-b)/den*100;
+}
+function renderValidation(r){
+  const body=document.getElementById('validationBody'); if(!body) return;
+  const checks=[];
+  const tol=1e-7;
+  const areaIndependent=Math.PI*Math.pow(state.tubeID/1000,2)/4;
+  checks.push(['Geometry — tube area',areaIndependent,r.tubeArea]);
+  const co2UtilInd=r.workVolL*state.co2Util/1000;
+  checks.push(['CO₂ — utilization rate',co2UtilInd,r.co2UtilH]);
+  const co2InInd=co2UtilInd/(state.captureEff/100);
+  checks.push(['CO₂ — inlet requirement',co2InInd,r.co2InletH]);
+  const molInd=co2InInd/state.co2MW;
+  checks.push(['CO₂ — molar flow',molInd,r.co2MolarH]);
+  const stdInd=molInd/(state.co2Frac/100)*NTP_MOLVOL;
+  checks.push(['Gas — standard flow',stdInd,r.stdNm3h]);
+  const actInd=molInd/(state.co2Frac/100)*NTP_MOLVOL*((273.15+state.flueTempIn)/273.15)/state.pressure;
+  checks.push(['Gas — actual flow',actInd,r.actM3h]);
+  const reInd=state.brothDensity*r.velocity*(state.tubeID/1000)/(state.viscosity/1000);
+  checks.push(['Hydraulics — Reynolds number',reInd,r.reCheck]);
+  const massClosure=r.co2BatchInKg-r.co2BatchUtilKg-r.co2BatchOutKg;
+  checks.push(['Mass balance — CO₂ closure',0,massClosure]);
+  const rows=checks.map(c=>{
+    const e=relErr(c[1],c[2]); const pass=Number.isFinite(e)&&e<=tol*100;
+    return `<tr><td>${c[0]}</td><td>${fmt(c[2],6)} vs ${fmt(c[1],6)}</td><td>${Number.isFinite(e)?fmt(e,6)+' %':'n/a'}</td><td><span class="vv-status ${pass?'vv-pass':'vv-fail'}">${pass?'PASS':'FAIL'}</span></td></tr>`;
+  });
+  // Unit/physics guard checks
+  const unitChecks=[
+    ['Energy — thermal capacitance','kJ/K',Number.isFinite(r.cLiquid)&&r.cLiquid>0],
+    ['Energy — heat-rate units','kJ/h',Number.isFinite(r.netHeat0_kJh)],
+    ['Energy — temperature output','°C',Number.isFinite(r.tempHorizon)]
+  ];
+  unitChecks.forEach(c=>rows.push(`<tr><td>${c[0]}</td><td>${c[1]}</td><td>dimensional/finite check</td><td><span class="vv-status ${c[2]?'vv-pass':'vv-fail'}">${c[2]?'PASS':'FAIL'}</span></td></tr>`));
+  body.innerHTML=rows.join('');
+
+  const tolPhys=Math.max(0.1,Number(state.validationTolerance)||5);
+  function phys(measured,pred){
+    if(!(Number(measured)>0)&&!(Number(measured)<0)) return '<span class="vv-status vv-review">VERIFIED — PHYSICAL VALIDATION PENDING</span>';
+    const e=relErr(pred,measured); const ok=Number.isFinite(e)&&e<=tolPhys;
+    return `<span class="vv-status ${ok?'vv-pass':'vv-fail'}">${ok?'VALIDATED':'VALIDATION FAIL'} · ${fmt(e,2)}%</span>`;
+  }
+  set('r-valTempStatus',phys(state.measuredFinalTemp,r.tempHorizon));
+  set('r-valGasStatus',phys(state.measuredGasFlow,r.actM3h));
+  set('r-valDpStatus',phys(state.measuredPressureDrop,r.dpTotal_Pa/1000));
+}
+
 /* ============================================================
    8. CANVAS CHART HELPERS (no external libs)
    ============================================================ */
 function drawLineChart(canvas, xs, ys, opts){
   opts = opts||{};
+  if(!canvas || !xs || !ys || !xs.length || xs.length!==ys.length) return;
+  if(xs.some(v=>!Number.isFinite(v)) || ys.some(v=>!Number.isFinite(v))) return;
   const dpr = window.devicePixelRatio||1;
-  const cssW = canvas.clientWidth || 400, cssH = parseInt(canvas.getAttribute('height'))||220;
-  canvas.width = cssW*dpr; canvas.height = cssH*dpr;
+  const parentW = canvas.parentElement ? canvas.parentElement.clientWidth : 0;
+  const cssW = canvas.clientWidth || parentW || 800, cssH = parseInt(canvas.getAttribute('height'))||220;
+  canvas.width = Math.max(1,Math.round(cssW*dpr)); canvas.height = Math.max(1,Math.round(cssH*dpr));
   const ctx = canvas.getContext('2d');
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,cssW,cssH);
   const padL=54,padR=16,padT=14,padB=30;
-  const w = cssW-padL-padR, h = cssH-padT-padB;
+  const w = Math.max(1,cssW-padL-padR), h = Math.max(1,cssH-padT-padB);
   const xmin=Math.min(...xs), xmax=Math.max(...xs);
   const ymin=0, ymax=Math.max(...ys)*1.15 || 1;
   function px(x){ return padL + (x-xmin)/(xmax-xmin||1)*w; }
@@ -2158,18 +2470,51 @@ function drawLineChart(canvas, xs, ys, opts){
     ctx.textAlign='center'; ctx.fillText(fmt(xs[idx],0), px(xs[idx]), padT+h+18);
   }
   // line
-  ctx.strokeStyle = opts.color || '#c97b4a'; ctx.lineWidth=2;
+  const stroke = opts.color || '#c97b4a';
+  ctx.strokeStyle = stroke; ctx.lineWidth=2;
   ctx.beginPath();
   xs.forEach((x,i)=>{ const X=px(x),Y=py(ys[i]); if(i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y); });
   ctx.stroke();
   // fill
   ctx.lineTo(px(xs[xs.length-1]), py(ymin)); ctx.lineTo(px(xs[0]), py(ymin)); ctx.closePath();
   const grad = ctx.createLinearGradient(0,padT,0,padT+h);
-  grad.addColorStop(0, (opts.color||'#c97b4a')+'33'); grad.addColorStop(1, (opts.color||'#c97b4a')+'00');
+  grad.addColorStop(0, stroke+'33'); grad.addColorStop(1, stroke+'00');
   ctx.fillStyle = grad; ctx.fill();
   // points
-  ctx.fillStyle = opts.color || '#c97b4a';
-  xs.forEach((x,i)=>{ ctx.beginPath(); ctx.arc(px(x),py(ys[i]),2.5,0,7); ctx.fill(); });
+  ctx.fillStyle = stroke;
+  xs.forEach((x,i)=>{ ctx.beginPath(); ctx.arc(px(x),py(ys[i]),3,0,Math.PI*2); ctx.fill(); });
+
+  // Store hit-test geometry for click-to-readout.
+  canvas._chartHit = {xs:xs.slice(), ys:ys.slice(), px, py, padL, padT, w, h, xmin, xmax, ymin, ymax, opts};
+  if(!canvas._chartClickBound){
+    canvas.addEventListener('click', function(ev){
+      const g = canvas._chartHit;
+      if(!g) return;
+      const rect=canvas.getBoundingClientRect();
+      const x=ev.clientX-rect.left, y=ev.clientY-rect.top;
+      let best=-1, bestDist=Infinity;
+      for(let i=0;i<g.xs.length;i++){
+        const dx=g.px(g.xs[i])-x, dy=g.py(g.ys[i])-y;
+        const dist=Math.hypot(dx,dy);
+        if(dist<bestDist){bestDist=dist;best=i;}
+      }
+      // Require the click to be reasonably close to the plotted point.
+      const maxHit=Math.max(14,Math.min(28,rect.width*0.035));
+      if(best<0 || bestDist>maxHit) return;
+      const o=g.opts||{};
+      const boxId=o.readoutId;
+      const box=boxId ? document.getElementById(boxId) : null;
+      if(!box) return;
+      const xText = o.xFormat ? o.xFormat(g.xs[best]) : fmt(g.xs[best],2);
+      const yText = o.yFormat ? o.yFormat(g.ys[best]) : fmt(g.ys[best],2);
+      box.innerHTML = '<strong>Selected point</strong><br>' +
+        (o.xLabel||'X') + ': <b>' + xText + '</b><br>' +
+        (o.yLabel||'Y') + ': <b>' + yText + '</b>' +
+        (o.formula ? '<br><span style="color:#617586">' + o.formula + '</span>' : '');
+      box.classList.add('show');
+    });
+    canvas._chartClickBound=true;
+  }
 }
 
 function drawTempChart(r){
@@ -2177,7 +2522,7 @@ function drawTempChart(r){
   const step = Math.max(1, horizon / 24);
   const xs = Array.from({length:25}, (_,i) => i * step);
   const ys = xs.map(t=>r.tempAt(t));
-  drawLineChart(document.getElementById('chartTemp'), xs, ys, {color:'#e0935f'});
+  drawLineChart(document.getElementById('chartTemp'), xs, ys, {color:'#e0935f', readoutId:'readoutTemp', xLabel:'Time', yLabel:'Reactor temperature', xFormat:v=>fmt(v,1)+' h', yFormat:v=>fmt(v,2)+' °C'});
 }
 function drawCO2ConcChart(r){
   const xs=[]; for(let c=5;c<=30;c+=2.5) xs.push(c);
@@ -2185,12 +2530,12 @@ function drawCO2ConcChart(r){
     const molar = r.co2MolarH/(c/100);
     return molar*NTP_MOLVOL*1000/60; // NL/min
   });
-  drawLineChart(document.getElementById('chartCO2Conc'), xs, ys, {color:'#6fb7c9'});
+  drawLineChart(document.getElementById('chartCO2Conc'), xs, ys, {color:'#6fb7c9', readoutId:'readoutCO2Conc', xLabel:'CO₂ concentration', yLabel:'Total flue-gas flow', xFormat:v=>fmt(v,1)+' vol%', yFormat:v=>fmt(v,2)+' NL/min'});
 }
 function drawCO2VolChart(r){
   const xs=[]; for(let v=5000;v<=13000;v+=1000) xs.push(v);
   const ys = xs.map(v=> v*state.co2Util/1000 );
-  drawLineChart(document.getElementById('chartCO2Vol'), xs, ys, {color:'#4fae7a'});
+  drawLineChart(document.getElementById('chartCO2Vol'), xs, ys, {color:'#4fae7a', readoutId:'readoutCO2Vol', xLabel:'Working volume', yLabel:'CO₂ utilization', xFormat:v=>fmt(v,0)+' L', yFormat:v=>fmt(v,3)+' kg/h'});
 }
 function drawCircTubeChart(r){
   const xs=[]; for(let d=60;d<=150;d+=10) xs.push(d);
@@ -2200,7 +2545,7 @@ function drawCircTubeChart(r){
     const v = state.targetRe*mu/(rho*D);
     return v*A*3600*state.numLoops;
   });
-  drawLineChart(document.getElementById('chartCircTube'), xs, ys, {color:'#5b8def'});
+  drawLineChart(document.getElementById('chartCircTube'), xs, ys, {color:'#5b8def', readoutId:'readoutCircTube', xLabel:'Tube ID', yLabel:'Total circulation flow', xFormat:v=>fmt(v,0)+' mm', yFormat:v=>fmt(v,2)+' m³/h'});
 }
 
 /* ============================================================
@@ -2673,6 +3018,7 @@ ${section('ENGINEERING NOTES', notesRows)}
 bindInputs();
 renderAll();
 renderCompare();
+requestAnimationFrame(() => { const rr = compute(state); drawTempChart(rr); drawCO2ConcChart(rr); drawCO2VolChart(rr); drawCircTubeChart(rr); });
 window.addEventListener('resize', () => {
   const r = compute(state);
   drawTempChart(r);
