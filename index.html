@@ -1115,20 +1115,64 @@ canvas.interactive-chart{cursor:crosshair;}
   </div>
 
   <div class="card arrangement-study-card">
-    <h2>12-Loop Tube Arrangement</h2>
-    <p class="footnote"><b>Locked loop basis:</b> Number of internal circulation loops remains fixed at <b>12</b>. The automatically calculated straight-tube count is distributed across these 12 loops as evenly as mathematically possible. No loop-count change is made by this arrangement study.</p>
-    <div class="grid3">
-      <div class="mini-stat"><span>Total straight tubes</span><strong id="r-arrTotalTubes">–</strong><small>tubes</small></div>
-      <div class="mini-stat"><span>Number of loops</span><strong id="r-arrLoops">12</strong><small>locked</small></div>
-      <div class="mini-stat"><span>Loop distribution</span><strong id="r-arrDistribution">–</strong><small>tubes / loop</small></div>
+    <h2>Reactor Tube Arrangement &amp; Space Planning</h2>
+    <p class="footnote"><b>Live arrangement study:</b> the calculated straight-tube count is distributed as evenly as possible across the selected circulation loops. Tube rows/columns, loop-bank layout and occupied floor space update automatically from the live design inputs. This is a layout-planning calculation, not a fabrication drawing.</p>
+
+    <div class="fieldgrid arrangement-input-grid">
+      <div class="field"><label>Tube pitch — columns <span class="badge input">INPUT</span></label><div class="inputwrap"><input type="number" step="0.001" min="0.111" id="in-arrangementPitchX" data-key="arrangementPitchX"><span class="unit-suffix">m C-C</span></div></div>
+      <div class="field"><label>Tube pitch — rows <span class="badge input">INPUT</span></label><div class="inputwrap"><input type="number" step="0.001" min="0.111" id="in-arrangementPitchY" data-key="arrangementPitchY"><span class="unit-suffix">m C-C</span></div></div>
+      <div class="field"><label>Clear gap between loop banks <span class="badge input">INPUT</span></label><div class="inputwrap"><input type="number" step="0.05" min="0" id="in-arrangementBankGap" data-key="arrangementBankGap"><span class="unit-suffix">m</span></div></div>
+      <div class="field"><label>Loop-bank columns <span class="badge input">INPUT</span></label><div class="inputwrap"><input type="number" step="1" min="1" id="in-arrangementBanksPerRow" data-key="arrangementBanksPerRow"><span class="unit-suffix">banks / row</span></div></div>
     </div>
-    <div class="row"><div class="label">Equal distribution calculation<span class="sub">N<sub>base</sub> = floor(N<sub>tubes</sub>/12); N<sub>extra</sub> = N<sub>tubes</sub> − 12N<sub>base</sub></span></div><div class="meta"><div class="val" id="r-arrMath">–</div></div></div>
-    <div class="row"><div class="label">Loops with 54 tubes</div><div class="meta"><span class="badge calc-badge">CALC</span><div class="val" id="r-arr54Loops">–</div></div></div>
-    <div class="row"><div class="label">Loops with 53 tubes</div><div class="meta"><span class="badge calc-badge">CALC</span><div class="val" id="r-arr53Loops">–</div></div></div>
-    <div class="row"><div class="label">Primary tube matrix<span class="sub">54 tubes = 6 rows × 9 columns</span></div><div class="meta"><div class="val" id="r-arr54Matrix">–</div></div></div>
-    <div class="row"><div class="label">Reduced loop matrix<span class="sub">53 tubes uses the same 6 × 9 grid with 1 unused position</span></div><div class="meta"><div class="val" id="r-arr53Matrix">–</div></div></div>
-    <div class="arrangement-note" id="equalArrangementNote">–</div>
-  </div>
+
+    <div class="grid3 arrangement-stat-grid">
+      <div class="mini-stat"><span>Total straight tubes</span><strong id="r-arrTotalTubes">–</strong><small>tubes</small></div>
+      <div class="mini-stat"><span>Circulation loops</span><strong id="r-arrLoops">–</strong><small>loops</small></div>
+      <div class="mini-stat"><span>Average tubes / loop</span><strong id="r-arrAvg">–</strong><small>tubes / loop</small></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card arrangement-inner-card">
+        <h3>Loop-by-Loop Tube Allocation</h3>
+        <div class="row"><div class="label">Equal distribution<span class="sub">N<sub>base</sub> = floor(N<sub>tubes</sub>/N<sub>loops</sub>)</span></div><div class="meta"><div class="val" id="r-arrMath">–</div></div></div>
+        <div class="row"><div class="label">Loops with higher count</div><div class="meta"><div class="val" id="r-arrHighLoops">–</div></div></div>
+        <div class="row"><div class="label">Higher-count loops</div><div class="meta"><div class="val" id="r-arrHighTubes">–</div></div></div>
+        <div class="row"><div class="label">Remaining loops</div><div class="meta"><div class="val" id="r-arrBaseLoops">–</div></div></div>
+        <div class="row"><div class="label">Remaining-loop tube count</div><div class="meta"><div class="val" id="r-arrBaseTubes">–</div></div></div>
+        <div class="arrangement-note" id="equalArrangementNote">–</div>
+      </div>
+
+      <div class="card arrangement-inner-card">
+        <h3>Tube Matrix Per Loop</h3>
+        <div class="row"><div class="label">Higher-count loop matrix</div><div class="meta"><div class="val" id="r-arr54Matrix">–</div></div></div>
+        <div class="row"><div class="label">Base-count loop matrix</div><div class="meta"><div class="val" id="r-arr53Matrix">–</div></div></div>
+        <div class="row"><div class="label">Planning rows × columns</div><div class="meta"><div class="val" id="r-arrOccupiedMatrix">–</div></div></div>
+        <div class="row"><div class="label">Row-wise distribution</div><div class="meta"><div class="val" id="r-arrRowDistribution">–</div></div></div>
+        <div class="row"><div class="label">Unused matrix positions</div><div class="meta"><div class="val" id="r-arrUnused">–</div></div></div>
+      </div>
+    </div>
+
+    <div class="card arrangement-inner-card">
+      <h3>Loop-Bank Arrangement &amp; Total Space</h3>
+      <div class="grid3">
+        <div class="mini-stat"><span>Loop banks / row</span><strong id="r-arrBankCols">–</strong><small>columns</small></div>
+        <div class="mini-stat"><span>Loop-bank rows</span><strong id="r-arrBankRows">–</strong><small>rows</small></div>
+        <div class="mini-stat"><span>Total bank positions</span><strong id="r-arrBankPositions">–</strong><small>positions</small></div>
+      </div>
+      <div class="row"><div class="label">Loop-bank matrix</div><div class="meta"><div class="val" id="r-arrBankMatrix">–</div></div></div>
+      <div class="row"><div class="label">One loop-bank envelope<span class="sub">Tube matrix width × straight-tube length × tube matrix height</span></div><div class="meta"><div class="val" id="r-arrBankEnvelope">–</div></div></div>
+      <div class="row"><div class="label">Overall arrangement footprint<span class="sub">Includes the clear gap between loop banks</span></div><div class="meta"><div class="val" id="r-arrFootprint">–</div></div></div>
+      <div class="row"><div class="label">Total covered floor area</div><div class="meta"><span class="badge calc-badge">CALC</span><div class="val" id="r-arrArea">–</div></div></div>
+      <div class="row"><div class="label">Approximate tube-field envelope volume<span class="sub">Footprint × matrix height; screening value only</span></div><div class="meta"><div class="val" id="r-arrEnvelopeVolume">–</div></div></div>
+      <div class="arrangement-note" id="arrangementSpaceNote">–</div>
+    </div>
+
+    <div class="arrangement-visual-wrap">
+      <div class="arrangement-visual-title">PLAN VIEW — LOOP BANK ARRANGEMENT</div>
+      <div id="arrangementPlanSvg"></div>
+      <div class="schematic-caption">LAYOUT SCREENING — SCHEMATIC / NOT FOR FABRICATION</div>
+    </div>
+  </div>>
 
   <div class="card">
     <h2>Total Flow-Path Length</h2>
@@ -1140,6 +1184,7 @@ canvas.interactive-chart{cursor:crosshair;}
   <div class="card">
     <h2>Loop Schematic</h2>
     <div class="schematic-wrap"><div id="schematicSvg"></div></div>
+  renderArrangementPlan(r);
     <div class="schematic-caption">SCHEMATIC — NOT FOR FABRICATION</div>
   </div>
 </section>
@@ -1841,6 +1886,11 @@ const DEFAULTS = {
   ubendCC: 210,             // mm
   headerID: 50,             // mm
   numLoops: 12,
+  // ---- physical tube-bank arrangement / space planning (editable) ----
+  arrangementPitchX: 0.130,     // m; tube centre-to-centre pitch across columns
+  arrangementPitchY: 0.130,     // m; tube centre-to-centre pitch across rows
+  arrangementBankGap: 0.300,    // m; clear gap between loop banks
+  arrangementBanksPerRow: 4,    // count; loop-bank columns in plant arrangement
   co2Frac: 13,               // %
   co2Util: 0.25,             // g/L/h
   captureEff: 85,            // %
@@ -2044,8 +2094,15 @@ function calculateLoopArrangement(numTubes, numLoops){
   const extra=tubes-(base*loops);
   const high=base+(extra>0?1:0);
   const matrixRows=6;
-  const matrixCols=Math.ceil(high/matrixRows);
-  return {loops,tubes,base,extra,high,matrixRows,matrixCols,unusedHigh:(matrixRows*matrixCols)-high};
+  const matrixCols=Math.max(1,Math.ceil(high/matrixRows));
+  const unusedHigh=(matrixRows*matrixCols)-high;
+  const highRows=Math.floor(high/matrixCols);
+  const highRem=high-(highRows*matrixCols);
+  const baseRows=Math.floor(base/matrixCols);
+  const baseRem=base-(baseRows*matrixCols);
+  const highRowDistribution=Array.from({length:matrixRows},(_,i)=>i<highRows?(i<highRem?matrixCols:matrixCols):0);
+  const baseRowDistribution=Array.from({length:matrixRows},(_,i)=>i<baseRows?(i<baseRem?matrixCols:matrixCols):0);
+  return {loops,tubes,base,extra,high,matrixRows,matrixCols,unusedHigh,highRowDistribution,baseRowDistribution};
 }
 
 function compute(s){
@@ -2080,6 +2137,25 @@ function compute(s){
   r.loopArrangement=calculateLoopArrangement(r.numStraightCalc, loops);
   r.baseTubesPerLoop=r.loopArrangement.base;
   r.extraTubeLoops=r.loopArrangement.extra;
+
+  // ---- physical arrangement and space planning ----
+  const pitchX=Math.max(Number(s.arrangementPitchX)||0,(Number(s.tubeOD)||0)/1000);
+  const pitchY=Math.max(Number(s.arrangementPitchY)||0,(Number(s.tubeOD)||0)/1000);
+  const bankGap=Math.max(0,Number(s.arrangementBankGap)||0);
+  const bankCols=Math.max(1,Math.round(Number(s.arrangementBanksPerRow)||1));
+  const bankRows=Math.max(1,Math.ceil(loops/bankCols));
+  const tubeODm=(Number(s.tubeOD)||0)/1000;
+  const bankTubeRows=r.loopArrangement.matrixRows;
+  const bankTubeCols=r.loopArrangement.matrixCols;
+  const bankWidth=Math.max(tubeODm,(bankTubeCols-1)*pitchX+tubeODm);
+  const bankHeight=Math.max(tubeODm,(bankTubeRows-1)*pitchY+tubeODm);
+  const bankDepth=Math.max(0,Number(s.straightLen)||0);
+  const totalFootprintWidth=bankCols*bankWidth+Math.max(0,bankCols-1)*bankGap;
+  const totalFootprintDepth=bankRows*bankDepth+Math.max(0,bankRows-1)*bankGap;
+  const totalArea=totalFootprintWidth*totalFootprintDepth;
+  r.arrangementSpace={pitchX,pitchY,bankGap,bankCols,bankRows,bankTubeRows,bankTubeCols,
+    bankWidth,bankHeight,bankDepth,totalFootprintWidth,totalFootprintDepth,totalArea,
+    envelopeVolume:totalArea*bankHeight,bankPositions:bankRows*bankCols};
   r.loopCols=4;
   r.loopRows=Math.ceil(loops/r.loopCols);
   r.loopUnused=r.loopRows*r.loopCols-loops;
@@ -3015,17 +3091,34 @@ function renderAll(){
   set('r-volumeAchieved', fmt(r.volumeAchieved,4)+' <span class="unit">m³</span>');
   set('r-volumeError', (r.volumeError>=0?'+':'')+fmt(r.volumeError,4)+' <span class="unit">m³ ('+fmt(r.volumeErrorPct,3)+'%)</span>');
   set('r-tubesPerLoop', fmt(r.tubesPerLoop,2)+' <span class="unit">tubes/loop</span>');
-  const a=r.loopArrangement;
+  const a=r.loopArrangement, sp=r.arrangementSpace;
   if(a){
     set('r-arrTotalTubes',fmt(a.tubes,0));
     set('r-arrLoops',fmt(a.loops,0));
+    set('r-arrAvg',fmt(a.tubes/a.loops,2));
     set('r-arrDistribution',`${fmt(a.extra,0)} loops × ${fmt(a.high,0)} + ${fmt(a.loops-a.extra,0)} loops × ${fmt(a.base,0)}`);
     set('r-arrMath',`${fmt(a.tubes,0)} ÷ ${fmt(a.loops,0)} = ${fmt(a.base,0)} remainder ${fmt(a.extra,0)}`);
-    set('r-arr54Loops',fmt(a.extra,0));
-    set('r-arr53Loops',fmt(a.loops-a.extra,0));
-    set('r-arr54Matrix','6 × 9 = 54 tubes');
-    set('r-arr53Matrix','6 × 9 grid − 1 position = 53 tubes');
-    set('equalArrangementNote',`<b>LOCKED ARRANGEMENT:</b> ${a.extra} loops → ${a.high} straight tubes each; ${a.loops-a.extra} loop → ${a.base} straight tubes. Total = ${a.tubes} tubes across ${a.loops} loops. Loop count remains fixed at 12.`);
+    set('r-arrHighLoops',fmt(a.extra,0));
+    set('r-arrHighTubes',fmt(a.high,0));
+    set('r-arrBaseLoops',fmt(a.loops-a.extra,0));
+    set('r-arrBaseTubes',fmt(a.base,0));
+    set('r-arr54Matrix',`${a.matrixRows} × ${a.matrixCols} = ${a.matrixRows*a.matrixCols} positions; ${a.high} occupied`);
+    set('r-arr53Matrix',`${a.matrixRows} × ${a.matrixCols} = ${a.matrixRows*a.matrixCols} positions; ${a.base} occupied`);
+    set('r-arrOccupiedMatrix',`${a.matrixRows} rows × ${a.matrixCols} columns`);
+    set('r-arrRowDistribution',`High loop: ${a.highRowDistribution.filter(x=>x>0).join(' + ')}; Base loop: ${a.baseRowDistribution.filter(x=>x>0).join(' + ')}`);
+    set('r-arrUnused',`${a.unusedHigh} unused positions in high-count loop matrix`);
+    set('equalArrangementNote',`<b>CURRENT ARRANGEMENT:</b> ${a.extra} loops carry ${a.high} straight tubes each; ${a.loops-a.extra} loops carry ${a.base} straight tubes each. Total = ${a.tubes} straight tubes across ${a.loops} loops.`);
+  }
+  if(sp){
+    set('r-arrBankCols',fmt(sp.bankCols,0));
+    set('r-arrBankRows',fmt(sp.bankRows,0));
+    set('r-arrBankPositions',fmt(sp.bankPositions,0));
+    set('r-arrBankMatrix',`${sp.bankRows} rows × ${sp.bankCols} columns`);
+    set('r-arrBankEnvelope',`${fmt(sp.bankWidth,2)} m W × ${fmt(sp.bankDepth,2)} m L × ${fmt(sp.bankHeight,2)} m H`);
+    set('r-arrFootprint',`${fmt(sp.totalFootprintWidth,2)} m × ${fmt(sp.totalFootprintDepth,2)} m`);
+    set('r-arrArea',`${fmt(sp.totalArea,2)} m²`);
+    set('r-arrEnvelopeVolume',`${fmt(sp.envelopeVolume,2)} m³`);
+    set('arrangementSpaceNote',`<b>SPACE BASIS:</b> ${sp.bankRows} bank row(s) × ${sp.bankCols} bank column(s), ${fmt(sp.bankGap,2)} m clear gap between banks. Tube pitch = ${fmt(sp.pitchX*1000,0)} mm × ${fmt(sp.pitchY*1000,0)} mm. Calculated tube-field footprint = ${fmt(sp.totalFootprintWidth,2)} m × ${fmt(sp.totalFootprintDepth,2)} m = ${fmt(sp.totalArea,2)} m². This excludes operator aisles, headers, pumps, blower/cyclone, electrical panels and maintenance clearances.`);
   }
   const tubeInp=document.getElementById('in-numStraight'); if(tubeInp) tubeInp.value=r.numStraightCalc;
   const bendInp=document.getElementById('in-numUbends'); if(bendInp) bendInp.value=r.numUbendsCalc;
@@ -3422,6 +3515,33 @@ function drawHeatingFlowChart(r){
 /* ============================================================
    9. REACTOR SCHEMATIC (SVG)
    ============================================================ */
+
+function renderArrangementPlan(r){
+  const el=document.getElementById('arrangementPlanSvg');
+  if(!el || !r || !r.arrangementSpace || !r.loopArrangement) return;
+  const sp=r.arrangementSpace,a=r.loopArrangement,W=900,H=360,pad=35;
+  const scale=Math.min((W-2*pad)/Math.max(sp.totalFootprintWidth,.001),(H-2*pad)/Math.max(sp.totalFootprintDepth,.001));
+  const gap=sp.bankGap*scale,bw=sp.bankWidth*scale,bd=sp.bankDepth*scale;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Loop bank arrangement plan view">
+  <rect x="0" y="0" width="${W}" height="${H}" fill="#f7fbfe" stroke="#c9d8e6"/>
+  <text x="${pad}" y="20" font-family="Rockwell,Georgia,serif" font-size="12" fill="#55718a">PLAN ENVELOPE ${fmt(sp.totalFootprintWidth,2)} m × ${fmt(sp.totalFootprintDepth,2)} m</text>`;
+  let loop=0;
+  for(let br=0;br<sp.bankRows;br++){
+    for(let bc=0;bc<sp.bankCols;bc++){
+      const x=pad+bc*(bw+gap),y=pad+br*(bd+gap),unused=loop>=a.loops;
+      const tubes=unused?0:(loop<a.extra?a.high:a.base);
+      svg+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bd.toFixed(1)}" rx="4" fill="${unused?'#f2f4f6':'#eaf4fc'}" stroke="${unused?'#b9c7d2':'#0b5ea8'}" stroke-width="1.4"/>`;
+      svg+=unused
+        ? `<text x="${(x+bw/2).toFixed(1)}" y="${(y+bd/2+4).toFixed(1)}" text-anchor="middle" font-family="Rockwell,Georgia,serif" font-size="10" fill="#71879a">UNUSED BANK</text>`
+        : `<text x="${(x+bw/2).toFixed(1)}" y="${(y+bd/2-7).toFixed(1)}" text-anchor="middle" font-family="Rockwell,Georgia,serif" font-size="12" font-weight="700" fill="#17344f">LOOP ${loop+1}</text>
+           <text x="${(x+bw/2).toFixed(1)}" y="${(y+bd/2+11).toFixed(1)}" text-anchor="middle" font-family="Rockwell,Georgia,serif" font-size="11" fill="#55718a">${tubes} tubes</text>`;
+      loop++;
+    }
+  }
+  svg+=`<text x="${W-pad}" y="${H-10}" text-anchor="end" font-family="Rockwell,Georgia,serif" font-size="10" fill="#71879a">Each bank: ${a.matrixRows} rows × ${a.matrixCols} planning columns; straight tube length ${fmt(sp.bankDepth,2)} m</text></svg>`;
+  el.innerHTML=svg;
+}
+
 function renderSchematic(){
   const el=document.getElementById('schematicSvg'); if(!el) return;
   const loops=Math.max(1,Math.round(Number(state.numLoops)||1)); const r=compute(state);
@@ -4257,6 +4377,16 @@ table.sheet{border-collapse:collapse;width:100%;margin:0 0 18px 0;table-layout:f
 .sheet .section-title th{background:#0b5ea8;color:#fff;font-size:13pt;text-align:left;padding:9px;}
 .sheet .head th{background:#dcecf9;color:#12304a;font-weight:bold;}
 .sheet td:nth-child(1){width:20%;}.sheet td:nth-child(2){width:25%;}.sheet td:nth-child(3){width:15%;}.sheet td:nth-child(4){width:10%;}.sheet td:nth-child(5){width:30%;}
+
+/* ---------- Tube arrangement and space planning ---------- */
+.arrangement-input-grid{margin-bottom:8px}
+.arrangement-stat-grid{margin-top:10px}
+.arrangement-inner-card{margin-bottom:0;background:#fbfdff;box-shadow:none}
+.arrangement-visual-wrap{margin-top:18px;background:#fff;border:1px solid var(--border);border-radius:7px;padding:12px}
+.arrangement-visual-title{font-size:11px;font-weight:700;letter-spacing:.06em;color:#54718a;margin:0 0 8px}
+#arrangementPlanSvg svg{width:100%;height:auto;display:block}
+@media(max-width:760px){.arrangement-study-card .grid2,.arrangement-study-card .grid3{grid-template-columns:1fr}}
+
 </style></head><body>
 <h1>CARBONONE MRPL — LIVE REACTOR DESIGN &amp; CALCULATION REPORT</h1>
 <p>Generated from current live model state</p>
