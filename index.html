@@ -1864,6 +1864,7 @@ function compute(s){
   // This is the same live CO₂-derived gas requirement multiplied by 24 h/day.
   r.stdNm3day  = r.stdNm3h * 24;                            // Nm3/day
   r.actM3day   = r.actM3h * 24;                             // m3/day at inlet T
+  r.co2DesignGasFlowKgH = r.stdNm3h * Number(s.normDensity); // kg/h
   r.gasMassDay = r.co2DesignGasFlowKgH * 24;                // kg/day
 
   // ---- dedicated flue-gas heating requirement calculator ----
@@ -1895,7 +1896,6 @@ function compute(s){
     r.heatGasMolarFlow*r.heatGasActualMolVol : NaN;
   r.heatGasFlowActLmin = Number.isFinite(r.heatGasFlowActM3h) ? r.heatGasFlowActM3h*1000/60 : NaN;
   // Compare the two independent requirements if the same flue-gas stream is used for both duties.
-  r.co2DesignGasFlowKgH = r.stdNm3h * Number(s.normDensity);
   r.combinedRequiredGasKgH = [r.heatGasFlowKgH,r.co2DesignGasFlowKgH].every(Number.isFinite) ?
     Math.max(r.heatGasFlowKgH,r.co2DesignGasFlowKgH) : NaN;
   r.combinedDuty = Number.isFinite(r.heatGasFlowKgH) && Number.isFinite(r.co2DesignGasFlowKgH) ?
