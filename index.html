@@ -824,38 +824,44 @@ canvas.interactive-chart{cursor:crosshair;}
         <div class="row"><div class="label">Low-flow kLa reference<span class="sub">Ug = 0.005 m/s</span></div><div class="meta"><div class="val">18 h⁻¹</div></div></div>
         <div class="row"><div class="label">Baseline kLa reference<span class="sub">Ug = 0.010 m/s</span></div><div class="meta"><div class="val">30 h⁻¹</div></div></div>
         <div class="row"><div class="label">Pilot-target kLa reference<span class="sub">Ug = 0.015 m/s</span></div><div class="meta"><div class="val">50 h⁻¹</div></div></div>
-        <p class="footnote">These kLa values were obtained in the report's bubble-column experiment. They are <b>not</b> treated as validated kLa for the CarbonONE tubular recirculation reactor.</p>
+        <p class="footnote">The report's pilot condition is kLa ≈ 50 h⁻¹ at Ug = 0.015 m/s. This remains an experimental bubble-column reference and is not silently applied as a validated tubular-reactor kLa.</p>
       </div>
       <div class="card compact-card">
         <h3>CO₂ Uptake Reference</h3>
         <div class="row"><div class="label">Measured GUR<span class="sub">X = 3.5 g/L DCW</span></div><div class="meta"><div class="val">108 mg/L/h</div></div></div>
         <div class="row"><div class="label">Specific CO₂ uptake q<sub>CO₂</sub></div><div class="meta"><div class="val">30.8 mg/g/h</div></div></div>
-        <div class="row"><div class="label">Reference GUR scaled to current 4.0 g/L target<span class="sub">q<sub>CO₂</sub> × X</span></div><div class="meta"><div class="val" id="r-refGUR4g">–</div></div></div>
-        <div class="row"><div class="label">Current CarbonONE CO₂ utilization basis<span class="sub">Existing design input — unchanged</span></div><div class="meta"><div class="val" id="r-refCurrentCO2Util">–</div></div></div>
-        <div class="row"><div class="label">Reference-to-current comparison<span class="sub">Reference scaled GUR ÷ current utilization basis</span></div><div class="meta"><div class="val" id="r-refCO2Ratio">–</div></div></div>
+        <div class="row"><div class="label">Report qCO₂ scaled to 4.0 g/L<span class="sub">30.8 × 4.0</span></div><div class="meta"><div class="val" id="r-refGUR4g">–</div></div></div>
+        <div class="row"><div class="label">Current CarbonONE CO₂ utilization basis<span class="sub">LOCKED — intentionally unchanged</span></div><div class="meta"><div class="val" id="r-refCurrentCO2Util">–</div></div></div>
+        <div class="row"><div class="label">Reference-to-current ratio<span class="sub">scaled report GUR ÷ live design basis</span></div><div class="meta"><div class="val" id="r-refCO2Ratio">–</div></div></div>
+        <p class="footnote"><b>Important:</b> the live CarbonONE design basis remains <b>0.25 g/L/h</b>. Report qCO₂/GUR is shown only as an experimental benchmark.</p>
       </div>
     </div>
     <div class="grid2">
       <div class="card compact-card">
         <h3>Growth Kinetics Reference</h3>
-        <div class="row"><div class="label">Maximum specific growth rate μ<sub>max</sub></div><div class="meta"><div class="val">~0.20 h⁻¹</div></div></div>
-        <div class="row"><div class="label">Half-saturation constant K<sub>s</sub></div><div class="meta"><div class="val">~8–12 mg/L</div></div></div>
-        <div class="row"><div class="label">Reference model</div><div class="meta"><div class="val">Monod: μ = μ<sub>max</sub>S/(K<sub>s</sub>+S)</div></div></div>
-        <p class="footnote">The report describes substrate-dependent growth under non-limiting light. These parameters remain reference values until validated for the actual CarbonONE operating condition.</p>
+        <div class="row"><div class="label">Observed overall μ<span class="sub">0 → 192 h</span></div><div class="meta"><div class="val">~0.0156 h⁻¹</div></div></div>
+        <div class="row"><div class="label">Observed doubling time</div><div class="meta"><div class="val" id="r-refDoubling">–</div></div></div>
+        <div class="row"><div class="label">Maximum specific growth μ<sub>max</sub></div><div class="meta"><div class="val">~0.20 h⁻¹</div></div></div>
+        <div class="row"><div class="label">Half-saturation K<sub>s</sub></div><div class="meta"><div class="val">~8–12 mg/L</div></div></div>
+        <div class="row"><div class="label">Monod reference at S = 15 mg/L</div><div class="meta"><div class="val" id="r-refMu15">–</div></div></div>
+        <p class="footnote">The report identifies substrate-dependent growth under non-limiting light. μmax/Ks remain reference parameters, not a replacement for a validated scale-up kinetic fit.</p>
       </div>
       <div class="card compact-card">
         <h3>Light Attenuation Reference</h3>
         <div class="row"><div class="label">Extinction coefficient α</div><div class="meta"><div class="val">~0.28–0.32 m²/g</div></div></div>
         <div class="row"><div class="label">Recommended maximum optical path<span class="sub">Report design implication</span></div><div class="meta"><div class="val">≤ 5–8 cm</div></div></div>
+        <div class="row"><div class="label">Optimal biomass per light zone</div><div class="meta"><div class="val">≤ 1.5 g/L</div></div></div>
         <div class="row"><div class="label">Current CarbonONE tube ID<span class="sub">Existing geometry — unchanged</span></div><div class="meta"><div class="val" id="r-refTubeID">–</div></div></div>
-        <div class="row"><div class="label">Reference optical-path check<span class="sub">Tube ID compared with report's 5–8 cm recommendation</span></div><div class="meta"><div class="val" id="r-refOpticalCheck">–</div></div></div>
-        <p class="footnote">This is a design-review flag only. The existing 104 mm tube basis is not changed by this reference section.</p>
+        <div class="row"><div class="label">Reference optical-path check<span class="sub">Tube ID vs. 5–8 cm recommendation</span></div><div class="meta"><div class="val" id="r-refOpticalCheck">–</div></div></div>
+        <p class="footnote">This is a design-review flag only. The 104 mm tube basis is not changed by this report reference.</p>
       </div>
     </div>
     <div class="card compact-card">
       <h3>8-Day Biomass &amp; Lipid Kinetic Reference</h3>
       <table><thead><tr><th>Time</th><th>Biomass</th><th>Lipid</th><th>Lipid content</th><th>Reference phase</th></tr></thead><tbody>
         <tr><td>0 h</td><td>0.20 g/L</td><td>0.02 g/L</td><td>10%</td><td>Growth</td></tr>
+        <tr><td>24 h</td><td>0.60 g/L</td><td>0.05 g/L</td><td>8%</td><td>Growth</td></tr>
+        <tr><td>48 h</td><td>1.20 g/L</td><td>0.15 g/L</td><td>12%</td><td>Growth</td></tr>
         <tr><td>72 h</td><td>2.00 g/L</td><td>0.35 g/L</td><td>17%</td><td>Growth → transition</td></tr>
         <tr><td>96 h</td><td>2.80 g/L</td><td>0.70 g/L</td><td>25%</td><td>Transition</td></tr>
         <tr><td>120 h</td><td>3.40 g/L</td><td>1.10 g/L</td><td>32%</td><td>Transition</td></tr>
@@ -863,9 +869,15 @@ canvas.interactive-chart{cursor:crosshair;}
         <tr><td>168 h</td><td>3.90 g/L</td><td>1.60 g/L</td><td>41%</td><td>Storage</td></tr>
         <tr><td>192 h</td><td>4.00 g/L</td><td>1.72 g/L</td><td>43%</td><td>Storage / end of study</td></tr>
       </tbody></table>
-      <p class="footnote"><b>Lipid-kinetics reference:</b> the report uses the Luedeking–Piret form dL/dt = α(dX/dt) + βX and reports interval-specific q<sub>L</sub> values of approximately 0.005 g/g/h in the transition phase and 0.0017 g/g/h in the later storage phase. No fitted α/β pair is inserted into the live model because the report does not provide a validated fitted pair.</p>
+      <div class="grid2" style="margin-top:12px">
+        <div class="row"><div class="label">4-day measured biomass<span class="sub">96 h report point</span></div><div class="meta"><div class="val" id="r-ref4dBiomass">–</div></div></div>
+        <div class="row"><div class="label">4-day measured lipid<span class="sub">96 h report point</span></div><div class="meta"><div class="val" id="r-ref4dLipid">–</div></div></div>
+        <div class="row"><div class="label">8-day measured lipid</div><div class="meta"><div class="val" id="r-ref8dLipid">–</div></div></div>
+        <div class="row"><div class="label">8-day lipid content</div><div class="meta"><div class="val" id="r-ref8dLipidPct">–</div></div></div>
+      </div>
+      <p class="footnote"><b>Lipid kinetics:</b> the report describes a growth phase (0–72 h), transition phase (72–144 h) and storage phase (144–192 h). It reports interval q<sub>L</sub> values of ~0.005 g/g/h in transition and ~0.0017 g/g/h in the later storage phase; no fitted α/β pair is inserted into the live model.</p>
     </div>
-    <div class="callout warning"><b>Engineering use rule:</b> Reference values from this report are kept separate from the existing CarbonONE locked design inputs. kLa, GUR, μ<sub>max</sub>, K<sub>s</sub>, optical extinction and lipid-kinetic values can be used for comparison, sensitivity studies and future validation, but they do not silently replace the current design basis.</div>
+    <div class="callout warning"><b>Engineering use rule:</b> Caliche report values are reference/benchmark data. They are added for comparison, traceability and future validation. The locked CarbonONE design inputs — including <b>0.25 g/L/h CO₂ utilization</b>, 104 mm ID, 110 mm OD, 210 mm U-bend C-C and 12 loops — remain unchanged.</div>
   </div>
 
   <p class="footnote">All percentages above are entered and displayed as %, not as decimal fractions — the model converts internally (e.g. 13% → 0.13) so a typo can't silently create a 99% CO₂ stream. Data basis: CarbonONE MRPL model-basis workbook ("Live Model Inputs" / "Final Design" sheets), overridden where noted by the current locked design basis (batch, 8-day, 90% working volume, 35°C target, 13% CO₂, 0.25 g/L/h utilization, 85% capture, Re≈5000, 12 loops).</p>
@@ -1759,6 +1771,50 @@ let traceMode = false;
 
 const NTP_MOLVOL = 22.414; // m3/kmol at 0C, 1atm
 
+// ---- Caliche lipid-kinetics report: fixed experimental reference dataset ----
+// These values are reference/benchmark data only. They do NOT replace the locked
+// CarbonONE CO2 utilization basis of 0.25 g/L/h.
+const CALICHE_REF = Object.freeze({
+  organism: 'CPLCO1',
+  durationH: 192,
+  initialBiomass_gL: 0.20,
+  finalBiomass_gL: 4.00,
+  observedMu_h: 0.0156,
+  doublingTimeH: 44.4,
+  muMax_h: 0.20,
+  ks_mgL_low: 8,
+  ks_mgL_high: 12,
+  qCO2_mg_g_h: 30.8,
+  gur_mg_L_h_at_3_5: 108,
+  kla_low_h: 18,
+  kla_baseline_h: 30,
+  kla_pilot_h: 50,
+  pilotUg_m_s: 0.015,
+  alpha_low_m2_g: 0.28,
+  alpha_high_m2_g: 0.32,
+  maxPathLow_cm: 5,
+  maxPathHigh_cm: 8,
+  optimalZoneBiomass_gL: 1.5,
+  baselineLipidFractionLow: 0.43,
+  baselineLipidFractionHigh: 0.45,
+  stressLipidFractionLow: 0.50,
+  stressLipidFractionHigh: 0.52,
+  lipidYieldBaseline_g_g: 0.40,
+  lipidYieldStress_g_g: 0.50,
+  hefaConversion: 0.80,
+  timeCourse: [
+    [0,0.20,0.02,10,'Growth'],
+    [24,0.60,0.05,8,'Growth'],
+    [48,1.20,0.15,12,'Growth'],
+    [72,2.00,0.35,17,'Growth → transition'],
+    [96,2.80,0.70,25,'Transition'],
+    [120,3.40,1.10,32,'Transition'],
+    [144,3.70,1.40,38,'Storage'],
+    [168,3.90,1.60,41,'Storage'],
+    [192,4.00,1.72,43,'Storage / end of study']
+  ]
+});
+
 // Optional Design Completion inputs. These are only active when the user explicitly enables
 // Design Completion Calculations. Zero is used internally as an empty/TBD placeholder only.
 const DESIGN_COMPLETION_KEYS = [
@@ -2062,6 +2118,21 @@ function compute(s){
     const dpc=Math.sqrt((9*muG*b)/(2*Math.PI*Ne*rhoP*Vi));
     r.cycCutSize_um=dpc*1e6;
   }
+
+  // ---- Caliche report reference calculations (always available, reference only) ----
+  r.reportMuObserved_h = CALICHE_REF.observedMu_h;
+  r.reportDoublingTime_h = Math.log(2)/CALICHE_REF.observedMu_h;
+  r.reportGURCurrentX_mgLh = CALICHE_REF.qCO2_mg_g_h * CALICHE_REF.finalBiomass_gL;
+  r.reportGURCurrentX_gLh = r.reportGURCurrentX_mgLh/1000;
+  r.reportLipid4Day_gL = CALICHE_REF.timeCourse.find(x=>x[0]===96)?.[2] ?? NaN;
+  r.reportBiomass4Day_gL = CALICHE_REF.timeCourse.find(x=>x[0]===96)?.[1] ?? NaN;
+  r.reportLipid4DayPct = CALICHE_REF.timeCourse.find(x=>x[0]===96)?.[3] ?? NaN;
+  r.reportLipid8Day_gL = CALICHE_REF.timeCourse.find(x=>x[0]===192)?.[2] ?? NaN;
+  r.reportLipid8DayPct = CALICHE_REF.timeCourse.find(x=>x[0]===192)?.[3] ?? NaN;
+  r.reportMuAt15mgL_h = CALICHE_REF.muMax_h*15/(10+15);
+  r.reportOpticalDepthAt4g = ((CALICHE_REF.alpha_low_m2_g+CALICHE_REF.alpha_high_m2_g)/2)*CALICHE_REF.finalBiomass_gL*1000*(s.tubeID/1000);
+  r.reportLightTransmissionAt4g = Math.exp(-r.reportOpticalDepthAt4g);
+  r.reportKLaPilotGURRatio = CALICHE_REF.kla_pilot_h*1; // retained as a reference marker; no C*-CL assumption is imposed
 
   // ---- optional complete design-development calculations ----
   // These calculations are intentionally opt-in. When disabled, their outputs remain NaN so
@@ -2839,6 +2910,12 @@ function renderAll(){
   set('r-refCO2Ratio', Number.isFinite(refRatio)?fmt(refRatio,2)+'× reference/current':'TBD');
   set('r-refTubeID', fmt(state.tubeID,0)+' mm = '+fmt(state.tubeID/10,1)+' cm');
   set('r-refOpticalCheck', state.tubeID/10<=8 ? 'Within ≤8 cm reference limit' : 'REVIEW — exceeds 8 cm reference limit');
+  set('r-refDoubling', fmt(r.reportDoublingTime_h,1)+' h');
+  set('r-refMu15', fmt(r.reportMuAt15mgL_h,3)+' h⁻¹');
+  set('r-ref4dBiomass', fmt(r.reportBiomass4Day_gL,2)+' g/L');
+  set('r-ref4dLipid', fmt(r.reportLipid4Day_gL,2)+' g/L ('+fmt(r.reportLipid4DayPct,0)+'%)');
+  set('r-ref8dLipid', fmt(r.reportLipid8Day_gL,2)+' g/L');
+  set('r-ref8dLipidPct', fmt(r.reportLipid8DayPct,0)+'%');
 
   // complete design-development outputs
   set('r-biomassProd', !state.designCompletionEnabled ? 'NOT ENABLED' : (Number.isFinite(r.biomassProductivity)?fmt(r.biomassProductivity,3)+' g/L/day':'TBD — biomass basis'));
